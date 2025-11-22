@@ -1,0 +1,235 @@
+import { FastifyInstance } from 'fastify';
+import { prisma } from '@freesquash/database';
+import { z } from 'zod';
+import { calculateGroupRankings } from '../services/ranking.service';
+
+const createGroupSchema = z.object({
+    name: z.string().min(1),
+    seasonId: z.string(),
+});
+
+const assignPlayerSchema = z.object({
+    playerId: z.string(),
+});
+
+export async function groupRoutes(fastify: FastifyInstance) {
+    // Get all groups
+    fastify.get('/', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const { seasonId } = request.query as { seasonId?: string };
+
+            const where = seasonId ? { seasonId } : {};
+
+            const groups = await prisma.group.findMany({
+                where,
+                include: {
+                    season: true,
+                    _count: {
+                        select: {
+                            groupPlayers: true,
+                            matches: true,
+                        },
+                    },
+                },
+                orderBy: {
+                    name: 'asc',
+                },
+            });
+
+            return groups;
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // Get group by ID with rankings
+    fastify.get('/:id', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const { id } = request.params as { id: string };
+
+            const group = await prisma.group.findUnique({
+                where: { id },
+                include: {
+                    season: true,
+                    groupPlayers: {
+                        include: {
+                            player: true,
+                        },
+                        orderBy: {
+                            rankingPosition: 'asc',
+                        },
+                    },
+                    matches: {
+                        include: {
+                            player1: true,
+                            player2: true,
+                            winner: true,
+                        },
+                        orderBy: {
+                            date: 'desc',
+                        },
+                    },
+                },
+            });
+
+            if (!group) {
+                return reply.status(404).send({ error: 'Group not found' });
+            }
+
+            return group;
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // Create group (admin only)
+    fastify.post('/', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            const body = createGroupSchema.parse(request.body);
+
+            const group = await prisma.group.create({
+                data: {
+                    name: body.name,
+                    seasonId: body.seasonId,
+                },
+            });
+
+            return group;
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                return reply.status(400).send({ error: error.errors });
+            }
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // Assign player to group (admin only)
+    fastify.post('/:id/players', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            const { id } = request.params as { id: string };
+
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            const body = assignPlayerSchema.parse(request.body);
+
+            // Check if player is already in group
+            const existing = await prisma.groupPlayer.findUnique({
+                where: {
+                    groupId_playerId: {
+                        groupId: id,
+                        playerId: body.playerId,
+                    },
+                },
+            });
+
+            if (existing) {
+                return reply.status(400).send({ error: 'Player already in group' });
+            }
+
+            // Get current player count to set initial ranking
+            const playerCount = await prisma.groupPlayer.count({
+                where: { groupId: id },
+            });
+
+            const groupPlayer = await prisma.groupPlayer.create({
+                data: {
+                    groupId: id,
+                    playerId: body.playerId,
+                    rankingPosition: playerCount + 1,
+                },
+                include: {
+                    player: true,
+                },
+            });
+
+            // Update player's currentGroupId
+            await prisma.player.update({
+                where: { id: body.playerId },
+                data: { currentGroupId: id },
+            });
+
+            return groupPlayer;
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                return reply.status(400).send({ error: error.errors });
+            }
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // Remove player from group (admin only)
+    fastify.delete('/:id/players/:playerId', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            const { id, playerId } = request.params as { id: string; playerId: string };
+
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            await prisma.groupPlayer.delete({
+                where: {
+                    groupId_playerId: {
+                        groupId: id,
+                        playerId,
+                    },
+                },
+            });
+
+            // Update player's currentGroupId
+            await prisma.player.update({
+                where: { id: playerId },
+                data: { currentGroupId: null },
+            });
+
+            return { success: true };
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // Recalculate group rankings (admin only)
+    fastify.post('/:id/recalculate', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            const { id } = request.params as { id: string };
+
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            await calculateGroupRankings(id);
+
+            return { success: true, message: 'Rankings recalculated' };
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+}

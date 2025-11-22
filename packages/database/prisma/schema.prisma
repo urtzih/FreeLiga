@@ -1,0 +1,156 @@
+// Prisma Schema for FreeSquash League
+// Designed for MVP with future expansion capabilities
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PLAYER
+  ADMIN
+}
+
+enum MatchStatus {
+  PLAYED
+  INJURY
+  CANCELLED
+}
+
+enum MovementType {
+  PROMOTION
+  RELEGATION
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // Hashed with bcrypt
+  role      Role     @default(PLAYER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  player Player?
+
+  @@map("users")
+}
+
+model Player {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  name           String
+  nickname       String?
+  phone          String?
+  email          String?
+  currentGroupId String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentGroup        Group?             @relation("CurrentGroupPlayers", fields: [currentGroupId], references: [id])
+  groupPlayers        GroupPlayer[]
+  matchesAsPlayer1    Match[]            @relation("Player1Matches")
+  matchesAsPlayer2    Match[]            @relation("Player2Matches")
+  wonMatches          Match[]            @relation("WinnerMatches")
+  promotionRecords    PromotionRecord[]
+
+  @@index([currentGroupId])
+  @@map("players")
+}
+
+model Season {
+  id        String   @id @default(cuid())
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  groups Group[]
+
+  @@map("seasons")
+}
+
+model Group {
+  id        String   @id @default(cuid())
+  name      String
+  seasonId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  season          Season            @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  groupPlayers    GroupPlayer[]
+  matches         Match[]
+  currentPlayers  Player[]          @relation("CurrentGroupPlayers")
+  promotionRecordsFrom PromotionRecord[] @relation("FromGroup")
+  promotionRecordsTo   PromotionRecord[] @relation("ToGroup")
+
+  @@index([seasonId])
+  @@map("groups")
+}
+
+model GroupPlayer {
+  id              String   @id @default(cuid())
+  groupId         String
+  playerId        String
+  rankingPosition Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  group  Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, playerId])
+  @@index([groupId])
+  @@index([playerId])
+  @@map("group_players")
+}
+
+model Match {
+  id          String      @id @default(cuid())
+  groupId     String
+  player1Id   String
+  player2Id   String
+  date        DateTime    @default(now())
+  gamesP1     Int         // 0-3
+  gamesP2     Int         // 0-3
+  winnerId    String?
+  matchStatus MatchStatus @default(PLAYED)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  group   Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  player1 Player  @relation("Player1Matches", fields: [player1Id], references: [id])
+  player2 Player  @relation("Player2Matches", fields: [player2Id], references: [id])
+  winner  Player? @relation("WinnerMatches", fields: [winnerId], references: [id])
+
+  @@index([groupId])
+  @@index([player1Id])
+  @@index([player2Id])
+  @@index([date])
+  @@map("matches")
+}
+
+model PromotionRecord {
+  id             String       @id @default(cuid())
+  playerId       String
+  fromGroupId    String?
+  toGroupId      String?
+  movementType   MovementType
+  date           DateTime     @default(now())
+  adminConfirmed Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  player    Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  fromGroup Group? @relation("FromGroup", fields: [fromGroupId], references: [id])
+  toGroup   Group? @relation("ToGroup", fields: [toGroupId], references: [id])
+
+  @@index([playerId])
+  @@index([date])
+  @@map("promotion_records")
+}

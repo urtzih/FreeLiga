@@ -1,0 +1,18 @@
+{
+    "name": "@freesquash/database",
+    "version": "1.0.0",
+    "main": "./src/index.ts",
+    "types": "./src/index.ts",
+    "scripts": {
+        "db:generate": "prisma generate",
+        "db:push": "prisma db push",
+        "db:studio": "prisma studio",
+        "db:migrate": "prisma migrate dev"
+    },
+    "dependencies": {
+        "@prisma/client": "^5.7.1"
+    },
+    "devDependencies": {
+        "prisma": "^5.7.1"
+    }
+}
