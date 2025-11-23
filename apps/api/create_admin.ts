@@ -1,33 +1,43 @@
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-async function main() {
+async function createAdminUser() {
     try {
-        const email = 'admin@freesquash.com';
-        const password = 'admin';
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const user = await prisma.user.upsert({
-            where: { email },
-            update: {
-                password: hashedPassword,
-                role: 'ADMIN'
-            },
-            create: {
-                email,
-                password: hashedPassword,
-                role: 'ADMIN'
-            }
+        // Check if admin already exists
+        const existingAdmin = await prisma.user.findUnique({
+            where: { email: 'admin@freesquash.com' },
         });
 
-        console.log('Admin user created/updated:', user);
+        if (existingAdmin) {
+            console.log('⚠️  El usuario admin ya existe');
+            return;
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash('admin123', 10);
+
+        // Create admin user
+        const admin = await prisma.user.create({
+            data: {
+                email: 'admin@freesquash.com',
+                password: hashedPassword,
+                role: 'ADMIN',
+                isActive: true,
+            },
+        });
+
+        console.log('✅ Usuario admin creado exitosamente:');
+        console.log(`   Email: ${admin.email}`);
+        console.log(`   Role: ${admin.role}`);
+        console.log(`   isActive: ${admin.isActive}`);
+        console.log(`   Password: admin123`);
     } catch (error) {
-        console.error('Error creating admin user:', error);
+        console.error('❌ Error:', error);
     } finally {
         await prisma.$disconnect();
     }
 }
 
-main();
+createAdminUser();

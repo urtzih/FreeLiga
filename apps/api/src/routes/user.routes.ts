@@ -23,6 +23,7 @@ const updateUserSchema = z.object({
     nickname: z.string().optional(),
     phone: z.string().optional(),
     role: z.enum(['PLAYER', 'ADMIN']).optional(),
+    isActive: z.boolean().optional(),
 });
 
 export async function userRoutes(fastify: FastifyInstance) {
@@ -136,10 +137,11 @@ export async function userRoutes(fastify: FastifyInstance) {
 
             // Actualizar usuario y player en una transacción
             const updatedUser = await prisma.$transaction(async (tx: any) => {
-                // Actualizar user (email y role)
+                // Actualizar user (email, role, isActive)
                 const userUpdate: any = {};
                 if (body.email) userUpdate.email = body.email;
                 if (body.role) userUpdate.role = body.role;
+                if (body.isActive !== undefined) userUpdate.isActive = body.isActive;
 
                 const updated = await tx.user.update({
                     where: { id },

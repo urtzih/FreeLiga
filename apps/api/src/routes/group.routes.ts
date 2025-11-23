@@ -118,6 +118,35 @@ export async function groupRoutes(fastify: FastifyInstance) {
         }
     });
 
+    // Update group (admin only)
+    fastify.put('/:id', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            const { id } = request.params as { id: string };
+
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            const body = request.body as { whatsappUrl?: string; name?: string };
+
+            const group = await prisma.group.update({
+                where: { id },
+                data: {
+                    ...(body.whatsappUrl !== undefined && { whatsappUrl: body.whatsappUrl }),
+                    ...(body.name && { name: body.name }),
+                },
+            });
+
+            return group;
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
     // Assign player to group (admin only)
     fastify.post('/:id/players', {
         onRequest: [fastify.authenticate],

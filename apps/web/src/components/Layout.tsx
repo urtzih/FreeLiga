@@ -247,13 +247,13 @@ export default function Layout() {
             <footer className="bg-gray-100 dark:bg-gray-800 py-6 mt-8 border-t border-slate-200 dark:border-slate-700">
                 <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
                     <div className="flex items-center">
-                        <img src="/euskadiLogo.png" alt="Federación de Squash de Euskadi" className="h-12" />
+                        <img src="/euskadiLogo.png" alt="Federación de Squash de Euskadi" className="h-13" />
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-300 flex items-center space-x-4">
                         <Link to="/report-bug" className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">
                             🐞 Reportar Bug
                         </Link>
-                        <a href="mailto:contacto@freesquash.test" className="hover:underline">Contacto</a>
+                        <a href="mailto:ligafreesquash@gmail.com" className="hover:underline">Contacto</a>
                     </div>
                 </div>
             </footer>

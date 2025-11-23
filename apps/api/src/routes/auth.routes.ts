@@ -103,6 +103,11 @@ export async function authRoutes(fastify: FastifyInstance) {
                 return reply.status(401).send({ error: 'Invalid credentials' });
             }
 
+            // Check if user is active
+            if (!user.isActive) {
+                return reply.status(403).send({ error: 'Account is deactivated. Please contact an administrator.' });
+            }
+
             // Generate JWT
             const token = fastify.jwt.sign({
                 id: user.id,

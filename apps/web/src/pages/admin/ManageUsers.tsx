@@ -6,6 +6,7 @@ interface User {
     id: string;
     email: string;
     role: 'PLAYER' | 'ADMIN';
+    isActive: boolean;
     createdAt: string;
     player?: {
         id: string;
@@ -38,6 +39,8 @@ export default function ManageUsers() {
     const [newPassword, setNewPassword] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [filterGroup, setFilterGroup] = useState('');
+    const [sortField, setSortField] = useState<'email' | 'name' | 'group' | 'role' | 'isActive' | 'createdAt'>('createdAt');
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
     const [editForm, setEditForm] = useState({
         email: '',
         name: '',
@@ -66,7 +69,7 @@ export default function ManageUsers() {
         },
     });
 
-    // Filter users client-side
+    // Filter and sort users client-side
     const filteredUsers = data?.users.filter(user => {
         const matchesSearch = !searchTerm ||
             user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -76,7 +79,49 @@ export default function ManageUsers() {
             user.player?.currentGroup?.id === filterGroup;
 
         return matchesSearch && matchesGroup;
+    }).sort((a, b) => {
+        let aVal: any, bVal: any;
+
+        switch (sortField) {
+            case 'email':
+                aVal = a.email;
+                bVal = b.email;
+                break;
+            case 'name':
+                aVal = a.player?.name || '';
+                bVal = b.player?.name || '';
+                break;
+            case 'group':
+                aVal = a.player?.currentGroup?.name || '';
+                bVal = b.player?.currentGroup?.name || '';
+                break;
+            case 'role':
+                aVal = a.role;
+                bVal = b.role;
+                break;
+            case 'isActive':
+                aVal = a.isActive ? 1 : 0;
+                bVal = b.isActive ? 1 : 0;
+                break;
+            case 'createdAt':
+                aVal = new Date(a.createdAt).getTime();
+                bVal = new Date(b.createdAt).getTime();
+                break;
+        }
+
+        if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
     }) || [];
+
+    const handleSort = (field: typeof sortField) => {
+        if (sortField === field) {
+            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortDirection('asc');
+        }
+    };
 
     const updateRoleMutation = useMutation({
         mutationFn: async ({ userId, role }: { userId: string; role: 'PLAYER' | 'ADMIN' }) => {
@@ -137,6 +182,22 @@ export default function ManageUsers() {
             alert(`Error al actualizar usuario: ${error.response?.data?.error || error.message}`);
         },
     });
+
+    const toggleActivationMutation = useMutation({
+        mutationFn: async ({ userId, isActive }: { userId: string; isActive: boolean }) => {
+            const { data } = await api.put(`/users/${userId}`, { isActive });
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['users'] });
+            alert('Estado de usuario actualizado correctamente');
+        },
+        onError: (error: any) => {
+            console.error('Error actualizando estado:', error);
+            alert(`Error al actualizar estado: ${error.response?.data?.error || error.message}`);
+        },
+    });
+
 
     const handleRoleChange = (user: User, newRole: 'PLAYER' | 'ADMIN') => {
         if (confirm(`¿Cambiar el rol de ${user.email} a ${newRole}?`)) {
@@ -253,20 +314,59 @@ export default function ManageUsers() {
                     <table className="w-full">
                         <thead className="bg-slate-50 dark:bg-slate-900">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                    Email
+                                <th
+                                    onClick={() => handleSort('email')}
+                                    className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none"
+                                >
+                                    <div className="flex items-center gap-1">
+                                        Email
+                                        {sortField === 'email' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
+                                    </div>
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                    Jugador
+                                <th
+                                    onClick={() => handleSort('name')}
+                                    className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none"
+                                >
+                                    <div className="flex items-center gap-1">
+                                        Jugador
+                                        {sortField === 'name' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
+                                    </div>
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                    Grupo
+                                <th
+                                    onClick={() => handleSort('group')}
+                                    className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none"
+                                >
+                                    <div className="flex items-center gap-1">
+                                        Grupo
+                                        {sortField === 'group' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
+                                    </div>
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                    Rol
+                                <th
+                                    onClick={() => handleSort('role')}
+                                    className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none"
+                                >
+                                    <div className="flex items-center gap-1">
+                                        Rol
+                                        {sortField === 'role' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
+                                    </div>
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                    Fecha Registro
+                                <th
+                                    onClick={() => handleSort('createdAt')}
+                                    className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none"
+                                >
+                                    <div className="flex items-center gap-1">
+                                        Fecha Registro
+                                        {sortField === 'createdAt' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
+                                    </div>
+                                </th>
+                                <th
+                                    onClick={() => handleSort('isActive')}
+                                    className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none"
+                                >
+                                    <div className="flex items-center gap-1">
+                                        Estado
+                                        {sortField === 'isActive' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}
+                                    </div>
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                     Acciones
@@ -313,6 +413,20 @@ export default function ManageUsers() {
                                         <div className="text-sm text-slate-600 dark:text-slate-400">
                                             {new Date(user.createdAt).toLocaleDateString('es-ES')}
                                         </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <button
+                                            onClick={() => toggleActivationMutation.mutate({
+                                                userId: user.id,
+                                                isActive: !user.isActive
+                                            })}
+                                            className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${user.isActive
+                                                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
+                                                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50'
+                                                }`}
+                                        >
+                                            {user.isActive ? '✓ Activo' : '✗ Inactivo'}
+                                        </button>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex space-x-2">
