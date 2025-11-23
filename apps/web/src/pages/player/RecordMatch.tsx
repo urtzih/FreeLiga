@@ -16,7 +16,7 @@ export default function RecordMatch() {
         gamesP1: 0,
         gamesP2: 0,
         date: new Date().toISOString().split('T')[0],
-        matchStatus: 'PLAYED' as 'PLAYED' | 'INJURY' | 'CANCELLED',
+        matchStatus: 'PLAYED' as 'PLAYED' | 'INJURY',
     });
     const [error, setError] = useState('');
 
@@ -35,26 +35,32 @@ export default function RecordMatch() {
 
         const playedOpponentIds = new Set();
 
-        // Buscar partidos jugados por el usuario actual
+        // Buscar TODOS los partidos (no solo PLAYED) para evitar duplicados
         group.matches?.forEach((match: any) => {
-            if (match.matchStatus === 'PLAYED') {
-                if (match.player1Id === user.player.id) {
-                    playedOpponentIds.add(match.player2Id);
-                } else if (match.player2Id === user.player.id) {
-                    playedOpponentIds.add(match.player1Id);
-                }
+            if (match.player1Id === user?.player?.id) {
+                playedOpponentIds.add(match.player2Id);
+            } else if (match.player2Id === user?.player?.id) {
+                playedOpponentIds.add(match.player1Id);
             }
         });
 
         return group.groupPlayers.filter((gp: any) =>
-            gp.playerId !== user.player.id && !playedOpponentIds.has(gp.playerId)
+            gp.playerId !== user?.player?.id && !playedOpponentIds.has(gp.playerId)
         );
     }, [group, user]);
 
     const mutation = useMutation({
         mutationFn: async (data: any) => {
             console.log('Enviando datos de partido:', data);
-            const response = await api.post('/matches', data);
+            const payload = {
+                ...data,
+                date: new Date(data.date).toISOString(),
+                // Ensure games are 0 if injury, though backend validation allows 0-3.
+                // Just in case we want to be clean.
+                gamesP1: data.matchStatus === 'INJURY' ? 0 : data.gamesP1,
+                gamesP2: data.matchStatus === 'INJURY' ? 0 : data.gamesP2,
+            };
+            const response = await api.post('/matches', payload);
             return response.data;
         },
         onSuccess: () => {
@@ -79,9 +85,24 @@ export default function RecordMatch() {
             return;
         }
 
+        // Validate date is not in future
+        const selectedDate = new Date(formData.date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (selectedDate > today) {
+            setError('No se pueden registrar partidos con fecha futura');
+            return;
+        }
+
         if (formData.matchStatus === 'PLAYED') {
+            // Validaciones: rangos y formato ganador obligatorio (3-0,3-1,3-2 o inverso)
             if (formData.gamesP1 < 0 || formData.gamesP1 > 3 || formData.gamesP2 < 0 || formData.gamesP2 > 3) {
                 setError('Los juegos deben estar entre 0 y 3');
+                return;
+            }
+            const validScore = (formData.gamesP1 === 3 && formData.gamesP2 >= 0 && formData.gamesP2 <= 2) || (formData.gamesP2 === 3 && formData.gamesP1 >= 0 && formData.gamesP1 <= 2);
+            if (!validScore) {
+                setError('Resultado inválido. Formatos permitidos: 3-0, 3-1, 3-2 (o inverso). Un jugador debe llegar a 3.');
                 return;
             }
         }
@@ -112,6 +133,7 @@ export default function RecordMatch() {
                         </label>
                         <input
                             type="date"
+                            max={new Date().toISOString().split('T')[0]}
                             value={formData.date}
                             onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                             className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -153,7 +175,6 @@ export default function RecordMatch() {
                         >
                             <option value="PLAYED">Jugado</option>
                             <option value="INJURY">Lesión (anulado)</option>
-                            <option value="CANCELLED">Cancelado</option>
                         </select>
                     </div>
 
@@ -203,9 +224,9 @@ export default function RecordMatch() {
                                             {group?.groupPlayers.find((gp: any) => gp.playerId === formData.player2Id)?.player.name}
                                         </span>
                                     </div>
-                                    {formData.gamesP1 === formData.gamesP2 && (
-                                        <p className="text-center text-sm text-yellow-600 dark:text-yellow-400 mt-2">
-                                            ⚠️ Esto se registrará como empate
+                                    {formData.matchStatus === 'PLAYED' && formData.gamesP1 !== formData.gamesP2 && (formData.gamesP1 === 3 || formData.gamesP2 === 3) && (
+                                        <p className="text-center text-xs text-slate-500 dark:text-slate-400 mt-2">
+                                            Formato al mejor de 5 (primero a 3)
                                         </p>
                                     )}
                                 </div>

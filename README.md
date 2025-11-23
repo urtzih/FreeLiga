@@ -17,7 +17,7 @@ A full-stack web application for managing a squash league with ranked groups, ad
 - **Node.js** with TypeScript
 - **Fastify** web framework
 - **Prisma ORM** for database access
-- **PostgreSQL** database
+- **MySQL** database (XAMPP)
 - **JWT** authentication
 - **bcrypt** for password hashing
 - **Zod** for validation

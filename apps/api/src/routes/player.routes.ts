@@ -40,15 +40,15 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 where: { id },
                 include: {
                     currentGroup: {
+                        include: { season: true },
+                    },
+                    groupPlayers: {
                         include: {
-                            season: true,
+                            group: { include: { season: true } },
                         },
                     },
                     user: {
-                        select: {
-                            email: true,
-                            role: true,
-                        },
+                        select: { email: true, role: true },
                     },
                 },
             });
@@ -107,7 +107,7 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 }
             });
 
-            const averas = setsWon - setsLost;
+            const average = setsWon - setsLost;
 
             // Calculate current streak
             const sortedMatches = matches
@@ -138,7 +138,7 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 winPercentage: parseFloat(winPercentage.toFixed(2)),
                 setsWon,
                 setsLost,
-                averas,
+                average,
                 currentStreak: lastResult === 'W' ? currentStreak : -currentStreak,
                 recentMatches: sortedMatches.slice(0, 5),
             };
@@ -173,6 +173,152 @@ export async function playerRoutes(fastify: FastifyInstance) {
             });
 
             return player;
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // Update own profile (player can update their own data)
+    fastify.patch('/:id/profile', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            const { id } = request.params as { id: string };
+            const body = request.body as any;
+
+            // Get the player associated with the current user
+            const userPlayer = await prisma.player.findUnique({
+                where: { userId: decoded.id }
+            });
+
+            // Check if user is trying to update their own profile
+            if (userPlayer?.id !== id && decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'You can only update your own profile' });
+            }
+
+            const player = await prisma.player.update({
+                where: { id },
+                data: {
+                    name: body.name,
+                    nickname: body.nickname,
+                    phone: body.phone,
+                    email: body.email,
+                },
+            });
+
+            return player;
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // Player progress (time series cumulative stats)
+    fastify.get('/:id/progress', { onRequest: [fastify.authenticate] }, async (request, reply) => {
+        try {
+            const { id } = request.params as { id: string };
+            const player = await prisma.player.findUnique({ where: { id } });
+            if (!player) return reply.status(404).send({ error: 'Player not found' });
+
+            const matches = await prisma.match.findMany({
+                where: {
+                    OR: [ { player1Id: id }, { player2Id: id } ],
+                    matchStatus: 'PLAYED'
+                },
+                orderBy: { date: 'asc' }
+            });
+
+            let wins = 0, losses = 0, setsWon = 0, setsLost = 0;
+            const points: Array<{ date: string; wins: number; losses: number; winPercentage: number; setsWon: number; setsLost: number; average: number }> = [];
+            for (const m of matches) {
+                const won = m.winnerId === id;
+                if (won) wins++; else if (m.winnerId) losses++;
+                if (m.player1Id === id) { setsWon += m.gamesP1; setsLost += m.gamesP2; }
+                else { setsWon += m.gamesP2; setsLost += m.gamesP1; }
+                const total = wins + losses;
+                const winPercentage = total > 0 ? +(wins / total * 100).toFixed(2) : 0;
+                points.push({
+                    date: m.date.toISOString(),
+                    wins,
+                    losses,
+                    winPercentage,
+                    setsWon,
+                    setsLost,
+                    average: setsWon - setsLost
+                });
+            }
+
+            // Monthly aggregation
+            const monthly: Record<string, { wins: number; losses: number; setsWon: number; setsLost: number }> = {};
+            for (const p of points) {
+                const monthKey = p.date.substring(0,7); // YYYY-MM
+                if (!monthly[monthKey]) monthly[monthKey] = { wins: 0, losses: 0, setsWon: 0, setsLost: 0 };
+                monthly[monthKey].wins = p.wins;
+                monthly[monthKey].losses = p.losses;
+                monthly[monthKey].setsWon = p.setsWon;
+                monthly[monthKey].setsLost = p.setsLost;
+            }
+            const monthlyPoints = Object.entries(monthly).map(([month, v]) => ({
+                month,
+                wins: v.wins,
+                losses: v.losses,
+                winPercentage: (v.wins + v.losses) > 0 ? +(v.wins / (v.wins + v.losses) * 100).toFixed(2) : 0,
+                average: v.setsWon - v.setsLost
+            }));
+
+            return { playerId: id, points, monthly: monthlyPoints };
+        } catch (error) {
+            fastify.log.error(error); return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // Get matches by date (for progress chart)
+    fastify.get('/:id/matches-by-date', { onRequest: [fastify.authenticate] }, async (request, reply) => {
+        try {
+            const { id } = request.params as { id: string };
+            const matches = await prisma.match.findMany({
+                where: {
+                    OR: [ { player1Id: id }, { player2Id: id } ],
+                    matchStatus: 'PLAYED'
+                },
+                include: { player1: true, player2: true },
+                orderBy: { date: 'asc' }
+            });
+
+            return matches.map(m => {
+                const isPlayer1 = m.player1Id === id;
+                const won = m.winnerId === id;
+                return {
+                    date: m.date.toISOString().split('T')[0],
+                    result: won ? 'WIN' : 'LOSS',
+                    opponent: isPlayer1 ? m.player2.name : m.player1.name,
+                    score: isPlayer1 ? `${m.gamesP1}-${m.gamesP2}` : `${m.gamesP2}-${m.gamesP1}`
+                };
+            });
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // Get player movement history (promotions/relegations)
+    fastify.get('/:id/movements', { onRequest: [fastify.authenticate] }, async (request, reply) => {
+        try {
+            const { id } = request.params as { id: string };
+            const history = await prisma.playerGroupHistory.findMany({
+                where: { playerId: id },
+                include: { season: true, group: true },
+                orderBy: { season: { startDate: 'asc' } }
+            });
+
+            return history.map(h => ({
+                seasonName: h.season.name,
+                groupName: h.group?.name || 'Sin grupo',
+                movement: h.movementType || 'STAY',
+                finalRank: h.finalRank || 0
+            }));
         } catch (error) {
             fastify.log.error(error);
             return reply.status(500).send({ error: 'Internal server error' });

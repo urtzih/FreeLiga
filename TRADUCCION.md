@@ -91,7 +91,7 @@
 "Dashboard" → "Inicio"
 "My Group" → "Mi Grupo"
 "Record Match" → "Registrar Partido"
-"Match History" → "Historial"
+"Match History" → "Historial de partidos"
 "Classification" → "Clasificación"
 
 // Navegación admin

@@ -232,4 +232,25 @@ export async function groupRoutes(fastify: FastifyInstance) {
             return reply.status(500).send({ error: 'Internal server error' });
         }
     });
+
+    // Delete group (admin only)
+    fastify.delete('/:id', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            const { id } = request.params as { id: string };
+
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            await prisma.group.delete({ where: { id } });
+
+            return { success: true };
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
 }

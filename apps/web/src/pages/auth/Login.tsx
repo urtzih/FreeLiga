@@ -17,7 +17,9 @@ export default function Login() {
 
         try {
             await login(email, password);
-            navigate('/dashboard');
+            // Redirigir según el rol después de hacer login
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            navigate(user.role === 'ADMIN' ? '/admin' : '/dashboard');
         } catch (err: any) {
             setError(err.response?.data?.error || 'Error al iniciar sesión. Verifica tus credenciales.');
         } finally {

@@ -115,10 +115,30 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 return reply.status(400).send({ error: 'Both players must be in the group' });
             }
 
+            // Check if match already exists between these two players in this group
+            const existingMatch = await prisma.match.findFirst({
+                where: {
+                    groupId: body.groupId,
+                    OR: [
+                        { player1Id: body.player1Id, player2Id: body.player2Id },
+                        { player1Id: body.player2Id, player2Id: body.player1Id }
+                    ]
+                }
+            });
+
+            if (existingMatch) {
+                return reply.status(400).send({ error: 'Ya existe un partido registrado entre estos jugadores en este grupo' });
+            }
+
             // Determine winner (only for PLAYED matches)
             let winnerId: string | null = null;
 
             if (body.matchStatus === 'PLAYED') {
+                // Enforce best-of-5: one player must reach 3, other 0-2
+                const validScore = (body.gamesP1 === 3 && body.gamesP2 >= 0 && body.gamesP2 <= 2) || (body.gamesP2 === 3 && body.gamesP1 >= 0 && body.gamesP1 <= 2);
+                if (!validScore) {
+                    return reply.status(400).send({ error: 'Resultado inválido: formato permitido 3-0, 3-1, 3-2 (o inverso). Un jugador debe llegar a 3.' });
+                }
                 if (body.gamesP1 > body.gamesP2) {
                     winnerId = body.player1Id;
                 } else if (body.gamesP2 > body.gamesP1) {
@@ -196,6 +216,10 @@ export async function matchRoutes(fastify: FastifyInstance) {
             const matchStatus = body.matchStatus ?? existingMatch.matchStatus;
 
             if (matchStatus === 'PLAYED') {
+                const validScore = (gamesP1 === 3 && gamesP2 >= 0 && gamesP2 <= 2) || (gamesP2 === 3 && gamesP1 >= 0 && gamesP1 <= 2);
+                if (!validScore) {
+                    return reply.status(400).send({ error: 'Resultado inválido: formato permitido 3-0, 3-1, 3-2 (o inverso). Un jugador debe llegar a 3.' });
+                }
                 if (gamesP1 > gamesP2) {
                     winnerId = existingMatch.player1Id;
                 } else if (gamesP2 > gamesP1) {

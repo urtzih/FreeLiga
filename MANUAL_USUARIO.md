@@ -298,7 +298,6 @@ En la **vista de grupo**, cada jugador tiene 3 botones de contacto:
 
 - **📞 Llamar**: Abre tu aplicación de teléfono
 - **💬 WhatsApp**: Abre WhatsApp con el número del jugador
-- **📋 Copiar**: Copia el teléfono al portapapeles
 
 > **Nota**: Solo funciona si el jugador registró su teléfono
 

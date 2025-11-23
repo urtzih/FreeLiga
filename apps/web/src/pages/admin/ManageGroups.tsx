@@ -11,7 +11,7 @@ export default function ManageGroups() {
         seasonId: '',
     });
 
-    const { data: groups = [], isLoading } = useQuery({
+    const { data: groups = [] } = useQuery({
         queryKey: ['groups'],
         queryFn: async () => {
             const { data } = await api.get('/groups');

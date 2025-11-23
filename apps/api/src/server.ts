@@ -7,6 +7,9 @@ import { groupRoutes } from './routes/group.routes';
 import { matchRoutes } from './routes/match.routes';
 import { seasonRoutes } from './routes/season.routes';
 import { classificationRoutes } from './routes/classification.routes';
+import { userRoutes } from './routes/user.routes';
+import { adminRoutes } from './routes/admin.routes';
+import { bugRoutes } from './routes/bug.routes';
 
 const fastify = Fastify({
     logger: {
@@ -43,6 +46,9 @@ async function start() {
         await fastify.register(matchRoutes, { prefix: '/api/matches' });
         await fastify.register(seasonRoutes, { prefix: '/api/seasons' });
         await fastify.register(classificationRoutes, { prefix: '/api/classification' });
+        await fastify.register(userRoutes, { prefix: '/api/users' });
+        await fastify.register(adminRoutes, { prefix: '/api/admin' });
+        await fastify.register(bugRoutes, { prefix: '/api/bugs' });
 
         // Health check
         fastify.get('/health', async () => {
@@ -51,13 +57,24 @@ async function start() {
 
         // Start server
         const port = parseInt(process.env.PORT || '3001');
-        await fastify.listen({ port, host: '0.0.0.0' });
+        const host = process.env.HOST || '0.0.0.0';
+        const address = await fastify.listen({ port, host });
 
-        console.log(`🚀 Server running on http://localhost:${port}`);
+        console.log(`🚀 Server running on ${address}`);
     } catch (err) {
         fastify.log.error(err);
         process.exit(1);
     }
 }
+
+// Handle unhandled rejections
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+});
 
 start();

@@ -22,7 +22,9 @@ export default function Register() {
 
         try {
             await register(formData);
-            navigate('/dashboard');
+            // Redirigir según el rol después del registro
+            const user = JSON.parse(localStorage.getItem('user') || '{}');
+            navigate(user.role === 'ADMIN' ? '/admin' : '/dashboard');
         } catch (err: any) {
             setError(err.response?.data?.error || 'Error al crear la cuenta. Inténtalo de nuevo.');
         } finally {

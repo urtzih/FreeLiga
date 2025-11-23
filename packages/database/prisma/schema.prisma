@@ -24,6 +24,18 @@ enum MatchStatus {
 enum MovementType {
   PROMOTION
   RELEGATION
+  STAY
+}
+
+enum ClosureStatus {
+  PENDING
+  APPROVED
+}
+
+enum BugStatus {
+  OPEN
+  ACK
+  CLOSED
 }
 
 model User {
@@ -35,6 +47,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   player Player?
+  bugReports BugReport[]
 
   @@map("users")
 }
@@ -57,6 +70,8 @@ model Player {
   matchesAsPlayer2    Match[]            @relation("Player2Matches")
   wonMatches          Match[]            @relation("WinnerMatches")
   promotionRecords    PromotionRecord[]
+  closureEntries      SeasonClosureEntry[]
+  groupHistories      PlayerGroupHistory[]
 
   @@index([currentGroupId])
   @@map("players")
@@ -71,6 +86,11 @@ model Season {
   updatedAt DateTime @updatedAt
 
   groups Group[]
+  closure SeasonClosure?
+  groupHistories PlayerGroupHistory[]
+  previousSeasonId String?
+  previousSeason   Season? @relation("SeasonRollover", fields: [previousSeasonId], references: [id])
+  nextSeasons      Season[] @relation("SeasonRollover")
 
   @@map("seasons")
 }
@@ -78,6 +98,7 @@ model Season {
 model Group {
   id        String   @id @default(cuid())
   name      String
+  whatsappUrl String?
   seasonId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -88,6 +109,9 @@ model Group {
   currentPlayers  Player[]          @relation("CurrentGroupPlayers")
   promotionRecordsFrom PromotionRecord[] @relation("FromGroup")
   promotionRecordsTo   PromotionRecord[] @relation("ToGroup")
+  closureEntriesFrom   SeasonClosureEntry[] @relation("ClosureFromGroup")
+  closureEntriesTo     SeasonClosureEntry[] @relation("ClosureToGroup")
+  groupHistories       PlayerGroupHistory[]
 
   @@index([seasonId])
   @@map("groups")
@@ -153,4 +177,69 @@ model PromotionRecord {
   @@index([playerId])
   @@index([date])
   @@map("promotion_records")
+}
+
+model SeasonClosure {
+  id         String          @id @default(cuid())
+  seasonId   String          @unique
+  season     Season          @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  status     ClosureStatus   @default(PENDING)
+  createdAt  DateTime        @default(now())
+  approvedAt DateTime?
+  entries    SeasonClosureEntry[]
+
+  @@map("season_closures")
+}
+
+model SeasonClosureEntry {
+  id          String        @id @default(cuid())
+  closureId   String
+  closure     SeasonClosure @relation(fields: [closureId], references: [id], onDelete: Cascade)
+  playerId    String
+  player      Player        @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  fromGroupId String?
+  fromGroup   Group?        @relation("ClosureFromGroup", fields: [fromGroupId], references: [id])
+  toGroupId   String?
+  toGroup     Group?        @relation("ClosureToGroup", fields: [toGroupId], references: [id])
+  movementType MovementType
+  finalRank   Int
+  createdAt   DateTime      @default(now())
+
+  @@index([closureId])
+  @@index([playerId])
+  @@map("season_closure_entries")
+}
+
+model PlayerGroupHistory {
+  id          String       @id @default(cuid())
+  playerId    String
+  player      Player       @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  seasonId    String
+  season      Season       @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  groupId     String?
+  group       Group?       @relation(fields: [groupId], references: [id])
+  finalRank   Int?
+  movementType MovementType?
+  createdAt   DateTime     @default(now())
+
+  @@index([playerId])
+  @@index([seasonId])
+  @@map("player_group_history")
+}
+
+model BugReport {
+  id          String    @id @default(cuid())
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id])
+  email       String?
+  description String    @db.Text
+  status      BugStatus @default(OPEN)
+  userAgent   String?   @db.Text
+  appVersion  String?
+  attachments String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
+  @@map("bug_reports")
 }

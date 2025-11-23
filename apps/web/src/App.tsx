@@ -1,16 +1,23 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
-import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
-import Dashboard from './pages/player/Dashboard';
-import GroupView from './pages/player/GroupView';
-import GlobalClassification from './pages/player/GlobalClassification';
-import RecordMatch from './pages/player/RecordMatch';
-import MatchHistory from './pages/player/MatchHistory';
-import AdminDashboard from './pages/admin/AdminDashboard';
-import ManageGroups from './pages/admin/ManageGroups';
-import ManagePlayers from './pages/admin/ManagePlayers';
-import ManageSeasons from './pages/admin/ManageSeasons';
+import { lazy, Suspense } from 'react';
+const Login = lazy(() => import('./pages/auth/Login'));
+const Register = lazy(() => import('./pages/auth/Register'));
+const Dashboard = lazy(() => import('./pages/player/Dashboard'));
+const GroupView = lazy(() => import('./pages/player/GroupView'));
+// Eliminado: GlobalClassification fusionado en GroupView
+// const GlobalClassification = lazy(() => import('./pages/player/GlobalClassification'));
+const RecordMatch = lazy(() => import('./pages/player/RecordMatch'));
+const MatchHistory = lazy(() => import('./pages/player/MatchHistory'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const ManageGroups = lazy(() => import('./pages/admin/ManageGroups'));
+const ManageSeasons = lazy(() => import('./pages/admin/ManageSeasons'));
+const ManageUsers = lazy(() => import('./pages/admin/ManageUsers'));
+const ManageBugs = lazy(() => import('./pages/admin/ManageBugs'));
+const BugReport = lazy(() => import('./pages/BugReport'));
+const PlayerProgress = lazy(() => import('./pages/PlayerProgress'));
+const Profile = lazy(() => import('./pages/player/Profile'));
+const History = lazy(() => import('./pages/player/History'));
 import Layout from './components/Layout';
 
 function ProtectedRoute({
@@ -40,7 +47,7 @@ function ProtectedRoute({
 }
 
 function App() {
-    const { isAuthenticated, loading } = useAuth();
+    const { isAuthenticated, isAdmin, loading, user } = useAuth();
 
     if (loading) {
         return <div className="flex items-center justify-center min-h-screen">
@@ -48,17 +55,20 @@ function App() {
         </div>;
     }
 
+    const defaultRoute = isAdmin ? '/admin' : '/dashboard';
+
     return (
         <BrowserRouter>
+            <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-slate-600">Cargando módulo...</div>}>
             <Routes>
                 {/* Public routes */}
                 <Route
                     path="/login"
-                    element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" replace />}
+                    element={!isAuthenticated ? <Login /> : <Navigate to={defaultRoute} replace />}
                 />
                 <Route
                     path="/register"
-                    element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" replace />}
+                    element={!isAuthenticated ? <Register /> : <Navigate to={defaultRoute} replace />}
                 />
 
                 {/* Protected player routes */}
@@ -67,7 +77,7 @@ function App() {
                         path="/dashboard"
                         element={
                             <ProtectedRoute>
-                                <Dashboard />
+                                {isAdmin ? <Navigate to="/admin" replace /> : <Dashboard />}
                             </ProtectedRoute>
                         }
                     />
@@ -81,9 +91,13 @@ function App() {
                     />
                     <Route
                         path="/classification"
+                        element={<Navigate to={user?.player?.currentGroupId ? `/groups/${user.player.currentGroupId}` : '/dashboard'} replace />}
+                    />
+                    <Route
+                        path="/historia"
                         element={
                             <ProtectedRoute>
-                                <GlobalClassification />
+                                <History />
                             </ProtectedRoute>
                         }
                     />
@@ -100,6 +114,30 @@ function App() {
                         element={
                             <ProtectedRoute>
                                 <MatchHistory />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/progress"
+                        element={
+                            <ProtectedRoute>
+                                <PlayerProgress />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/profile"
+                        element={
+                            <ProtectedRoute>
+                                <Profile />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/report-bug"
+                        element={
+                            <ProtectedRoute>
+                                <BugReport />
                             </ProtectedRoute>
                         }
                     />
@@ -122,14 +160,6 @@ function App() {
                         }
                     />
                     <Route
-                        path="/admin/players"
-                        element={
-                            <ProtectedRoute adminOnly>
-                                <ManagePlayers />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
                         path="/admin/seasons"
                         element={
                             <ProtectedRoute adminOnly>
@@ -137,12 +167,29 @@ function App() {
                             </ProtectedRoute>
                         }
                     />
+                    <Route
+                        path="/admin/users"
+                        element={
+                            <ProtectedRoute adminOnly>
+                                <ManageUsers />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/admin/bugs"
+                        element={
+                            <ProtectedRoute adminOnly>
+                                <ManageBugs />
+                            </ProtectedRoute>
+                        }
+                    />
                 </Route>
 
                 {/* Default redirect */}
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/" element={<Navigate to={defaultRoute} replace />} />
+                <Route path="*" element={<Navigate to={defaultRoute} replace />} />
             </Routes>
+            </Suspense>
         </BrowserRouter>
     );
 }

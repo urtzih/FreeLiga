@@ -99,7 +99,7 @@ export async function classificationRoutes(fastify: FastifyInstance) {
                     }
                 });
 
-                const averas = setsWon - setsLost;
+                const average = setsWon - setsLost;
                 const winPercentage = totalMatches > 0 ? (wins / totalMatches) * 100 : 0;
 
                 return {
@@ -114,7 +114,7 @@ export async function classificationRoutes(fastify: FastifyInstance) {
                     winPercentage: parseFloat(winPercentage.toFixed(2)),
                     setsWon,
                     setsLost,
-                    averas,
+                    average,
                 };
             });
 
@@ -126,7 +126,7 @@ export async function classificationRoutes(fastify: FastifyInstance) {
                 if (b.winPercentage !== a.winPercentage) {
                     return b.winPercentage - a.winPercentage;
                 }
-                return b.averas - a.averas;
+                return b.average - a.average;
             });
 
             // Filter out players with no matches (optional, depending on requirement)
