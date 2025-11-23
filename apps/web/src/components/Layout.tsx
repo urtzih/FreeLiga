@@ -88,6 +88,12 @@ export default function Layout() {
                                     >
                                         Bugs
                                     </Link>
+                                    <Link
+                                        to="/matches/history"
+                                        className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                                    >
+                                        Ver todos los partidos
+                                    </Link>
                                 </>
                             ) : (
                                 // Player Menu
@@ -191,6 +197,9 @@ export default function Layout() {
                                     <Link to="/admin/bugs" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                                         🐞 Bugs
                                     </Link>
+                                    <Link to="/matches/history" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                                        ⚽ Ver todos los partidos
+                                    </Link>
                                 </>
                             ) : (
                                 // Player Mobile Menu
@@ -247,7 +256,7 @@ export default function Layout() {
             <footer className="bg-gray-100 dark:bg-gray-800 py-6 mt-8 border-t border-slate-200 dark:border-slate-700">
                 <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
                     <div className="flex items-center">
-                        <img src="/euskadiLogo.png" alt="Federación de Squash de Euskadi" className="h-13" />
+                        <img src="/euskadiLogo.png" alt="Federación de Squash de Euskadi" className="h-12" />
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-300 flex items-center space-x-4">
                         <Link to="/report-bug" className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors">

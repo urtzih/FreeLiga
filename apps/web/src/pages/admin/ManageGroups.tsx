@@ -5,12 +5,23 @@ import api from '../../lib/api';
 
 export default function ManageGroups() {
     const queryClient = useQueryClient();
+
+    // UI state
     const [showForm, setShowForm] = useState(false);
     const [editingGroup, setEditingGroup] = useState<any>(null);
     const [whatsappUrl, setWhatsappUrl] = useState('');
-    const [formData, setFormData] = useState({
-        name: '',
-        seasonId: '',
+    const [formData, setFormData] = useState({ name: '', seasonId: '' });
+    const [filterSeason, setFilterSeason] = useState('');
+    const [page, setPage] = useState(1);
+    const perPage = 12;
+
+    // Data fetching
+    const { data: adminStats } = useQuery({
+        queryKey: ['adminStatsForUsers'],
+        queryFn: async () => {
+            const { data } = await api.get('/admin/stats');
+            return data;
+        },
     });
 
     const { data: groups = [] } = useQuery({
@@ -29,6 +40,14 @@ export default function ManageGroups() {
         },
     });
 
+    // Filtering & pagination
+    const filteredBySeason = filterSeason
+        ? groups.filter((g: any) => g.season?.id === filterSeason)
+        : groups;
+    const paginatedGroups = filteredBySeason.slice((page - 1) * perPage, page * perPage);
+    const totalPages = Math.ceil(filteredBySeason.length / perPage);
+
+    // Mutations
     const createMutation = useMutation({
         mutationFn: async (data: any) => {
             await api.post('/groups', data);
@@ -55,6 +74,7 @@ export default function ManageGroups() {
         },
     });
 
+    // Handlers
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         createMutation.mutate(formData);
@@ -67,15 +87,13 @@ export default function ManageGroups() {
 
     const handleSaveWhatsapp = () => {
         if (editingGroup) {
-            updateWhatsappMutation.mutate({
-                groupId: editingGroup.id,
-                whatsappUrl: whatsappUrl,
-            });
+            updateWhatsappMutation.mutate({ groupId: editingGroup.id, whatsappUrl });
         }
     };
 
     return (
         <div className="space-y-6">
+            {/* Header */}
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Gestionar Grupos</h1>
                 <button
@@ -86,31 +104,43 @@ export default function ManageGroups() {
                 </button>
             </div>
 
+            {/* Season filter */}
+            <div className="mt-4 flex items-center gap-2">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Filtrar por Temporada:</label>
+                <select
+                    value={filterSeason}
+                    onChange={e => { setFilterSeason(e.target.value); setPage(1); }}
+                    className="px-3 py-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                >
+                    <option value="">Todas</option>
+                    {seasons.map((s: any) => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                </select>
+            </div>
+
+            {/* Create group form */}
             {showForm && (
                 <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Crear Grupo</h2>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Nombre del Grupo
-                            </label>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nombre del Grupo</label>
                             <input
                                 type="text"
                                 required
                                 value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                onChange={e => setFormData({ ...formData, name: e.target.value })}
                                 className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                                 placeholder="ej. Grupo A"
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Temporada
-                            </label>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Temporada</label>
                             <select
                                 required
                                 value={formData.seasonId}
-                                onChange={(e) => setFormData({ ...formData, seasonId: e.target.value })}
+                                onChange={e => setFormData({ ...formData, seasonId: e.target.value })}
                                 className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                             >
                                 <option value="">Selecciona una temporada...</option>
@@ -119,19 +149,20 @@ export default function ManageGroups() {
                                 ))}
                             </select>
                         </div>
-                        <button
-                            type="submit"
-                            className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                        >
+                        <button type="submit" className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                             Crear Grupo
                         </button>
                     </form>
                 </div>
             )}
 
+            {/* Groups grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {groups.map((group: any) => (
-                    <div key={group.id} className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
+                {paginatedGroups.map((group: any) => (
+                    <div key={group.id} className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 relative">
+                        {adminStats?.activeSeason?.id === group.season?.id && (
+                            <span className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded">Activo</span>
+                        )}
                         <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{group.name}</h3>
                         <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{group.season?.name}</p>
                         <p className="text-xs text-slate-500 dark:text-slate-500 mb-4">
@@ -139,13 +170,8 @@ export default function ManageGroups() {
                         </p>
                         <div className="space-y-2">
                             <div className="flex items-center justify-between text-sm">
-                                <span className="text-slate-600 dark:text-slate-400">
-                                    {group._count?.groupPlayers || 0} jugadores
-                                </span>
-                                <Link
-                                    to={`/groups/${group.id}`}
-                                    className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-medium"
-                                >
+                                <span className="text-slate-600 dark:text-slate-400">{group._count?.groupPlayers || 0} jugadores</span>
+                                <Link to={`/groups/${group.id}`} className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-medium">
                                     Ver →
                                 </Link>
                             </div>
@@ -160,46 +186,50 @@ export default function ManageGroups() {
                 ))}
             </div>
 
-            {/* Modal para editar WhatsApp */}
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="flex justify-center items-center mt-6 space-x-4">
+                    <button
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page === 1}
+                        className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50"
+                    >Anterior</button>
+                    <span className="text-sm">Página {page} de {totalPages}</span>
+                    <button
+                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                        disabled={page === totalPages}
+                        className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded disabled:opacity-50"
+                    >Siguiente</button>
+                </div>
+            )}
+
+            {/* WhatsApp modal */}
             {editingGroup && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full shadow-xl">
-                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">
-                            Link de WhatsApp - {editingGroup.name}
-                        </h3>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Link de WhatsApp - {editingGroup.name}</h3>
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    URL del grupo de WhatsApp
-                                </label>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">URL del grupo de WhatsApp</label>
                                 <input
                                     type="url"
                                     value={whatsappUrl}
-                                    onChange={(e) => setWhatsappUrl(e.target.value)}
+                                    onChange={e => setWhatsappUrl(e.target.value)}
                                     className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
                                     placeholder="https://chat.whatsapp.com/..."
                                 />
-                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                    Deja vacío para eliminar el link
-                                </p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Deja vacío para eliminar el link</p>
                             </div>
                             <div className="flex space-x-3">
                                 <button
                                     onClick={handleSaveWhatsapp}
                                     disabled={updateWhatsappMutation.isPending}
                                     className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-                                >
-                                    {updateWhatsappMutation.isPending ? 'Guardando...' : 'Guardar'}
-                                </button>
+                                >{updateWhatsappMutation.isPending ? 'Guardando...' : 'Guardar'}</button>
                                 <button
-                                    onClick={() => {
-                                        setEditingGroup(null);
-                                        setWhatsappUrl('');
-                                    }}
+                                    onClick={() => { setEditingGroup(null); setWhatsappUrl(''); }}
                                     className="flex-1 px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600"
-                                >
-                                    Cancelar
-                                </button>
+                                >Cancelar</button>
                             </div>
                         </div>
                     </div>
