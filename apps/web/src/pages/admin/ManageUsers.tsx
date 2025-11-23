@@ -132,6 +132,10 @@ export default function ManageUsers() {
             setSelectedUser(null);
             alert('Usuario actualizado correctamente');
         },
+        onError: (error: any) => {
+            console.error('Error actualizando usuario:', error);
+            alert(`Error al actualizar usuario: ${error.response?.data?.error || error.message}`);
+        },
     });
 
     const handleRoleChange = (user: User, newRole: 'PLAYER' | 'ADMIN') => {
