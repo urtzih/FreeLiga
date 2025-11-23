@@ -265,7 +265,7 @@ export async function matchRoutes(fastify: FastifyInstance) {
         }
     });
 
-    // Delete match (admin only)
+    // Delete match (admin or player from their active group)
     fastify.delete('/:id', {
         onRequest: [fastify.authenticate],
     }, async (request, reply) => {
@@ -273,16 +273,38 @@ export async function matchRoutes(fastify: FastifyInstance) {
             const decoded = request.user as any;
             const { id } = request.params as { id: string };
 
-            if (decoded.role !== 'ADMIN') {
-                return reply.status(403).send({ error: 'Forbidden' });
-            }
-
             const match = await prisma.match.findUnique({
                 where: { id },
+                include: {
+                    player1: true,
+                    player2: true,
+                },
             });
 
             if (!match) {
                 return reply.status(404).send({ error: 'Match not found' });
+            }
+
+            // Allow deletion if:
+            // 1. User is admin, OR
+            // 2. User is one of the players AND the match is in their current/active group
+            const isAdmin = decoded.role === 'ADMIN';
+            const isPlayerInMatch = match.player1Id === decoded.playerId || match.player2Id === decoded.playerId;
+
+            if (!isAdmin && !isPlayerInMatch) {
+                return reply.status(403).send({ error: 'No tienes permiso para eliminar este partido' });
+            }
+
+            // If not admin, verify it's from their active group
+            if (!isAdmin) {
+                const player = await prisma.player.findUnique({
+                    where: { id: decoded.playerId },
+                    select: { currentGroupId: true },
+                });
+
+                if (!player?.currentGroupId || match.groupId !== player.currentGroupId) {
+                    return reply.status(403).send({ error: 'Solo puedes eliminar partidos de tu grupo activo' });
+                }
             }
 
             const groupId = match.groupId;
