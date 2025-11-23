@@ -45,7 +45,11 @@ export async function userRoutes(fastify: FastifyInstance) {
                     skip,
                     take: parseInt(limit),
                     include: {
-                        player: true,
+                        player: {
+                            include: {
+                                currentGroup: true,
+                            },
+                        },
                     },
                     orderBy: {
                         createdAt: 'desc',
