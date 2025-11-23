@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import api from '../../lib/api';
@@ -42,6 +42,16 @@ export default function ManageUsers() {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newPassword, setNewPassword] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+    // Debounce search term
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+            setPage(1); // Reset to page 1 on new search
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
     const [filterGroup, setFilterGroup] = useState('');
     const [sortField, setSortField] = useState<'email' | 'name' | 'group' | 'role' | 'isActive' | 'createdAt'>('createdAt');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -73,24 +83,22 @@ export default function ManageUsers() {
     });
     const availableGroups = adminStats?.activeSeason?.groups || [];
 
-    // Fetch users (paginated)
+    // Fetch users (paginated & filtered)
     const { data, isLoading } = useQuery<UsersResponse>({
-        queryKey: ['users', page],
+        queryKey: ['users', page, debouncedSearchTerm],
         queryFn: async () => {
-            const { data } = await api.get(`/users?page=${page}&limit=20`);
+            const { data } = await api.get(`/users?page=${page}&limit=20&search=${encodeURIComponent(debouncedSearchTerm)}`);
             return data;
         }
     });
 
-    // Client‑side filter & sort
+    // Client‑side sort (filter is now server-side)
     const filteredUsers = (data?.users || [])
         .filter(user => {
-            const matchesSearch =
-                !searchTerm ||
-                user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                user.player?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+            // Only filter by group client-side for now as API doesn't support it yet
+            // Search is handled by API
             const matchesGroup = !filterGroup || user.player?.currentGroup?.id === filterGroup;
-            return matchesSearch && matchesGroup;
+            return matchesGroup;
         })
         .sort((a, b) => {
             let aVal: any, bVal: any;

@@ -38,11 +38,21 @@ export async function userRoutes(fastify: FastifyInstance) {
                 return reply.status(403).send({ error: 'Forbidden' });
             }
 
-            const { page = '1', limit = '50' } = request.query as { page?: string; limit?: string };
+            const { page = '1', limit = '50', search = '' } = request.query as { page?: string; limit?: string; search?: string };
             const skip = (parseInt(page) - 1) * parseInt(limit);
+
+            const where: any = {};
+            if (search) {
+                where.OR = [
+                    { email: { contains: search } }, // Removed mode: 'insensitive' for compatibility if needed, but usually safe in recent Prisma/MySQL
+                    { player: { name: { contains: search } } },
+                    { player: { nickname: { contains: search } } },
+                ];
+            }
 
             const [users, total] = await Promise.all([
                 prisma.user.findMany({
+                    where,
                     skip,
                     take: parseInt(limit),
                     include: {
@@ -56,7 +66,7 @@ export async function userRoutes(fastify: FastifyInstance) {
                         createdAt: 'desc',
                     },
                 }),
-                prisma.user.count(),
+                prisma.user.count({ where }),
             ]);
 
             return {

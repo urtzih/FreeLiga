@@ -154,7 +154,7 @@ export default function MatchHistory() {
                                 const opponentGames = isPlayer1 ? match.gamesP2 : match.gamesP1;
                                 const won = match.winnerId === user?.player?.id;
                                 const canEdit = isAdmin || match.player1Id === user?.player?.id || match.player2Id === user?.player?.id;
-                                const canDelete = match.groupId === user?.player?.currentGroupId;
+                                const canDelete = isAdmin || match.groupId === user?.player?.currentGroupId;
 
                                 return (
                                     <div key={match.id} className="p-6 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors group">

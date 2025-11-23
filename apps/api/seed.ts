@@ -86,6 +86,9 @@ async function main() {
     // -------------------------------------------------
     // 5️⃣  Create past seasons (4 previous years) with data
     // -------------------------------------------------
+    // -------------------------------------------------
+    // 5️⃣  Create past seasons (4 previous years) with data
+    // -------------------------------------------------
     const pastSeasons = [
         { name: 'Temporada 2024‑Nov‑Dic', start: new Date('2024-11-01T00:00:00Z'), end: new Date('2024-12-31T23:59:59Z') },
         { name: 'Temporada 2023‑Nov‑Dic', start: new Date('2023-11-01T00:00:00Z'), end: new Date('2023-12-31T23:59:59Z') },
@@ -107,23 +110,40 @@ async function main() {
                 data: { name: g.name, seasonId: pastSeason.id },
             });
             for (const playerName of g.players) {
-                const email = `${playerName.toLowerCase().replace(/\\s+/g, '.')}.example@${past.name.replace(/\s+/g, '_').toLowerCase()}.com`;
-                const user = await prisma.user.create({
-                    data: { email, password: passwordHash, role: Role.PLAYER, isActive: true },
+                // Use the SAME email format as the current season to find the existing user
+                const email = `${playerName.toLowerCase().replace(/\s+/g, '.')}.example@freesquash.com`;
+
+                let user = await prisma.user.findUnique({
+                    where: { email },
+                    include: { player: true },
                 });
-                const player = await prisma.player.create({
-                    data: {
-                        userId: user.id,
-                        name: playerName,
-                        nickname: null,
-                        phone: null,
-                        email,
-                        currentGroupId: group.id,
-                    },
-                });
-                await prisma.groupPlayer.create({
-                    data: { groupId: group.id, playerId: player.id, rankingPosition: 0 },
-                });
+
+                // If user doesn't exist (shouldn't happen with identical lists, but safety first), create them
+                if (!user) {
+                    const newUser = await prisma.user.create({
+                        data: { email, password: passwordHash, role: Role.PLAYER, isActive: true },
+                    });
+                    await prisma.player.create({
+                        data: {
+                            userId: newUser.id,
+                            name: playerName,
+                            nickname: null,
+                            phone: null,
+                            email,
+                            currentGroupId: group.id, // If new, this is their current group
+                        },
+                    });
+                    // Re-fetch to get the player relation
+                    user = await prisma.user.findUnique({ where: { id: newUser.id }, include: { player: true } });
+                }
+
+                if (user && user.player) {
+                    // Add to the past group via GroupPlayer
+                    // Do NOT update currentGroupId as that should point to the ACTIVE season's group
+                    await prisma.groupPlayer.create({
+                        data: { groupId: group.id, playerId: user.player.id, rankingPosition: 0 },
+                    });
+                }
             }
         }
         // Generate matches for this past season (3 per group)
