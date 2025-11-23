@@ -29,33 +29,6 @@ interface UsersResponse {
     };
 }
 
-// Celda de estadísticas del jugador
-function PlayerStatsCell({ playerId }: { playerId?: string }) {
-    const enabled = !!playerId;
-    const { data, isLoading } = useQuery({
-        queryKey: ['playerStatsForAdmin', playerId],
-        queryFn: async () => {
-            const { data } = await api.get(`/players/${playerId}/stats`);
-            return data;
-        },
-        enabled,
-        staleTime: 30_000,
-    });
-
-    if (!enabled) return <span className="text-slate-400">-</span>;
-    if (isLoading) return <span className="text-xs text-slate-400">Cargando...</span>;
-    if (!data) return <span className="text-slate-400">-</span>;
-
-    return (
-        <div className="flex flex-col text-xs leading-tight">
-            <span><strong>V:</strong> {data.wins}</span>
-            <span><strong>D:</strong> {data.losses}</span>
-            <span><strong>%:</strong> {data.winPercentage}</span>
-            <span><strong>Avg:</strong> {data.average}</span>
-        </div>
-    );
-}
-
 export default function ManageUsers() {
     const queryClient = useQueryClient();
     const [page, setPage] = useState(1);
@@ -63,6 +36,8 @@ export default function ManageUsers() {
     const [showResetPassword, setShowResetPassword] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [newPassword, setNewPassword] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterGroup, setFilterGroup] = useState('');
     const [editForm, setEditForm] = useState({
         email: '',
         name: '',
@@ -90,6 +65,18 @@ export default function ManageUsers() {
             return data;
         },
     });
+
+    // Filter users client-side
+    const filteredUsers = data?.users.filter(user => {
+        const matchesSearch = !searchTerm ||
+            user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.player?.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+        const matchesGroup = !filterGroup ||
+            user.player?.currentGroup?.id === filterGroup;
+
+        return matchesSearch && matchesGroup;
+    }) || [];
 
     const updateRoleMutation = useMutation({
         mutationFn: async ({ userId, role }: { userId: string; role: 'PLAYER' | 'ADMIN' }) => {
@@ -209,11 +196,44 @@ export default function ManageUsers() {
                 <p className="text-blue-100">Administrar usuarios y permisos del sistema</p>
             </div>
 
+            {/* Filtros */}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Buscar por nombre o email
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="Buscar..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Filtrar por grupo
+                        </label>
+                        <select
+                            value={filterGroup}
+                            onChange={(e) => setFilterGroup(e.target.value)}
+                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="">Todos los grupos</option>
+                            {availableGroups.map(g => (
+                                <option key={g.id} value={g.id}>{g.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
             {/* Lista de Usuarios */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                        Usuarios ({data?.pagination.total || 0})
+                        Usuarios ({filteredUsers.length} de {data?.pagination.total || 0})
                     </h2>
                 </div>
 
@@ -231,9 +251,6 @@ export default function ManageUsers() {
                                     Grupo
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                    Stats
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                     Rol
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -245,7 +262,7 @@ export default function ManageUsers() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                            {data?.users.map((user) => (
+                            {filteredUsers.map((user) => (
                                 <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-900">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm font-medium text-slate-900 dark:text-white">
@@ -267,9 +284,6 @@ export default function ManageUsers() {
                                         <div className="text-sm text-slate-600 dark:text-slate-400">
                                             {user.player?.currentGroup?.name || 'Sin grupo'}
                                         </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <PlayerStatsCell playerId={user.player?.id} />
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <select
@@ -348,7 +362,7 @@ export default function ManageUsers() {
                         <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">
                             Editar Usuario
                         </h3>
-                        
+
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">

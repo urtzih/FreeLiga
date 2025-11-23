@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+﻿import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import api from '../../lib/api';
 import { Bar } from 'react-chartjs-2';
@@ -52,7 +52,7 @@ export default function GroupView() {
     }
 
     if (classificationError) {
-        return <div className="text-center py-12 text-red-600">Error cargando clasificación</div>;
+        return <div className="text-center py-12 text-red-600">Error cargando clasificaci├│n</div>;
     }
 
     const totalPlayers = group.groupPlayers.length;
@@ -62,7 +62,7 @@ export default function GroupView() {
         ? Math.round((matchesPlayed / totalPossibleMatches) * 100)
         : 0;
 
-    // Calcular días restantes
+    // Calcular d├¡as restantes
     const endDate = new Date(group.season.endDate);
     const today = new Date();
     const daysRemaining = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
@@ -94,8 +94,8 @@ export default function GroupView() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium opacity-90">Días Restantes</span>
-                        <span className="text-2xl">⏰</span>
+                        <span className="text-sm font-medium opacity-90">D├¡as Restantes</span>
+                        <span className="text-2xl">ÔÅ░</span>
                     </div>
                     <p className="text-4xl font-bold">{daysRemaining > 0 ? daysRemaining : 0}</p>
                     <p className="text-sm opacity-75 mt-1">Hasta el {endDate.toLocaleDateString('es-ES')}</p>
@@ -104,7 +104,7 @@ export default function GroupView() {
                 <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium opacity-90">Progreso</span>
-                        <span className="text-2xl">📊</span>
+                        <span className="text-2xl">­ƒôè</span>
                     </div>
                     <p className="text-4xl font-bold">{completionPercentage}%</p>
                     <p className="text-sm opacity-75 mt-1">{matchesPlayed} / {totalPossibleMatches} partidos</p>
@@ -113,24 +113,24 @@ export default function GroupView() {
                 <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium opacity-90">Total Jugadores</span>
-                        <span className="text-2xl">👥</span>
+                        <span className="text-2xl">­ƒæÑ</span>
                     </div>
                     <p className="text-4xl font-bold">{totalPlayers}</p>
                     <p className="text-sm opacity-75 mt-1">Activos en el grupo</p>
                 </div>
             </div>
 
-            {/* Estadísticas del Grupo */}
+            {/* Estad├¡sticas del Grupo */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Estadísticas del Grupo</h2>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Estad├¡sticas del Grupo</h2>
                     {classification && classification.length > 0 && (
                         <span className="text-xs text-slate-500 dark:text-slate-400">{classification.length} jugadores</span>
                     )}
                 </div>
                 <div className="p-6 space-y-6">
                     {!classification || classification.length === 0 ? (
-                        <p className="text-sm text-slate-600 dark:text-slate-400">Sin partidos registrados todavía.</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">Sin partidos registrados todav├¡a.</p>
                     ) : (
                         <>
 
@@ -142,7 +142,7 @@ export default function GroupView() {
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Victorias</th>
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Derrotas</th>
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Restantes</th>
-                                            <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Lesión</th>
+                                            <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Lesi├│n</th>
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Sets +</th>
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Sets -</th>
                                         </tr>
@@ -213,7 +213,7 @@ export default function GroupView() {
                                                 backgroundColor: 'rgba(148, 163, 184, 0.6)'
                                             },
                                             {
-                                                label: 'Con Lesión',
+                                                label: 'Con Lesi├│n',
                                                 data: classification.slice(0, 10).map(c => {
                                                     return group.matches.filter((m: any) =>
                                                         (m.player1Id === c.playerId || m.player2Id === c.playerId) &&
@@ -239,107 +239,70 @@ export default function GroupView() {
                 </div>
             </div>
 
-            {/* Clasificación Actual (Ranking interno) */}
+            {/* Clasificaci├│n Actual (Ranking interno) */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Clasificación Actual</h2>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Clasificaci├│n Actual</h2>
                 </div>
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead className="bg-slate-50 dark:bg-slate-900">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                    Jugador
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                    Contacto
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                            {group.groupPlayers
-                                .filter((gp: any) => gp.player.user?.role !== 'ADMIN')
-                                .map((gp: any, index: number) => (
-                                    <tr key={gp.id} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center space-x-2">
-                                                {index < 2 && <span className="text-xl">🏆</span>}
-                                                {index >= totalPlayers - 2 && <span className="text-xl">⚠️</span>}
-                                                <span className="text-sm font-bold text-slate-600 dark:text-slate-400">
-                                                    #{gp.rankingPosition}
-                                                </span>
-                                                <div>
-                                                    <p className="font-medium text-slate-900 dark:text-white">{gp.player.name}</p>
-                                                    {gp.player.nickname && (
-                                                        <p className="text-sm text-slate-500 dark:text-slate-400">"{gp.player.nickname}"</p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <ContactButtons phone={gp.player.phone} />
-                                        </td>
-                                    </tr>
-                                ))}
-                        </tbody>
-                    </table>
+            </tbody>
+        </table>
+                </div >
+            </div >
+
+        {/* Partidos Recientes */ }
+    {
+        group.matches.length > 0 && (
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Partidos Recientes</h2>
                 </div>
-            </div>
-
-            {/* Partidos Recientes */}
-            {group.matches.length > 0 && (
-
-                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Partidos Recientes</h2>
-                    </div>
-                    <div className="divide-y divide-slate-200 dark:divide-slate-700">
-                        {group.matches.slice(0, 10).map((match: any) => (
-                            <div key={match.id} className="p-4">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex-1">
-                                        <div className="flex items-center space-x-2">
-                                            <span className={`font-medium ${match.winnerId === match.player1Id ? 'text-green-600 dark:text-green-400' : 'text-slate-900 dark:text-white'}`}>
-                                                {match.player1.name}
-                                            </span>
-                                            <span className="text-slate-600 dark:text-slate-400">vs</span>
-                                            <span className={`font-medium ${match.winnerId === match.player2Id ? 'text-green-600 dark:text-green-400' : 'text-slate-900 dark:text-white'}`}>
-                                                {match.player2.name}
-                                            </span>
-                                        </div>
-                                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                                            {new Date(match.date).toLocaleDateString('es-ES')}
-                                        </p>
+                <div className="divide-y divide-slate-200 dark:divide-slate-700">
+                    {group.matches.slice(0, 10).map((match: any) => (
+                        <div key={match.id} className="p-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                    <div className="flex items-center space-x-2">
+                                        <span className={`font-medium ${match.winnerId === match.player1Id ? 'text-green-600 dark:text-green-400' : 'text-slate-900 dark:text-white'}`}>
+                                            {match.player1.name}
+                                        </span>
+                                        <span className="text-slate-600 dark:text-slate-400">vs</span>
+                                        <span className={`font-medium ${match.winnerId === match.player2Id ? 'text-green-600 dark:text-green-400' : 'text-slate-900 dark:text-white'}`}>
+                                            {match.player2.name}
+                                        </span>
                                     </div>
-                                    <div className="text-right">
-                                        <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                                            {match.gamesP1} - {match.gamesP2}
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                                        {new Date(match.date).toLocaleDateString('es-ES')}
+                                    </p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                                        {match.gamesP1} - {match.gamesP2}
+                                    </p>
+                                    {match.matchStatus !== 'PLAYED' && (
+                                        <p className="text-xs text-orange-600 dark:text-orange-400 uppercase">
+                                            {match.matchStatus === 'INJURY' ? 'LESI├ôN' : 'CANCELADO'}
                                         </p>
-                                        {match.matchStatus !== 'PLAYED' && (
-                                            <p className="text-xs text-orange-600 dark:text-orange-400 uppercase">
-                                                {match.matchStatus === 'INJURY' ? 'LESIÓN' : 'CANCELADO'}
-                                            </p>
-                                        )}
-                                    </div>
+                                    )}
                                 </div>
                             </div>
-                        ))}
-                    </div>
+                        </div>
+                    ))}
                 </div>
-            )
-            }
+            </div>
+        )
+    }
         </div >
     );
 }
 
 function ContactButtons({ phone }: { phone?: string }) {
     if (!phone) {
-        return <span className="text-sm text-slate-400">Sin información de contacto</span>;
+        return <span className="text-sm text-slate-400">Sin informaci├│n de contacto</span>;
     }
 
     const handleCopy = () => {
         navigator.clipboard.writeText(phone);
-        alert('¡Teléfono copiado!');
+        alert('┬íTel├®fono copiado!');
     };
 
     return (
@@ -361,7 +324,7 @@ function ContactButtons({ phone }: { phone?: string }) {
                 className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors text-sm font-medium"
                 title="Llamar"
             >
-                📞 Llamar
+                ­ƒô× Llamar
             </a>
         </div>
     );

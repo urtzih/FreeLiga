@@ -17,12 +17,16 @@ export default function MatchHistory() {
     const itemsPerPage = 20;
 
     const { data: matches = [], isLoading } = useQuery({
-        queryKey: ['matches', user?.player?.id],
+        queryKey: ['matches', isAdmin ? 'all' : user?.player?.id],
         queryFn: async () => {
-            const { data } = await api.get(`/matches?playerId=${user?.player?.id}`);
+            // Admins see all matches, players see only their own
+            const endpoint = isAdmin
+                ? '/matches'
+                : `/matches?playerId=${user?.player?.id}`;
+            const { data } = await api.get(endpoint);
             return data;
         },
-        enabled: !!user?.player?.id,
+        enabled: isAdmin || !!user?.player?.id,
     });
 
     // Delete mutation
