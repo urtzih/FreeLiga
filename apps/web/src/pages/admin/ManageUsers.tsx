@@ -169,18 +169,31 @@ export default function ManageUsers() {
     };
 
     const handleUpdateUser = () => {
-        if (!selectedUser) return;
+        console.log('handleUpdateUser called');
+        console.log('selectedUser:', selectedUser);
+        console.log('editForm:', editForm);
+
+        if (!selectedUser) {
+            console.log('No selectedUser, returning');
+            return;
+        }
         if (!editForm.email || !editForm.name) {
+            console.log('Missing email or name');
             alert('El email y el nombre son obligatorios');
             return;
         }
+
+        console.log('About to show confirm dialog');
         if (confirm(`¿Actualizar los datos de ${selectedUser.email}?`)) {
+            console.log('User confirmed, calling mutation');
             updateUserMutation.mutate({
                 userId: selectedUser.id,
                 userData: editForm,
                 playerId: selectedUser.player?.id,
                 previousGroupId: selectedUser.player?.currentGroup?.id,
             });
+        } else {
+            console.log('User cancelled');
         }
     };
 
