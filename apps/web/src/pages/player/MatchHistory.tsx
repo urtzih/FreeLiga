@@ -34,6 +34,11 @@ export default function MatchHistory() {
             queryClient.invalidateQueries({ queryKey: ['matches'] });
             queryClient.invalidateQueries({ queryKey: ['group'] });
             queryClient.invalidateQueries({ queryKey: ['classification'] });
+            alert('Partido eliminado correctamente');
+        },
+        onError: (error: any) => {
+            console.error('Error eliminando partido:', error);
+            alert(`Error al eliminar el partido: ${error.response?.data?.error || error.message}`);
         },
     });
 
