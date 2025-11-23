@@ -244,53 +244,88 @@ export default function GroupView() {
                 <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white">Clasificación Actual</h2>
                 </div>
-            </tbody>
-        </table>
-                </div >
-            </div >
-
-        {/* Partidos Recientes */ }
-    {
-        group.matches.length > 0 && (
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Partidos Recientes</h2>
-                </div>
-                <div className="divide-y divide-slate-200 dark:divide-slate-700">
-                    {group.matches.slice(0, 10).map((match: any) => (
-                        <div key={match.id} className="p-4">
-                            <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                    <div className="flex items-center space-x-2">
-                                        <span className={`font-medium ${match.winnerId === match.player1Id ? 'text-green-600 dark:text-green-400' : 'text-slate-900 dark:text-white'}`}>
-                                            {match.player1.name}
-                                        </span>
-                                        <span className="text-slate-600 dark:text-slate-400">vs</span>
-                                        <span className={`font-medium ${match.winnerId === match.player2Id ? 'text-green-600 dark:text-green-400' : 'text-slate-900 dark:text-white'}`}>
-                                            {match.player2.name}
-                                        </span>
-                                    </div>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                                        {new Date(match.date).toLocaleDateString('es-ES')}
-                                    </p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                                        {match.gamesP1} - {match.gamesP2}
-                                    </p>
-                                    {match.matchStatus !== 'PLAYED' && (
-                                        <p className="text-xs text-orange-600 dark:text-orange-400 uppercase">
-                                            {match.matchStatus === 'INJURY' ? 'LESIÓN' : 'CANCELADO'}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead className="bg-slate-50 dark:bg-slate-900">
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                    Jugador
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                    Contacto
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                            {group.groupPlayers.map((gp: any, index: number) => (
+                                <tr key={gp.id} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center space-x-2">
+                                            {index < 2 && <span className="text-xl">🏆</span>}
+                                            {index >= totalPlayers - 2 && <span className="text-xl">⚠️</span>}
+                                            <span className="text-sm font-bold text-slate-600 dark:text-slate-400">
+                                                #{gp.rankingPosition}
+                                            </span>
+                                            <div>
+                                                <p className="font-medium text-slate-900 dark:text-white">{gp.player.name}</p>
+                                                {gp.player.nickname && (
+                                                    <p className="text-sm text-slate-500 dark:text-slate-400">"{gp.player.nickname}"</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <ContactButtons phone={gp.player.phone} />
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        )
-    }
+
+            {/* Partidos Recientes */}
+            {group.matches.length > 0 && (
+
+                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Partidos Recientes</h2>
+                    </div>
+                    <div className="divide-y divide-slate-200 dark:divide-slate-700">
+                        {group.matches.slice(0, 10).map((match: any) => (
+                            <div key={match.id} className="p-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                        <div className="flex items-center space-x-2">
+                                            <span className={`font-medium ${match.winnerId === match.player1Id ? 'text-green-600 dark:text-green-400' : 'text-slate-900 dark:text-white'}`}>
+                                                {match.player1.name}
+                                            </span>
+                                            <span className="text-slate-600 dark:text-slate-400">vs</span>
+                                            <span className={`font-medium ${match.winnerId === match.player2Id ? 'text-green-600 dark:text-green-400' : 'text-slate-900 dark:text-white'}`}>
+                                                {match.player2.name}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                                            {new Date(match.date).toLocaleDateString('es-ES')}
+                                        </p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                                            {match.gamesP1} - {match.gamesP2}
+                                        </p>
+                                        {match.matchStatus !== 'PLAYED' && (
+                                            <p className="text-xs text-orange-600 dark:text-orange-400 uppercase">
+                                                {match.matchStatus === 'INJURY' ? 'LESIÓN' : 'CANCELADO'}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )
+            }
         </div >
     );
 }
