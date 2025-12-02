@@ -74,6 +74,33 @@ export default function ManageSeasons() {
         updateMutation.mutate({ id: editSeason.id, data: editData });
     };
 
+    // Función para exportar CSV de una temporada
+    const handleExportCSV = (season: any) => {
+        if (!season.groups) return;
+        
+        const rows: string[] = [];
+        rows.push('Temporada,Grupo,Posición,Jugador,Movimiento,Partidos Ganados');
+        
+        season.groups.forEach((group: any) => {
+            const sortedPlayers = [...(group.groupPlayers || [])].sort((a: any, b: any) => a.rankingPosition - b.rankingPosition);
+            sortedPlayers.forEach((gp: any) => {
+                const totalPlayers = group.groupPlayers.length;
+                const movement = gp.rankingPosition <= 2 ? 'ASCENSO' : gp.rankingPosition > totalPlayers - 2 ? 'DESCENSO' : 'MANTIENE';
+                const matchesWon = gp.player.matches?.filter((m: any) => m.winnerId === gp.playerId).length || 0;
+                
+                rows.push(`"${season.name}","${group.name}",${gp.rankingPosition},"${gp.player.name}","${movement}",${matchesWon}`);
+            });
+        });
+        
+        const csv = rows.join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `clasificacion_${season.name.replace(/\s+/g, '_')}.csv`);
+        link.click();
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -164,11 +191,21 @@ export default function ManageSeasons() {
                                         {new Date(season.endDate).toLocaleDateString('es-ES')}
                                     </td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{season.groups?.length || 0}</td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-6 py-4 flex gap-2">
                                         <button
                                             onClick={() => openEdit(season)}
                                             className="text-xs px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700"
                                         >Editar</button>
+                                        <a
+                                            href={`/admin/groups?season=${season.id}`}
+                                            className="text-xs px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
+                                            title="Ver clasificación y resultados de todos los grupos"
+                                        >Ver más</a>
+                                        <button
+                                            onClick={() => handleExportCSV(season)}
+                                            className="text-xs px-3 py-1 rounded bg-purple-600 text-white hover:bg-purple-700"
+                                            title="Exportar clasificación como CSV"
+                                        >CSV</button>
                                     </td>
                                 </tr>
                             ))}

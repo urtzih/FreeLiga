@@ -1,0 +1,46 @@
+-- Seed de usuarios de prueba para FreeLiga
+-- Este script crea 20 usuarios distribuidos en los últimos 180 días
+
+INSERT INTO users (id, email, password, role, isActive, createdAt, updatedAt) VALUES
+('test_user_1', 'test1@freeliga.com', '$2b$10$QQ0WfPK6k7l7H7j8K8i7j', 'PLAYER', 1, DATE_SUB(NOW(), INTERVAL 170 DAY), DATE_SUB(NOW(), INTERVAL 170 DAY)),
+('test_user_2', 'test2@freeliga.com', '$2b$10$QQ0WfPK6k7l7H7j8K8i7j', 'PLAYER', 1, DATE_SUB(NOW(), INTERVAL 160 DAY), DATE_SUB(NOW(), INTERVAL 160 DAY)),
+('test_user_3', 'test3@freeliga.com', '$2b$10$QQ0WfPK6k7l7H7j8K8i7j', 'PLAYER', 0, DATE_SUB(NOW(), INTERVAL 150 DAY), DATE_SUB(NOW(), INTERVAL 150 DAY)),
+('test_user_4', 'test4@freeliga.com', '$2b$10$QQ0WfPK6k7l7H7j8K8i7j', 'PLAYER', 1, DATE_SUB(NOW(), INTERVAL 140 DAY), DATE_SUB(NOW(), INTERVAL 140 DAY)),
+('test_user_5', 'test5@freeliga.com', '$2b$10$QQ0WfPK6k7l7H7j8K8i7j', 'PLAYER', 1, DATE_SUB(NOW(), INTERVAL 130 DAY), DATE_SUB(NOW(), INTERVAL 130 DAY)),
+('test_user_6', 'test6@freeliga.com', '$2b$10$QQ0WfPK6k7l7H7j8K8i7j', 'PLAYER', 0, DATE_SUB(NOW(), INTERVAL 120 DAY), DATE_SUB(NOW(), INTERVAL 120 DAY)),
+('test_user_7', 'test7@freeliga.com', '$2b$10$QQ0WfPK6k7l7H7j8K8i7j', 'PLAYER', 1, DATE_SUB(NOW(), INTERVAL 110 DAY), DATE_SUB(NOW(), INTERVAL 110 DAY)),
+('test_user_8', 'test8@freeliga.com', '$2b$10$QQ0WfPK6k7l7H7j8K8i7j', 'PLAYER', 1, DATE_SUB(NOW(), INTERVAL 100 DAY), DATE_SUB(NOW(), INTERVAL 100 DAY)),
+('test_user_9', 'test9@freeliga.com', '$2b$10$QQ0WfPK6k7l7H7j8K8i7j', 'PLAYER', 1, DATE_SUB(NOW(), INTERVAL 90 DAY), DATE_SUB(NOW(), INTERVAL 90 DAY)),
+('test_user_10', 'test10@freeliga.com', '$2b$10$QQ0WfPK6k7l7H7j8K8i7j', 'PLAYER', 0, DATE_SUB(NOW(), INTERVAL 80 DAY), DATE_SUB(NOW(), INTERVAL 80 DAY)),
+('test_user_11', 'test11@freeliga.com', '$2b$10$QQ0WfPK6k7l7H7j8K8i7j', 'PLAYER', 1, DATE_SUB(NOW(), INTERVAL 70 DAY), DATE_SUB(NOW(), INTERVAL 70 DAY)),
+('test_user_12', 'test12@freeliga.com', '$2b$10$QQ0WfPK6k7l7H7j8K8i7j', 'PLAYER', 1, DATE_SUB(NOW(), INTERVAL 60 DAY), DATE_SUB(NOW(), INTERVAL 60 DAY)),
+('test_user_13', 'test13@freeliga.com', '$2b$10$QQ0WfPK6k7l7H7j8K8i7j', 'PLAYER', 1, DATE_SUB(NOW(), INTERVAL 50 DAY), DATE_SUB(NOW(), INTERVAL 50 DAY)),
+('test_user_14', 'test14@freeliga.com', '$2b$10$QQ0WfPK6k7l7H7j8K8i7j', 'PLAYER', 0, DATE_SUB(NOW(), INTERVAL 40 DAY), DATE_SUB(NOW(), INTERVAL 40 DAY)),
+('test_user_15', 'test15@freeliga.com', '$2b$10$QQ0WfPK6k7l7H7j8K8i7j', 'PLAYER', 1, DATE_SUB(NOW(), INTERVAL 30 DAY), DATE_SUB(NOW(), INTERVAL 30 DAY)),
+('test_user_16', 'test16@freeliga.com', '$2b$10$QQ0WfPK6k7l7H7j8K8i7j', 'PLAYER', 1, DATE_SUB(NOW(), INTERVAL 25 DAY), DATE_SUB(NOW(), INTERVAL 25 DAY)),
+('test_user_17', 'test17@freeliga.com', '$2b$10$QQ0WfPK6k7l7H7j8K8i7j', 'PLAYER', 1, DATE_SUB(NOW(), INTERVAL 20 DAY), DATE_SUB(NOW(), INTERVAL 20 DAY)),
+('test_user_18', 'test18@freeliga.com', '$2b$10$QQ0WfPK6k7l7H7j8K8i7j', 'PLAYER', 0, DATE_SUB(NOW(), INTERVAL 15 DAY), DATE_SUB(NOW(), INTERVAL 15 DAY)),
+('test_user_19', 'test19@freeliga.com', '$2b$10$QQ0WfPK6k7l7H7j8K8i7j', 'PLAYER', 1, DATE_SUB(NOW(), INTERVAL 10 DAY), DATE_SUB(NOW(), INTERVAL 10 DAY)),
+('test_user_20', 'test20@freeliga.com', '$2b$10$QQ0WfPK6k7l7H7j8K8i7j', 'PLAYER', 1, DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_SUB(NOW(), INTERVAL 5 DAY));
+
+INSERT INTO players (id, userId, name, nickname, phone, email, createdAt, updatedAt) VALUES
+('player_1', 'test_user_1', 'Carlos López', 'carlos_test', NULL, NULL, DATE_SUB(NOW(), INTERVAL 170 DAY), DATE_SUB(NOW(), INTERVAL 170 DAY)),
+('player_2', 'test_user_2', 'María García', 'maria_test', NULL, NULL, DATE_SUB(NOW(), INTERVAL 160 DAY), DATE_SUB(NOW(), INTERVAL 160 DAY)),
+('player_3', 'test_user_3', 'Juan Rodríguez', 'juan_test', NULL, NULL, DATE_SUB(NOW(), INTERVAL 150 DAY), DATE_SUB(NOW(), INTERVAL 150 DAY)),
+('player_4', 'test_user_4', 'Ana Martínez', 'ana_test', NULL, NULL, DATE_SUB(NOW(), INTERVAL 140 DAY), DATE_SUB(NOW(), INTERVAL 140 DAY)),
+('player_5', 'test_user_5', 'Pedro Sánchez', 'pedro_test', NULL, NULL, DATE_SUB(NOW(), INTERVAL 130 DAY), DATE_SUB(NOW(), INTERVAL 130 DAY)),
+('player_6', 'test_user_6', 'Laura González', 'laura_test', NULL, NULL, DATE_SUB(NOW(), INTERVAL 120 DAY), DATE_SUB(NOW(), INTERVAL 120 DAY)),
+('player_7', 'test_user_7', 'Roberto Fernández', 'roberto_test', NULL, NULL, DATE_SUB(NOW(), INTERVAL 110 DAY), DATE_SUB(NOW(), INTERVAL 110 DAY)),
+('player_8', 'test_user_8', 'Isabel Ruiz', 'isabel_test', NULL, NULL, DATE_SUB(NOW(), INTERVAL 100 DAY), DATE_SUB(NOW(), INTERVAL 100 DAY)),
+('player_9', 'test_user_9', 'Fernando López', 'fernando_test', NULL, NULL, DATE_SUB(NOW(), INTERVAL 90 DAY), DATE_SUB(NOW(), INTERVAL 90 DAY)),
+('player_10', 'test_user_10', 'Cristina Díaz', 'cristina_test', NULL, NULL, DATE_SUB(NOW(), INTERVAL 80 DAY), DATE_SUB(NOW(), INTERVAL 80 DAY)),
+('player_11', 'test_user_11', 'Miguel Ángel', 'miguel_test', NULL, NULL, DATE_SUB(NOW(), INTERVAL 70 DAY), DATE_SUB(NOW(), INTERVAL 70 DAY)),
+('player_12', 'test_user_12', 'Sofía García', 'sofia_test', NULL, NULL, DATE_SUB(NOW(), INTERVAL 60 DAY), DATE_SUB(NOW(), INTERVAL 60 DAY)),
+('player_13', 'test_user_13', 'Antonio Jiménez', 'antonio_test', NULL, NULL, DATE_SUB(NOW(), INTERVAL 50 DAY), DATE_SUB(NOW(), INTERVAL 50 DAY)),
+('player_14', 'test_user_14', 'Elena Moreno', 'elena_test', NULL, NULL, DATE_SUB(NOW(), INTERVAL 40 DAY), DATE_SUB(NOW(), INTERVAL 40 DAY)),
+('player_15', 'test_user_15', 'José Luis', 'jose_test', NULL, NULL, DATE_SUB(NOW(), INTERVAL 30 DAY), DATE_SUB(NOW(), INTERVAL 30 DAY)),
+('player_16', 'test_user_16', 'Beatriz Torres', 'beatriz_test', NULL, NULL, DATE_SUB(NOW(), INTERVAL 25 DAY), DATE_SUB(NOW(), INTERVAL 25 DAY)),
+('player_17', 'test_user_17', 'David Guerrero', 'david_test', NULL, NULL, DATE_SUB(NOW(), INTERVAL 20 DAY), DATE_SUB(NOW(), INTERVAL 20 DAY)),
+('player_18', 'test_user_18', 'Gloria Sáez', 'gloria_test', NULL, NULL, DATE_SUB(NOW(), INTERVAL 15 DAY), DATE_SUB(NOW(), INTERVAL 15 DAY)),
+('player_19', 'test_user_19', 'Oscar Herrera', 'oscar_test', NULL, NULL, DATE_SUB(NOW(), INTERVAL 10 DAY), DATE_SUB(NOW(), INTERVAL 10 DAY)),
+('player_20', 'test_user_20', 'Patricia Vega', 'patricia_test', NULL, NULL, DATE_SUB(NOW(), INTERVAL 5 DAY), DATE_SUB(NOW(), INTERVAL 5 DAY));

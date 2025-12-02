@@ -147,4 +147,63 @@ export async function adminRoutes(fastify: FastifyInstance) {
             return reply.status(500).send({ error: 'Internal server error' });
         }
     });
+
+    // Get player history (registration and activity timeline)
+    fastify.get('/player-history', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            // Get all users with their players and group history
+            const users = await prisma.user.findMany({
+                include: {
+                    player: {
+                        include: {
+                            groupHistories: {
+                                include: {
+                                    season: true,
+                                    group: true,
+                                },
+                                orderBy: {
+                                    createdAt: 'desc',
+                                },
+                            },
+                        },
+                    },
+                },
+                orderBy: {
+                    createdAt: 'desc',
+                },
+            });
+
+            // Format response
+            const playerHistory = users
+                .filter(u => u.player) // Only users with player records
+                .map(u => ({
+                    playerId: u.player!.id,
+                    playerName: u.player!.name,
+                    email: u.email,
+                    isActive: u.isActive,
+                    registeredAt: u.createdAt,
+                    seasonHistories: u.player!.groupHistories.map(gh => ({
+                        season: gh.season.name,
+                        seasonId: gh.season.id,
+                        group: gh.group?.name || null,
+                        finalRank: gh.finalRank,
+                        movement: gh.movementType,
+                        createdAt: gh.createdAt,
+                    })),
+                }));
+
+            return playerHistory;
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
 }

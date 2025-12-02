@@ -67,6 +67,44 @@ export default function GroupView() {
     const today = new Date();
     const daysRemaining = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
+    // Función para exportar CSV del grupo
+    const handleExportGroupCSV = () => {
+        if (!group.groupPlayers) return;
+        
+        const rows: string[] = [];
+        rows.push('Posición,Jugador,Partidos Ganados,Partidos Perdidos,Sets Ganados,Sets Perdidos,Movimiento');
+        
+        const sortedPlayers = [...group.groupPlayers].sort((a: any, b: any) => a.rankingPosition - b.rankingPosition);
+        sortedPlayers.forEach((gp: any) => {
+            const movement = gp.rankingPosition <= 2 ? 'ASCENSO' : gp.rankingPosition > totalPlayers - 2 ? 'DESCENSO' : 'MANTIENE';
+            const wins = group.matches.filter((m: any) => m.matchStatus === 'PLAYED' && m.winnerId === gp.playerId).length || 0;
+            const losses = group.matches.filter((m: any) => m.matchStatus === 'PLAYED' && ((m.player1Id === gp.playerId && m.winnerId === m.player2Id) || (m.player2Id === gp.playerId && m.winnerId === m.player1Id))).length || 0;
+            
+            let setsWon = 0, setsLost = 0;
+            group.matches.forEach((m: any) => {
+                if (m.matchStatus === 'PLAYED') {
+                    if (m.player1Id === gp.playerId) {
+                        setsWon += m.gamesP1;
+                        setsLost += m.gamesP2;
+                    } else if (m.player2Id === gp.playerId) {
+                        setsWon += m.gamesP2;
+                        setsLost += m.gamesP1;
+                    }
+                }
+            });
+            
+            rows.push(`${gp.rankingPosition},"${gp.player.name}",${wins},${losses},${setsWon},${setsLost},"${movement}"`);
+        });
+        
+        const csv = rows.join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `clasificacion_${group.name.replace(/\s+/g, '_')}.csv`);
+        link.click();
+    };
+
     return (
         <div className="space-y-6">
             {/* Encabezado */}
@@ -75,9 +113,17 @@ export default function GroupView() {
                     <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">{group.name}</h1>
                     <p className="text-slate-600 dark:text-slate-400">{group.season.name}</p>
                 </div>
-                {group.whatsappUrl && (
-                    <a
-                        href={group.whatsappUrl}
+                <div className="flex gap-2">
+                    <button
+                        onClick={handleExportGroupCSV}
+                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2 shadow-sm"
+                        title="Descargar clasificación como CSV"
+                    >
+                        📥 CSV
+                    </button>
+                    {group.whatsappUrl && (
+                        <a
+                            href={group.whatsappUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors font-medium flex items-center gap-2 shadow-sm"
@@ -87,7 +133,8 @@ export default function GroupView() {
                         </svg>
                         Grupo WhatsApp
                     </a>
-                )}
+                    )}
+                </div>
             </div>
 
             {/* Indicadores de Progreso */}
@@ -363,6 +410,13 @@ function ContactButtons({ phone }: { phone?: string }) {
             >
                 📞 Llamar
             </a>
+            <button
+                onClick={handleCopy}
+                className="px-3 py-1 bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-sm font-medium"
+                title="Copiar teléfono"
+            >
+                📋 Copiar
+            </button>
         </div>
     );
 }

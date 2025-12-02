@@ -161,15 +161,17 @@ export default function MatchHistory() {
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center space-x-4">
                                                 <div className="text-4xl">
-                                                    {match.matchStatus === 'INJURY' ? '🤕' : match.matchStatus === 'CANCELLED' ? '🚫' : won ? '✅' : '❌'}
+                                                    {match.matchStatus === 'INJURY' ? '🤕' : match.matchStatus === 'CANCELLED' ? '🚫' : isAdmin ? '🎾' : won ? '✅' : '❌'}
                                                 </div>
                                                 <div>
-                                                    <div className="flex items-center space-x-2">
-                                                        <span className="font-medium text-slate-900 dark:text-white">vs {opponent.name}</span>
-                                                        {opponent.nickname && (
-                                                            <span className="text-sm text-slate-500 dark:text-slate-400">"{opponent.nickname}"</span>
-                                                        )}
-                                                    </div>
+                                                    {!isAdmin && (
+                                                        <div className="flex items-center space-x-2">
+                                                            <span className="font-medium text-slate-900 dark:text-white">vs {opponent.name}</span>
+                                                            {opponent.nickname && (
+                                                                <span className="text-sm text-slate-500 dark:text-slate-400">"{opponent.nickname}"</span>
+                                                            )}
+                                                        </div>
+                                                    )}
                                                     <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                                                         {match.group.name} • {new Date(match.date).toLocaleDateString('es-ES')}
                                                     </p>
@@ -181,18 +183,31 @@ export default function MatchHistory() {
                                                 </div>
                                             </div>
 
-                                            <div className="flex items-center space-x-4">
+                                            <div className="flex flex-col items-end gap-3">
                                                 {match.matchStatus === 'PLAYED' && (
                                                     <div className="text-right">
                                                         <div className="text-3xl font-bold text-slate-900 dark:text-white">
                                                             {myGames} - {opponentGames}
                                                         </div>
-                                                        <p className={`text-sm font-medium ${won ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                                                            {won ? 'Victoria' : 'Derrota'}
-                                                        </p>
+                                                        {isAdmin ? (
+                                                            // Admin view: show colored participant names
+                                                            <div className="flex items-center gap-2 mt-2 text-xs">
+                                                                <span className={`px-2 py-1 rounded font-medium ${match.winnerId === match.player1Id ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
+                                                                    {match.player1.name}
+                                                                </span>
+                                                                <span className="text-slate-600 dark:text-slate-400">vs</span>
+                                                                <span className={`px-2 py-1 rounded font-medium ${match.winnerId === match.player2Id ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'}`}>
+                                                                    {match.player2.name}
+                                                                </span>
+                                                            </div>
+                                                        ) : (
+                                                            // Player view: show victory/defeat labels
+                                                            <p className={`text-sm font-medium ${won ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                                                {won ? 'Victoria' : 'Derrota'}
+                                                            </p>
+                                                        )}
                                                     </div>
                                                 )}
-
                                                 <div className="flex items-center gap-2">
                                                     {canEdit && (
                                                         <button

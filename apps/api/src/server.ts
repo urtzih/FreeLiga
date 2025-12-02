@@ -39,6 +39,42 @@ async function start() {
             }
         });
 
+        // Register Swagger
+        await fastify.register(require('@fastify/swagger'), {
+            swagger: {
+                info: {
+                    title: 'FreeSquash API',
+                    description: 'API documentation for FreeSquash League',
+                    version: '1.0.0',
+                },
+                host: 'localhost:3001',
+                schemes: ['http'],
+                consumes: ['application/json'],
+                produces: ['application/json'],
+                securityDefinitions: {
+                    apiKey: {
+                        type: 'apiKey',
+                        name: 'Authorization',
+                        in: 'header',
+                    },
+                },
+            },
+        });
+
+        await fastify.register(require('@fastify/swagger-ui'), {
+            routePrefix: '/documentation',
+            uiConfig: {
+                docExpansion: 'list',
+                deepLinking: false,
+            },
+            uiHooks: {
+                onRequest: function (request: any, reply: any, next: any) { next() },
+                preHandler: function (request: any, reply: any, next: any) { next() }
+            },
+            staticCSP: true,
+            transformStaticCSP: (header: any) => header,
+        });
+
         // Register routes
         await fastify.register(authRoutes, { prefix: '/api/auth' });
         await fastify.register(playerRoutes, { prefix: '/api/players' });

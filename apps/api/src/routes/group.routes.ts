@@ -26,6 +26,14 @@ export async function groupRoutes(fastify: FastifyInstance) {
                 where,
                 include: {
                     season: true,
+                    groupPlayers: {
+                        include: {
+                            player: true,
+                        },
+                        orderBy: {
+                            rankingPosition: 'asc',
+                        },
+                    },
                     _count: {
                         select: {
                             groupPlayers: true,

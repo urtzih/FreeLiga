@@ -1,19 +1,41 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import api from '../../lib/api';
 
 export default function ManageGroups() {
     const queryClient = useQueryClient();
+    const [searchParams, setSearchParams] = useSearchParams();
 
     // UI state
     const [showForm, setShowForm] = useState(false);
     const [editingGroup, setEditingGroup] = useState<any>(null);
     const [whatsappUrl, setWhatsappUrl] = useState('');
     const [formData, setFormData] = useState({ name: '', seasonId: '' });
-    const [filterSeason, setFilterSeason] = useState('');
+    const [filterSeason, setFilterSeason] = useState(searchParams.get('season') || '');
     const [page, setPage] = useState(1);
     const perPage = 12;
+    const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+
+    // Sincronizar filtro con URL
+    useEffect(() => {
+        const seasonParam = searchParams.get('season');
+        if (seasonParam && seasonParam !== filterSeason) {
+            setFilterSeason(seasonParam);
+            setPage(1);
+        }
+    }, [searchParams]);
+
+    // Actualizar URL cuando cambia el filtro
+    const handleFilterChange = (seasonId: string) => {
+        setFilterSeason(seasonId);
+        setPage(1);
+        if (seasonId) {
+            setSearchParams({ season: seasonId });
+        } else {
+            setSearchParams({});
+        }
+    };
 
     // Data fetching
     const { data: adminStats } = useQuery({
@@ -109,7 +131,7 @@ export default function ManageGroups() {
                 <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Filtrar por Temporada:</label>
                 <select
                     value={filterSeason}
-                    onChange={e => { setFilterSeason(e.target.value); setPage(1); }}
+                    onChange={e => handleFilterChange(e.target.value)}
                     className="px-3 py-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                 >
                     <option value="">Todas</option>
@@ -176,12 +198,47 @@ export default function ManageGroups() {
                                 </Link>
                             </div>
                             <button
+                                onClick={() => {
+                                    console.log('Toggling group:', group.id, 'Current expanded:', expandedGroup);
+                                    setExpandedGroup(expandedGroup === group.id ? null : group.id);
+                                }}
+                                className={`w-full px-3 py-2 text-xs rounded-lg font-semibold transition-all ${
+                                    expandedGroup === group.id
+                                        ? 'bg-blue-600 dark:bg-blue-700 text-white'
+                                        : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800'
+                                }`}
+                            >
+                                {expandedGroup === group.id ? '▼ Ocultar clasificación' : '▶ Ver clasificación'}
+                            </button>
+                            <button
                                 onClick={() => handleEditWhatsapp(group)}
                                 className="w-full px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
                             >
                                 {group.whatsappUrl ? 'Editar WhatsApp' : 'Añadir WhatsApp'}
                             </button>
                         </div>
+                        
+                        {/* Clasificación expandible */}
+                        {expandedGroup === group.id && group.groupPlayers && (
+                            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                                <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Clasificación</h4>
+                                <div className="space-y-2 max-h-96 overflow-y-auto">
+                                    {[...group.groupPlayers]
+                                        .sort((a: any, b: any) => a.rankingPosition - b.rankingPosition)
+                                        .map((gp: any) => (
+                                            <div key={gp.playerId} className="flex items-center justify-between text-xs bg-slate-50 dark:bg-slate-900/50 p-2 rounded">
+                                                <div className="flex-1">
+                                                    <span className="font-medium text-slate-900 dark:text-white">#{gp.rankingPosition}</span>
+                                                    <span className="text-slate-600 dark:text-slate-400 ml-2">{gp.player.name}</span>
+                                                </div>
+                                                <div className="text-xs px-2 py-1 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                                                    {gp.rankingPosition <= 2 ? '📈 Ascenso' : gp.rankingPosition > group.groupPlayers.length - 2 ? '📉 Descenso' : 'Mantiene'}
+                                                </div>
+                                            </div>
+                                        ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ))}
             </div>
