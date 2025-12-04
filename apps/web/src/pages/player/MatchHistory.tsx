@@ -13,8 +13,35 @@ export default function MatchHistory() {
     const [searchTerm, setSearchTerm] = useState('');
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
+    const [selectedSeason, setSelectedSeason] = useState('');
+    const [selectedGroup, setSelectedGroup] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 20;
+
+    // Fetch all seasons
+    const { data: seasons = [] } = useQuery({
+        queryKey: ['seasons'],
+        queryFn: async () => {
+            const { data } = await api.get('/seasons');
+            return data;
+        }
+    });
+
+    // Fetch all groups
+    const { data: allGroups = [] } = useQuery({
+        queryKey: ['groups'],
+        queryFn: async () => {
+            const { data } = await api.get('/groups');
+            return data;
+        }
+    });
+
+    // Filter groups by selected season
+    const availableGroups = useMemo(() => {
+        if (!selectedSeason) return allGroups;
+        return allGroups.filter((g: any) => g.seasonId === selectedSeason);
+    }, [allGroups, selectedSeason]);
+
 
     const { data: matches = [], isLoading } = useQuery({
         queryKey: ['matches', isAdmin ? 'all' : user?.player?.id],
@@ -68,9 +95,19 @@ export default function MatchHistory() {
             if (dateFrom && matchDate < new Date(dateFrom)) return false;
             if (dateTo && matchDate > new Date(dateTo)) return false;
 
+            // Season filter
+            if (selectedSeason && match.group?.seasonId !== selectedSeason) {
+                return false;
+            }
+
+            // Group filter
+            if (selectedGroup && match.groupId !== selectedGroup) {
+                return false;
+            }
+
             return true;
         });
-    }, [matches, searchTerm, dateFrom, dateTo, user?.player?.id]);
+    }, [matches, searchTerm, dateFrom, dateTo, selectedSeason, selectedGroup, user?.player?.id]);
 
     const totalPages = Math.ceil(filteredMatches.length / itemsPerPage);
     const paginatedMatches = useMemo(() => {
@@ -90,7 +127,7 @@ export default function MatchHistory() {
 
             {/* Filters */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                             Buscar oponente
@@ -100,8 +137,43 @@ export default function MatchHistory() {
                             placeholder="Nombre del oponente..."
                             value={searchTerm}
                             onChange={(e) => { setSearchTerm(e.target.value); resetToPageOne(); }}
-                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                         />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Temporada
+                        </label>
+                        <select
+                            value={selectedSeason}
+                            onChange={(e) => {
+                                setSelectedSeason(e.target.value);
+                                setSelectedGroup(''); // Reset group when season changes
+                                resetToPageOne();
+                            }}
+                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        >
+                            <option value="">Todas las temporadas</option>
+                            {seasons.map((season: any) => (
+                                <option key={season.id} value={season.id}>{season.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Grupo
+                        </label>
+                        <select
+                            value={selectedGroup}
+                            onChange={(e) => { setSelectedGroup(e.target.value); resetToPageOne(); }}
+                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                            disabled={!selectedSeason && allGroups.length > 0}
+                        >
+                            <option value="">Todos los grupos</option>
+                            {availableGroups.map((group: any) => (
+                                <option key={group.id} value={group.id}>{group.name}</option>
+                            ))}
+                        </select>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -111,7 +183,7 @@ export default function MatchHistory() {
                             type="date"
                             value={dateFrom}
                             onChange={(e) => { setDateFrom(e.target.value); resetToPageOne(); }}
-                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                         />
                     </div>
                     <div>
@@ -122,13 +194,13 @@ export default function MatchHistory() {
                             type="date"
                             value={dateTo}
                             onChange={(e) => { setDateTo(e.target.value); resetToPageOne(); }}
-                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                         />
                     </div>
                 </div>
-                {(searchTerm || dateFrom || dateTo) && (
+                {(searchTerm || dateFrom || dateTo || selectedSeason || selectedGroup) && (
                     <button
-                        onClick={() => { setSearchTerm(''); setDateFrom(''); setDateTo(''); resetToPageOne(); }}
+                        onClick={() => { setSearchTerm(''); setDateFrom(''); setDateTo(''); setSelectedSeason(''); setSelectedGroup(''); resetToPageOne(); }}
                         className="mt-4 px-4 py-2 text-sm bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg transition-colors"
                     >
                         Limpiar filtros

@@ -302,12 +302,13 @@ export default function ManageUsers() {
                 escapeCsvField(user.isActive ? 'Activo' : 'Inactivo')
             ]);
 
-            const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map(r => r.join(';'))].join('\n');
+            const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map((r: any) => r.join(';'))].join('\n');
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = `usuarios_${new Date().toISOString().split('T')[0]}.csv`;
             link.click();
+            URL.revokeObjectURL(link.href);
         } catch (error) {
             console.error('Error exporting CSV:', error);
             alert('Error al exportar CSV');
