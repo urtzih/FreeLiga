@@ -83,6 +83,7 @@ model Season {
   name      String
   startDate DateTime
   endDate   DateTime
+  isActive  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -204,6 +205,7 @@ model SeasonClosureEntry {
   toGroup     Group?        @relation("ClosureToGroup", fields: [toGroupId], references: [id])
   movementType MovementType
   finalRank   Int
+  matchesWon  Int           @default(0)
   createdAt   DateTime      @default(now())
 
   @@index([closureId])

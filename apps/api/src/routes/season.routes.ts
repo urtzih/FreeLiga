@@ -11,6 +11,7 @@ const createSeasonSchema = z.object({
 });
 
 export async function seasonRoutes(fastify: FastifyInstance) {
+    // List all seasons
     fastify.get('/', { onRequest: [fastify.authenticate] }, async (request, reply) => {
         try {
             const seasons = await prisma.season.findMany({
@@ -19,10 +20,12 @@ export async function seasonRoutes(fastify: FastifyInstance) {
             });
             return seasons;
         } catch (error) {
-            fastify.log.error(error); return reply.status(500).send({ error: 'Internal server error' });
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
         }
     });
 
+    // Get season by ID
     fastify.get('/:id', { onRequest: [fastify.authenticate] }, async (request, reply) => {
         try {
             const { id } = request.params as { id: string };
@@ -36,54 +39,131 @@ export async function seasonRoutes(fastify: FastifyInstance) {
             if (!season) return reply.status(404).send({ error: 'Season not found' });
             return season;
         } catch (error) {
-            fastify.log.error(error); return reply.status(500).send({ error: 'Internal server error' });
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
         }
     });
 
+    // Create season
     fastify.post('/', { onRequest: [fastify.authenticate] }, async (request, reply) => {
         try {
             const decoded = request.user as any;
             if (decoded.role !== 'ADMIN') return reply.status(403).send({ error: 'Forbidden' });
             const body = createSeasonSchema.parse(request.body);
-            const season = await prisma.season.create({ data: { name: body.name, startDate: new Date(body.startDate), endDate: new Date(body.endDate) } });
+            const season = await prisma.season.create({
+                data: { name: body.name, startDate: new Date(body.startDate), endDate: new Date(body.endDate) }
+            });
             return season;
         } catch (error) {
             if (error instanceof z.ZodError) return reply.status(400).send({ error: error.errors });
-            fastify.log.error(error); return reply.status(500).send({ error: 'Internal server error' });
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
         }
     });
 
+    // Update season
     fastify.put('/:id', { onRequest: [fastify.authenticate] }, async (request, reply) => {
         try {
-            const decoded = request.user as any; const { id } = request.params as { id: string };
+            const decoded = request.user as any;
+            const { id } = request.params as { id: string };
             if (decoded.role !== 'ADMIN') return reply.status(403).send({ error: 'Forbidden' });
             const body = createSeasonSchema.parse(request.body);
-            const season = await prisma.season.update({ where: { id }, data: { name: body.name, startDate: new Date(body.startDate), endDate: new Date(body.endDate) } });
+            const season = await prisma.season.update({
+                where: { id },
+                data: { name: body.name, startDate: new Date(body.startDate), endDate: new Date(body.endDate) }
+            });
             return season;
         } catch (error) {
             if (error instanceof z.ZodError) return reply.status(400).send({ error: error.errors });
-            fastify.log.error(error); return reply.status(500).send({ error: 'Internal server error' });
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // GET closure - fetch existing or compute new
+    fastify.get('/:id/closure', { onRequest: [fastify.authenticate] }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            const { id } = request.params as { id: string };
+            if (decoded.role !== 'ADMIN') return reply.status(403).send({ error: 'Forbidden' });
+
+            // Try to get existing closure
+            let closure = await prisma.seasonClosure.findUnique({
+                where: { seasonId: id },
+                include: { entries: { include: { player: true, fromGroup: true, toGroup: true } } }
+            });
+
+            // If doesn't exist, or if entries lack matchesWon, compute it
+            if (!closure || (closure.entries && closure.entries.length > 0 && closure.entries[0].matchesWon === null)) {
+                closure = await computeSeasonClosure(id);
+            }
+
+            return closure;
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // PUT closure/entries - update manual changes
+    fastify.put('/:id/closure/entries', { onRequest: [fastify.authenticate] }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            const { id } = request.params as { id: string };
+            if (decoded.role !== 'ADMIN') return reply.status(403).send({ error: 'Forbidden' });
+
+            const body = request.body as { entries: Array<{ id: string; movementType: string; toGroupId: string | null }> };
+
+            // Update each entry
+            await prisma.$transaction(
+                body.entries.map(entry =>
+                    prisma.seasonClosureEntry.update({
+                        where: { id: entry.id },
+                        data: {
+                            movementType: entry.movementType as any,
+                            toGroupId: entry.toGroupId
+                        }
+                    })
+                )
+            );
+
+            // Return updated closure
+            const closure = await prisma.seasonClosure.findUnique({
+                where: { seasonId: id },
+                include: { entries: { include: { player: true, fromGroup: true, toGroup: true } } }
+            });
+
+            return closure;
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
         }
     });
 
     // Preview / generate closure
     fastify.post('/:id/closure/preview', { onRequest: [fastify.authenticate] }, async (request, reply) => {
         try {
-            const decoded = request.user as any; const { id } = request.params as { id: string };
+            const decoded = request.user as any;
+            const { id } = request.params as { id: string };
             if (decoded.role !== 'ADMIN') return reply.status(403).send({ error: 'Forbidden' });
             const closure = await computeSeasonClosure(id);
             return closure;
         } catch (error) {
-            fastify.log.error(error); return reply.status(500).send({ error: 'Internal server error' });
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
         }
     });
 
     // Approve closure
     fastify.post('/:id/closure/approve', { onRequest: [fastify.authenticate] }, async (request, reply) => {
         try {
-            const decoded = request.user as any; const { id } = request.params as { id: string };
+            const decoded = request.user as any;
+            const { id } = request.params as { id: string };
             if (decoded.role !== 'ADMIN') return reply.status(403).send({ error: 'Forbidden' });
-            const closure = await prisma.seasonClosure.findUnique({ where: { seasonId: id }, include: { entries: true } });
+            const closure = await prisma.seasonClosure.findUnique({
+                where: { seasonId: id },
+                include: { entries: true }
+            });
             if (!closure) return reply.status(404).send({ error: 'Closure not found' });
             if (closure.status === 'APPROVED') return closure;
 
@@ -92,7 +172,10 @@ export async function seasonRoutes(fastify: FastifyInstance) {
                 for (const entry of closure.entries) {
                     if (entry.movementType === 'PROMOTION' || entry.movementType === 'RELEGATION') {
                         if (entry.toGroupId) {
-                            await tx.player.update({ where: { id: entry.playerId }, data: { currentGroupId: entry.toGroupId } });
+                            await tx.player.update({
+                                where: { id: entry.playerId },
+                                data: { currentGroupId: entry.toGroupId }
+                            });
                         }
                     }
                     await tx.playerGroupHistory.create({
@@ -105,68 +188,136 @@ export async function seasonRoutes(fastify: FastifyInstance) {
                         }
                     });
                 }
-                await tx.seasonClosure.update({ where: { id: closure.id }, data: { status: 'APPROVED', approvedAt: new Date() } });
+                await tx.seasonClosure.update({
+                    where: { id: closure.id },
+                    data: { status: 'APPROVED', approvedAt: new Date() }
+                });
             });
 
-            const updated = await prisma.seasonClosure.findUnique({ where: { seasonId: id }, include: { entries: { include: { player: true, fromGroup: true, toGroup: true } } } });
+            const updated = await prisma.seasonClosure.findUnique({
+                where: { seasonId: id },
+                include: { entries: { include: { player: true, fromGroup: true, toGroup: true } } }
+            });
             return updated;
         } catch (error) {
-            fastify.log.error(error); return reply.status(500).send({ error: 'Internal server error' });
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
         }
     });
 
-    // Rollover season -> create next season cloning group names
+    // Rollover season -> create next season cloning groups and importing players
     fastify.post('/:id/rollover', { onRequest: [fastify.authenticate] }, async (request, reply) => {
         try {
-            const decoded = request.user as any; const { id } = request.params as { id: string };
+            const decoded = request.user as any;
+            const { id } = request.params as { id: string };
             if (decoded.role !== 'ADMIN') return reply.status(403).send({ error: 'Forbidden' });
             const body = (request.body as any) || {};
             const nMonths: number = parseInt(body.nMonths || '3');
-            const season = await prisma.season.findUnique({ where: { id }, include: { groups: true } });
+
+            const season = await prisma.season.findUnique({
+                where: { id },
+                include: {
+                    groups: { orderBy: { name: 'asc' } },
+                    closure: { include: { entries: true } }
+                }
+            });
+
             if (!season) return reply.status(404).send({ error: 'Season not found' });
-            // Derivar nombre siguiente de forma inteligente
+
+            // Derive next season name intelligently
             const newStart = addMonths(season.startDate, nMonths);
             const newEnd = addMonths(season.endDate, nMonths);
             const startYear = newStart.getFullYear();
             const endYear = newEnd.getFullYear();
             const monthSpan = (newEnd.getMonth() - newStart.getMonth() + 12 * (endYear - startYear)) + 1;
-            // Si abarca cambio de año usar formato YYYY-YYYY, si no YYYY (Nm)
+
             let newName: string;
             if (startYear !== endYear) {
                 newName = `${startYear}-${endYear}`;
             } else {
                 newName = `${startYear} (${monthSpan}m)`;
             }
-            // Evitar colisión de nombres existentes añadiendo sufijo incremental si ya existe
+
+            // Avoid name collision
             let finalName = newName;
             let counter = 2;
             while (await prisma.season.findFirst({ where: { name: finalName } })) {
                 finalName = `${newName} #${counter}`;
                 counter++;
-                if (counter > 10) break; // evitar bucle infinito raro
+                if (counter > 10) break;
             }
-            const next = await prisma.season.create({ data: { name: finalName, startDate: newStart, endDate: newEnd, previousSeasonId: season.id } });
-            // Clonar grupos
-            for (const g of season.groups) {
-                await prisma.group.create({ data: { name: g.name, seasonId: next.id } });
-            }
-            const created = await prisma.season.findUnique({ where: { id: next.id }, include: { groups: true } });
+
+            // Create new season and groups, then assign players
+            const next = await prisma.$transaction(async (tx) => {
+                // Create season
+                const newSeason = await tx.season.create({
+                    data: {
+                        name: finalName,
+                        startDate: newStart,
+                        endDate: newEnd,
+                        previousSeasonId: season.id
+                    }
+                });
+
+                // Clone groups
+                const newGroups: any[] = [];
+                for (const g of season.groups) {
+                    const newGroup = await tx.group.create({
+                        data: { name: g.name, seasonId: newSeason.id }
+                    });
+                    newGroups.push(newGroup);
+                }
+
+                // Import players if closure is approved
+                if (season.closure && season.closure.status === 'APPROVED' && season.closure.entries.length > 0) {
+                    for (const entry of season.closure.entries) {
+                        // Find target group in new season
+                        const targetGroupName = entry.toGroupId
+                            ? season.groups.find(g => g.id === entry.toGroupId)?.name
+                            : entry.fromGroupId
+                                ? season.groups.find(g => g.id === entry.fromGroupId)?.name
+                                : null;
+
+                        if (targetGroupName) {
+                            const newGroup = newGroups.find(g => g.name === targetGroupName);
+                            if (newGroup) {
+                                await tx.groupPlayer.create({
+                                    data: {
+                                        playerId: entry.playerId,
+                                        groupId: newGroup.id
+                                    }
+                                });
+                            }
+                        }
+                    }
+                }
+
+                return newSeason;
+            });
+
+            const created = await prisma.season.findUnique({
+                where: { id: next.id },
+                include: { groups: { include: { groupPlayers: { include: { player: true } } } } }
+            });
+
             return created;
         } catch (error) {
-            fastify.log.error(error); return reply.status(500).send({ error: 'Internal server error' });
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
         }
     });
 
     // Delete season (admin)
     fastify.delete('/:id', { onRequest: [fastify.authenticate] }, async (request, reply) => {
         try {
-            const decoded = request.user as any; const { id } = request.params as { id: string };
+            const decoded = request.user as any;
+            const { id } = request.params as { id: string };
             if (decoded.role !== 'ADMIN') return reply.status(403).send({ error: 'Forbidden' });
             await prisma.season.delete({ where: { id } });
             return { success: true };
         } catch (error) {
-            fastify.log.error(error); return reply.status(500).send({ error: 'Internal server error' });
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
         }
     });
 }
-

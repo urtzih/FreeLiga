@@ -260,7 +260,7 @@ export default function ManageUsers() {
 
             // Apply client-side filters (group, sort)
             const exportUsers = allUsers
-                .filter(user => {
+                .filter((user: User) => {
                     if (filterGroup && user.player?.currentGroup?.id !== filterGroup) return false;
                     return true;
                 })
@@ -291,7 +291,7 @@ export default function ManageUsers() {
             };
 
             const headers = ['Email', 'Nombre', 'Apodo', 'Teléfono', 'Grupo', 'Rol', 'Fecha Registro', 'Estado'];
-            const rows = exportUsers.map(user => [
+            const rows = exportUsers.map((user: User) => [
                 escapeCsvField(user.email),
                 escapeCsvField(user.player?.name || ''),
                 escapeCsvField(user.player?.nickname || ''),

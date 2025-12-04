@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import api from '../../lib/api';
 
 export default function ManageSeasons() {
@@ -53,6 +54,25 @@ export default function ManageSeasons() {
             setEditSeason(null);
         },
     });
+
+    const deleteMutation = useMutation({
+        mutationFn: async (id: string) => {
+            await api.delete(`/seasons/${id}`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['seasons'] });
+            alert('Temporada eliminada correctamente');
+        },
+        onError: (error: any) => {
+            alert(`Error al eliminar la temporada: ${error.response?.data?.error || error.message}`);
+        }
+    });
+
+    const handleDelete = (seasonId: string, seasonName: string) => {
+        if (window.confirm(`¿Está seguro de que desea eliminar la temporada "${seasonName}"? Esto eliminará todos los grupos, jugadores y partidos asociados.`)) {
+            deleteMutation.mutate(seasonId);
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -196,6 +216,19 @@ export default function ManageSeasons() {
                                             onClick={() => openEdit(season)}
                                             className="text-xs px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700"
                                         >Editar</button>
+                                        {new Date(season.endDate) < new Date() ? (
+                                            <Link
+                                                to={`/admin/seasons/${season.id}/proposals`}
+                                                className="text-xs px-3 py-1 rounded bg-orange-600 text-white hover:bg-orange-700 inline-block"
+                                                title="Gestionar ascensos y descensos"
+                                            >Movimientos</Link>
+                                        ) : (
+                                            <button
+                                                disabled
+                                                className="text-xs px-3 py-1 rounded bg-orange-300 text-orange-900 cursor-not-allowed opacity-60"
+                                                title="La temporada debe estar finalizada"
+                                            >Movimientos</button>
+                                        )}
                                         <a
                                             href={`/admin/groups?season=${season.id}`}
                                             className="text-xs px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
@@ -206,6 +239,12 @@ export default function ManageSeasons() {
                                             className="text-xs px-3 py-1 rounded bg-purple-600 text-white hover:bg-purple-700"
                                             title="Exportar clasificación como CSV"
                                         >CSV</button>
+                                        <button
+                                            onClick={() => handleDelete(season.id, season.name)}
+                                            disabled={deleteMutation.isPending}
+                                            className="text-xs px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
+                                            title="Eliminar temporada"
+                                        >{deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}</button>
                                     </td>
                                 </tr>
                             ))}

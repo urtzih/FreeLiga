@@ -198,27 +198,78 @@ export default function PlayerHistory() {
             </div>
 
             {/* View Mode Tabs */}
-            <div className="flex gap-2 border-b border-slate-200 dark:border-slate-700">
-                <button
-                    onClick={() => setViewMode('chart')}
-                    className={`px-4 py-2 font-medium transition-colors border-b-2 ${
-                        viewMode === 'chart'
-                            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                            : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                    }`}
-                >
-                    📈 Gráfico
-                </button>
-                <button
-                    onClick={() => setViewMode('timeline')}
-                    className={`px-4 py-2 font-medium transition-colors border-b-2 ${
-                        viewMode === 'timeline'
-                            ? 'border-blue-600 text-blue-600 dark:text-blue-400'
-                            : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                    }`}
-                >
-                    📋 Lista
-                </button>
+            <div className="flex gap-2 justify-between items-center border-b border-slate-200 dark:border-slate-700">
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setViewMode('chart')}
+                        className={`px-4 py-2 font-medium transition-colors border-b-2 ${
+                            viewMode === 'chart'
+                                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                                : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                    >
+                        📈 Gráfico
+                    </button>
+                    <button
+                        onClick={() => setViewMode('timeline')}
+                        className={`px-4 py-2 font-medium transition-colors border-b-2 ${
+                            viewMode === 'timeline'
+                                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                                : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                    >
+                        📋 Lista
+                    </button>
+                </div>
+                {viewMode === 'timeline' && (
+                    <button
+                        onClick={() => {
+                            const escapeCsvField = (field: any) => {
+                                if (field === null || field === undefined) return '""';
+                                const stringField = String(field);
+                                return `"${stringField.replace(/"/g, '""')}"`;
+                            };
+
+                            const headers = ['Email', 'Jugador', 'Estado', 'Fecha Registro', 'Temporada', 'Grupo', 'Posición Final', 'Movimiento'];
+                            const rows = timelineEvents.map((player: any) => {
+                                const row = [
+                                    escapeCsvField(player.email),
+                                    escapeCsvField(player.playerName),
+                                    player.isActive ? 'Activo' : 'Inactivo',
+                                    new Date(player.registeredAt).toLocaleDateString('es-ES'),
+                                ];
+                                
+                                // Add seasonal history
+                                if (player.seasonHistories && player.seasonHistories.length > 0) {
+                                    const seasonData = player.seasonHistories
+                                        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+                                    row.push(
+                                        escapeCsvField(seasonData.season || ''),
+                                        escapeCsvField(seasonData.group || ''),
+                                        seasonData.finalRank ? String(seasonData.finalRank) : '',
+                                        seasonData.movement || ''
+                                    );
+                                } else {
+                                    row.push('', '', '', '');
+                                }
+                                
+                                return row;
+                            });
+
+                            const csv = [headers.join(','), ...rows.map((r: string[]) => r.join(','))].join('\n');
+                            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                            const link = document.createElement('a');
+                            const url = URL.createObjectURL(blob);
+                            link.setAttribute('href', url);
+                            link.setAttribute('download', `historial_jugadores_${new Date().toISOString().split('T')[0]}.csv`);
+                            link.click();
+                        }}
+                        className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+                        title="Descargar historial como CSV"
+                    >
+                        📥 CSV
+                    </button>
+                )}
             </div>
 
             {/* Chart View */}

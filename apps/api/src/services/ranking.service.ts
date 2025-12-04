@@ -117,7 +117,8 @@ export async function computeSeasonClosure(seasonId: string) {
             closure: { include: { entries: true } }
         }
     });
-    if (!season) throw new Error('Season not found');
+    if (!season) throw new Error(`Season not found: ${seasonId}`);
+    if (!season.groups || season.groups.length === 0) throw new Error(`No groups found for season: ${seasonId}`);
 
     // Ordenar grupos por nombre (asumiendo jerarquía A,B,C,...)
     const orderedGroups = [...season.groups].sort((a, b) => a.name.localeCompare(b.name));
@@ -134,10 +135,15 @@ export async function computeSeasonClosure(seasonId: string) {
     });
     const refreshedOrdered = [...refreshedGroups].sort((a, b) => a.name.localeCompare(b.name));
 
+    // Obtener matches para calcular victorias por jugador
+    const allMatches = await prisma.match.findMany({
+        where: { group: { seasonId } }
+    });
+
     // Preparar cierre (crear o limpiar existente PENDING)
     let closure = await prisma.seasonClosure.findUnique({ where: { seasonId } });
     if (!closure) {
-        closure = await prisma.seasonClosure.create({ data: { seasonId } });
+        closure = await prisma.seasonClosure.create({ data: { seasonId, status: 'PENDING' } });
     } else if (closure.status === 'APPROVED') {
         // Si ya aprobado, devolver directamente con entries
         return await prisma.seasonClosure.findUnique({ where: { seasonId }, include: { entries: { include: { player: true, fromGroup: true, toGroup: true } } } });
@@ -150,7 +156,8 @@ export async function computeSeasonClosure(seasonId: string) {
     for (let idx = 0; idx < refreshedOrdered.length; idx++) {
         const group = refreshedOrdered[idx];
         const players = [...group.groupPlayers].sort((a, b) => a.rankingPosition - b.rankingPosition);
-        const isTop = idx === 0; const isBottom = idx === refreshedOrdered.length - 1;
+        const isTop = idx === 0; 
+        const isBottom = idx === refreshedOrdered.length - 1;
         const targetAbove = !isTop ? refreshedOrdered[idx - 1] : null;
         const targetBelow = !isBottom ? refreshedOrdered[idx + 1] : null;
 
@@ -166,6 +173,8 @@ export async function computeSeasonClosure(seasonId: string) {
 
         for (const gp of players) {
             const movementType = promotions.includes(gp.playerId) ? 'PROMOTION' : relegations.includes(gp.playerId) ? 'RELEGATION' : 'STAY';
+            const playerMatches = allMatches.filter(m => m.groupId === group.id && (m.player1Id === gp.playerId || m.player2Id === gp.playerId) && m.matchStatus === 'PLAYED');
+            const matchesWon = playerMatches.filter(m => m.winnerId === gp.playerId).length;
             entriesData.push({
                 closureId: closure.id,
                 playerId: gp.playerId,
@@ -173,11 +182,14 @@ export async function computeSeasonClosure(seasonId: string) {
                 toGroupId: movementType === 'PROMOTION' ? targetAbove?.id : movementType === 'RELEGATION' ? targetBelow?.id : null,
                 movementType,
                 finalRank: gp.rankingPosition,
+                matchesWon,
             });
         }
     }
 
-    await prisma.seasonClosureEntry.createMany({ data: entriesData });
+    if (entriesData.length > 0) {
+        await prisma.seasonClosureEntry.createMany({ data: entriesData });
+    }
 
     return await prisma.seasonClosure.findUnique({
         where: { seasonId },

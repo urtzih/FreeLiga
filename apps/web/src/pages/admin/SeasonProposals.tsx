@@ -111,6 +111,11 @@ export default function SeasonProposals() {
 
     const isApproved = season.closure?.status === 'APPROVED';
 
+    // Calculate statistics
+    const promotions = localEntries.filter(e => e.movementType === 'PROMOTION').length;
+    const relegations = localEntries.filter(e => e.movementType === 'RELEGATION').length;
+    const stays = localEntries.filter(e => e.movementType === 'STAY').length;
+
     return (
         <div className="space-y-8">
             <div className="flex items-center justify-between">
@@ -168,10 +173,49 @@ export default function SeasonProposals() {
                 </div>
             </div>
 
+            {/* Summary Statistics */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+                    <div className="text-sm font-medium text-blue-600 dark:text-blue-400">Total Jugadores</div>
+                    <div className="text-3xl font-bold text-blue-900 dark:text-blue-100">{localEntries.length}</div>
+                </div>
+                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-700">
+                    <div className="text-sm font-medium text-green-600 dark:text-green-400">Ascensos 📈</div>
+                    <div className="text-3xl font-bold text-green-900 dark:text-green-100">{promotions}</div>
+                </div>
+                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-700">
+                    <div className="text-sm font-medium text-red-600 dark:text-red-400">Descensos 📉</div>
+                    <div className="text-3xl font-bold text-red-900 dark:text-red-100">{relegations}</div>
+                </div>
+                <div className="bg-slate-50 dark:bg-slate-900/20 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
+                    <div className="text-sm font-medium text-slate-600 dark:text-slate-400">Mantienen ➡️</div>
+                    <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">{stays}</div>
+                </div>
+            </div>
+
+            {isApproved && (
+                <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-700 rounded-lg p-6">
+                    <div className="flex items-start gap-4">
+                        <div className="text-4xl">✅</div>
+                        <div>
+                            <h3 className="font-bold text-green-900 dark:text-green-100 text-lg">Propuesta Aprobada</h3>
+                            <p className="text-green-800 dark:text-green-200 mt-2">
+                                Los movimientos han sido registrados en el historial de los jugadores. Los cambios serán aplicados cuando generes la siguiente temporada.
+                            </p>
+                            <div className="mt-4 space-y-1 text-sm text-green-700 dark:text-green-300">
+                                <p>✓ {promotions} jugador(es) ascendido(s)</p>
+                                <p>✓ {relegations} jugador(es) descendido(s)</p>
+                                <p>✓ {stays} jugador(es) mantiene(n) grupo</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {season.groups.map((group: any) => {
-                    // Sort players by ranking position
-                    const players = [...(group.groupPlayers || [])].sort((a: any, b: any) => a.rankingPosition - b.rankingPosition);
+                    // Get entries for this group to have correct ranking
+                    const groupEntries = localEntries.filter((e: any) => e.fromGroupId === group.id).sort((a: any, b: any) => a.finalRank - b.finalRank);
 
                     return (
                         <div key={group.id} className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
@@ -179,22 +223,22 @@ export default function SeasonProposals() {
                                 <h3 className="font-bold text-lg text-slate-900 dark:text-white">{group.name}</h3>
                             </div>
                             <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                                {players.map((gp: any) => {
-                                    const entry = localEntries.find((e: any) => e.playerId === gp.playerId);
-                                    const movement = entry?.movementType || 'STAY';
+                                {groupEntries.map((entry: any) => {
+                                    const movement = entry.movementType || 'STAY';
 
                                     let statusColor = 'text-slate-500';
                                     if (movement === 'PROMOTION') statusColor = 'text-green-600 dark:text-green-400';
                                     if (movement === 'RELEGATION') statusColor = 'text-red-600 dark:text-red-400';
 
                                     return (
-                                        <div key={gp.playerId} className="px-4 py-2 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                                            <div className="flex items-center gap-3">
-                                                <span className="font-mono text-sm text-slate-400 w-6">#{gp.rankingPosition}</span>
-                                                <span className="font-medium text-slate-900 dark:text-white">{gp.player.name}</span>
+                                        <div key={entry.playerId} className="px-4 py-2 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                                            <div className="flex items-center gap-3 flex-1">
+                                                <span className="font-mono text-sm text-slate-400 w-6">#{entry.finalRank}</span>
+                                                <span className="font-medium text-slate-900 dark:text-white flex-1">{entry.player.name}</span>
+                                                <span className="text-xs text-slate-500 dark:text-slate-400">🏆 {entry.matchesWon || 0}</span>
                                             </div>
                                             {isApproved ? (
-                                                <div className={`text-xs font-bold ${statusColor}`}>
+                                                <div className={`text-xs font-bold ${statusColor} ml-2`}>
                                                     {movement === 'STAY' && 'Mantiene ➡️'}
                                                     {movement === 'PROMOTION' && 'Asciende 📈'}
                                                     {movement === 'RELEGATION' && 'Desciende 📉'}
@@ -202,8 +246,8 @@ export default function SeasonProposals() {
                                             ) : (
                                                 <select
                                                     value={movement}
-                                                    onChange={(e) => handleMovementChange(gp.playerId, e.target.value)}
-                                                    className={`text-xs font-bold bg-transparent border-none focus:ring-0 cursor-pointer ${statusColor}`}
+                                                    onChange={(e) => handleMovementChange(entry.playerId, e.target.value)}
+                                                    className={`text-xs font-bold bg-transparent border-none focus:ring-0 cursor-pointer ${statusColor} ml-2`}
                                                 >
                                                     <option value="STAY">Mantiene ➡️</option>
                                                     <option value="PROMOTION">Asciende 📈</option>
