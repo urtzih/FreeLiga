@@ -60,135 +60,135 @@ function App() {
     return (
         <BrowserRouter>
             <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-slate-600">Cargando módulo...</div>}>
-            <Routes>
-                {/* Public routes */}
-                <Route
-                    path="/login"
-                    element={!isAuthenticated ? <Login /> : <Navigate to={defaultRoute} replace />}
-                />
-                <Route
-                    path="/register"
-                    element={!isAuthenticated ? <Register /> : <Navigate to={defaultRoute} replace />}
-                />
-
-                {/* Protected player routes */}
-                <Route element={<Layout />}>
+                <Routes>
+                    {/* Public routes */}
                     <Route
-                        path="/dashboard"
-                        element={
-                            <ProtectedRoute>
-                                {isAdmin ? <Navigate to="/admin" replace /> : <Dashboard />}
-                            </ProtectedRoute>
-                        }
+                        path="/login"
+                        element={!isAuthenticated ? <Login /> : <Navigate to={defaultRoute} replace />}
                     />
                     <Route
-                        path="/groups/:id"
-                        element={
-                            <ProtectedRoute>
-                                <GroupView />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/classification"
-                        element={<Navigate to={user?.player?.currentGroupId ? `/groups/${user.player.currentGroupId}` : '/dashboard'} replace />}
-                    />
-                    <Route
-                        path="/historia"
-                        element={
-                            <ProtectedRoute>
-                                <History />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/matches/record"
-                        element={
-                            <ProtectedRoute>
-                                <RecordMatch />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/matches/history"
-                        element={
-                            <ProtectedRoute>
-                                <MatchHistory />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/progress"
-                        element={
-                            <ProtectedRoute>
-                                <PlayerProgress />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/profile"
-                        element={
-                            <ProtectedRoute>
-                                <Profile />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/report-bug"
-                        element={
-                            <ProtectedRoute>
-                                <BugReport />
-                            </ProtectedRoute>
-                        }
+                        path="/register"
+                        element={!isAuthenticated ? <Register /> : <Navigate to={defaultRoute} replace />}
                     />
 
-                    {/* Admin routes */}
-                    <Route
-                        path="/admin"
-                        element={
-                            <ProtectedRoute adminOnly>
-                                <AdminDashboard />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/admin/groups"
-                        element={
-                            <ProtectedRoute adminOnly>
-                                <ManageGroups />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/admin/seasons"
-                        element={
-                            <ProtectedRoute adminOnly>
-                                <ManageSeasons />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/admin/users"
-                        element={
-                            <ProtectedRoute adminOnly>
-                                <ManageUsers />
-                            </ProtectedRoute>
-                        }
-                    />
-                    <Route
-                        path="/admin/bugs"
-                        element={
-                            <ProtectedRoute adminOnly>
-                                <ManageBugs />
-                            </ProtectedRoute>
-                        }
-                    />
-                </Route>
+                    {/* Protected player routes */}
+                    <Route element={<Layout />}>
+                        <Route
+                            path="/dashboard"
+                            element={
+                                <ProtectedRoute>
+                                    {isAdmin ? <Navigate to="/admin" replace /> : <Dashboard />}
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/groups/:id"
+                            element={
+                                <ProtectedRoute>
+                                    <GroupView />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/classification"
+                            element={<Navigate to={user?.player?.currentGroupId ? `/groups/${user.player.currentGroupId}` : '/dashboard'} replace />}
+                        />
+                        <Route
+                            path="/historia"
+                            element={
+                                <ProtectedRoute>
+                                    <History />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/matches/record"
+                            element={
+                                <ProtectedRoute>
+                                    <RecordMatch />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/matches/history"
+                            element={
+                                <ProtectedRoute>
+                                    <MatchHistory />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/progress"
+                            element={
+                                <ProtectedRoute>
+                                    <PlayerProgress />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/profile"
+                            element={
+                                <ProtectedRoute>
+                                    <Profile />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/report-bug"
+                            element={
+                                <ProtectedRoute>
+                                    <BugReport />
+                                </ProtectedRoute>
+                            }
+                        />
 
-                {/* Default redirect */}
-                <Route path="/" element={<Navigate to={defaultRoute} replace />} />
-                <Route path="*" element={<Navigate to={defaultRoute} replace />} />
-            </Routes>
+                        {/* Admin routes */}
+                        <Route
+                            path="/admin"
+                            element={
+                                <ProtectedRoute adminOnly>
+                                    <AdminDashboard />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/groups"
+                            element={
+                                <ProtectedRoute adminOnly>
+                                    <ManageGroups />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/seasons"
+                            element={
+                                <ProtectedRoute adminOnly>
+                                    <ManageSeasons />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/users"
+                            element={
+                                <ProtectedRoute adminOnly>
+                                    <ManageUsers />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/bugs"
+                            element={
+                                <ProtectedRoute adminOnly>
+                                    <ManageBugs />
+                                </ProtectedRoute>
+                            }
+                        />
+                    </Route>
+
+                    {/* Default redirect */}
+                    <Route path="/" element={<Navigate to={defaultRoute} replace />} />
+                    <Route path="*" element={<Navigate to={defaultRoute} replace />} />
+                </Routes>
             </Suspense>
         </BrowserRouter>
     );
