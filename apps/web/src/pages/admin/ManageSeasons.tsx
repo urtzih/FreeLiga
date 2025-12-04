@@ -6,6 +6,7 @@ import api from '../../lib/api';
 export default function ManageSeasons() {
     const queryClient = useQueryClient();
     const [showForm, setShowForm] = useState(false);
+    const [yearFilter, setYearFilter] = useState<string>('');
     const [formData, setFormData] = useState({
         name: '',
         startDate: '',
@@ -25,6 +26,24 @@ export default function ManageSeasons() {
             return data;
         },
     });
+
+    // Filtrar temporadas por año
+    const filteredSeasons = yearFilter
+        ? seasons.filter((season: any) => {
+            const startYear = new Date(season.startDate).getFullYear();
+            const endYear = new Date(season.endDate).getFullYear();
+            return startYear.toString() === yearFilter || endYear.toString() === yearFilter;
+        })
+        : seasons;
+
+    // Obtener años únicos para el filtro
+    const availableYears = Array.from(new Set(
+        seasons.flatMap((season: any) => {
+            const startYear = new Date(season.startDate).getFullYear();
+            const endYear = new Date(season.endDate).getFullYear();
+            return [startYear, endYear];
+        })
+    )).sort((a, b) => b - a);
 
     const createMutation = useMutation({
         mutationFn: async (data: any) => {
@@ -68,9 +87,27 @@ export default function ManageSeasons() {
         }
     });
 
+    const setActiveMutation = useMutation({
+        mutationFn: async (id: string) => {
+            await api.post(`/seasons/${id}/set-active`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['seasons'] });
+        },
+        onError: (error: any) => {
+            alert(`Error al activar la temporada: ${error.response?.data?.error || error.message}`);
+        }
+    });
+
     const handleDelete = (seasonId: string, seasonName: string) => {
         if (window.confirm(`¿Está seguro de que desea eliminar la temporada "${seasonName}"? Esto eliminará todos los grupos, jugadores y partidos asociados.`)) {
             deleteMutation.mutate(seasonId);
+        }
+    };
+
+    const handleSetActive = (seasonId: string, seasonName: string) => {
+        if (window.confirm(`¿Marcar "${seasonName}" como temporada activa? Esto desactivará todas las demás.`)) {
+            setActiveMutation.mutate(seasonId);
         }
     };
 
@@ -186,6 +223,36 @@ export default function ManageSeasons() {
                 </div>
             )}
 
+            {/* Filtro de año */}
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-4 mb-6">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Filtrar por año
+                </label>
+                <div className="flex gap-2">
+                    <select
+                        value={yearFilter}
+                        onChange={(e) => setYearFilter(e.target.value)}
+                        className="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                    >
+                        <option value="">Todos los años</option>
+                        {availableYears.map(year => (
+                            <option key={year} value={year}>{year}</option>
+                        ))}
+                    </select>
+                    {yearFilter && (
+                        <button
+                            onClick={() => setYearFilter('')}
+                            className="px-4 py-2 text-sm bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-500"
+                        >
+                            Limpiar filtro
+                        </button>
+                    )}
+                    <span className="px-4 py-2 text-sm text-slate-600 dark:text-slate-400">
+                        Mostrando {filteredSeasons.length} de {seasons.length} temporadas
+                    </span>
+                </div>
+            </div>
+
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                 {isLoading ? (
                     <div className="p-12 text-center">Cargando...</div>
@@ -194,6 +261,7 @@ export default function ManageSeasons() {
                         <thead className="bg-slate-50 dark:bg-slate-900">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Nombre</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Estado</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Inicio</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Fin</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Grupos</th>
@@ -201,9 +269,20 @@ export default function ManageSeasons() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                            {seasons.map((season: any) => (
+                            {filteredSeasons.map((season: any) => (
                                 <tr key={season.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
-                                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{season.name}</td>
+                                    <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
+                                        {season.name}
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        {season.isActive ? (
+                                            <span className="px-2 py-1 rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 text-xs font-bold">
+                                                ✓ ACTIVA
+                                            </span>
+                                        ) : (
+                                            <span className="text-slate-400 text-xs">-</span>
+                                        )}
+                                    </td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
                                         {new Date(season.startDate).toLocaleDateString('es-ES')}
                                     </td>
@@ -211,7 +290,17 @@ export default function ManageSeasons() {
                                         {new Date(season.endDate).toLocaleDateString('es-ES')}
                                     </td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{season.groups?.length || 0}</td>
-                                    <td className="px-6 py-4 flex gap-2">
+                                    <td className="px-6 py-4 flex gap-2 flex-wrap">
+                                        {!season.isActive && (
+                                            <button
+                                                onClick={() => handleSetActive(season.id, season.name)}
+                                                disabled={setActiveMutation.isPending}
+                                                className="text-xs px-3 py-1 rounded bg-cyan-600 text-white hover:bg-cyan-700 disabled:opacity-50"
+                                                title="Marcar como temporada activa"
+                                            >
+                                                {setActiveMutation.isPending ? 'Activando...' : 'Activar'}
+                                            </button>
+                                        )}
                                         <button
                                             onClick={() => openEdit(season)}
                                             className="text-xs px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700"

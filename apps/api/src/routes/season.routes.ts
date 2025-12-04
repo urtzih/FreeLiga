@@ -80,6 +80,33 @@ export async function seasonRoutes(fastify: FastifyInstance) {
         }
     });
 
+    // Set active season (only one can be active)
+    fastify.post('/:id/set-active', { onRequest: [fastify.authenticate] }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            const { id } = request.params as { id: string };
+            if (decoded.role !== 'ADMIN') return reply.status(403).send({ error: 'Forbidden' });
+
+            await prisma.$transaction(async (tx) => {
+                // Desactivar todas las temporadas
+                await tx.season.updateMany({
+                    data: { isActive: false }
+                });
+                // Activar solo esta
+                await tx.season.update({
+                    where: { id },
+                    data: { isActive: true }
+                });
+            });
+
+            const season = await prisma.season.findUnique({ where: { id } });
+            return season;
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
     // GET closure - fetch existing or compute new
     fastify.get('/:id/closure', { onRequest: [fastify.authenticate] }, async (request, reply) => {
         try {
