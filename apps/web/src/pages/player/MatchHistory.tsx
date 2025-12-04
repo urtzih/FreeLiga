@@ -247,6 +247,11 @@ export default function MatchHistory() {
                                                     <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                                                         {match.group.name} • {new Date(match.date).toLocaleDateString('es-ES')}
                                                     </p>
+                                                    {match.group.season && (
+                                                        <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-0.5">
+                                                            {match.group.season.name}
+                                                        </p>
+                                                    )}
                                                     {match.matchStatus !== 'PLAYED' && (
                                                         <p className="text-sm text-orange-600 dark:text-orange-400 mt-1 uppercase font-medium">
                                                             {match.matchStatus === 'INJURY' ? 'LESIÓN' : 'CANCELADO'}
