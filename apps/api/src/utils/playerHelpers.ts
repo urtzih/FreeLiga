@@ -28,7 +28,15 @@ export async function getPlayerCurrentGroup(playerId: string) {
         include: {
             group: {
                 include: {
-                    season: true
+                    season: true,
+                    groupPlayers: {
+                        include: {
+                            player: true
+                        },
+                        orderBy: {
+                            rankingPosition: 'asc'
+                        }
+                    }
                 }
             }
         }

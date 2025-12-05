@@ -5,7 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
 
 export default function Dashboard() {
-    const { user } = useAuth();
+    const { user, loading } = useAuth();
     const [showBanner, setShowBanner] = useState(true);
 
     // Auto-dismiss banner after 10s
@@ -31,6 +31,17 @@ export default function Dashboard() {
     const myRanking = currentGroup?.groupPlayers.find(
         (gp: any) => gp.playerId === user?.player?.id
     );
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                    <p className="mt-4 text-slate-600 dark:text-slate-400">Cargando...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -121,18 +132,18 @@ export default function Dashboard() {
                             </div>
                             <div className="text-right">
                                 <div className={`text-4xl font-bold ${myRanking?.rankingPosition && myRanking.rankingPosition <= 2
-                                        ? 'text-green-600 dark:text-green-400'
-                                        : myRanking?.rankingPosition && myRanking.rankingPosition > 6
-                                            ? 'text-red-600 dark:text-red-400'
-                                            : 'text-blue-600 dark:text-blue-400'
+                                    ? 'text-green-600 dark:text-green-400'
+                                    : myRanking?.rankingPosition && myRanking.rankingPosition > 6
+                                        ? 'text-red-600 dark:text-red-400'
+                                        : 'text-blue-600 dark:text-blue-400'
                                     }`}>
                                     #{myRanking?.rankingPosition || '-'}
                                 </div>
                                 <p className={`text-sm ${myRanking?.rankingPosition && myRanking.rankingPosition <= 2
-                                        ? 'text-green-600 dark:text-green-400'
-                                        : myRanking?.rankingPosition && myRanking.rankingPosition > 6
-                                            ? 'text-red-600 dark:text-red-400'
-                                            : 'text-slate-600 dark:text-slate-400'
+                                    ? 'text-green-600 dark:text-green-400'
+                                    : myRanking?.rankingPosition && myRanking.rankingPosition > 6
+                                        ? 'text-red-600 dark:text-red-400'
+                                        : 'text-slate-600 dark:text-slate-400'
                                     }`}>
                                     {myRanking?.rankingPosition && myRanking.rankingPosition <= 2
                                         ? '⬆️ Puestos de Ascenso'
