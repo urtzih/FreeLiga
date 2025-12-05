@@ -195,6 +195,55 @@ export async function seasonRoutes(fastify: FastifyInstance) {
         }
     });
 
+    // Add a new player entry to the closure (e.g., inactive or without group)
+    fastify.post('/:id/closure/entries/add', { onRequest: [fastify.authenticate] }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            const { id } = request.params as { id: string };
+            if (decoded.role !== 'ADMIN') return reply.status(403).send({ error: 'Forbidden' });
+
+            const body = z.object({
+                playerId: z.string().min(1),
+                toGroupId: z.string().min(1),
+                movementType: z.enum(['STAY', 'PROMOTION', 'RELEGATION']).optional()
+            }).parse(request.body);
+
+            // Ensure closure exists
+            let closure = await prisma.seasonClosure.findUnique({ where: { seasonId: id } });
+            if (!closure) {
+                closure = await prisma.seasonClosure.create({ data: { seasonId: id, status: 'PENDING' } });
+            }
+
+            // Determine a final rank placing this player at the end of the target group list
+            const rank = (await prisma.seasonClosureEntry.count({
+                where: { closureId: closure.id, fromGroupId: body.toGroupId }
+            })) + 1;
+
+            const created = await prisma.seasonClosureEntry.create({
+                data: {
+                    closureId: closure.id,
+                    playerId: body.playerId,
+                    fromGroupId: body.toGroupId,
+                    toGroupId: body.toGroupId,
+                    movementType: body.movementType || 'STAY',
+                    finalRank: rank,
+                    matchesWon: 0,
+                },
+                include: {
+                    player: { include: { user: { select: { isActive: true, id: true } } } },
+                    fromGroup: true,
+                    toGroup: true
+                }
+            });
+
+            return created;
+        } catch (error) {
+            if (error instanceof z.ZodError) return reply.status(400).send({ error: error.errors });
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
     // Preview / generate closure
     fastify.post('/:id/closure/preview', { onRequest: [fastify.authenticate] }, async (request, reply) => {
         try {

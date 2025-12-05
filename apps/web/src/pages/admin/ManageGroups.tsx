@@ -16,6 +16,9 @@ export default function ManageGroups() {
     const [page, setPage] = useState(1);
     const perPage = 12;
     const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [selectedGroupId, setSelectedGroupId] = useState('');
+    const [selectedPlayerId, setSelectedPlayerId] = useState('');
 
     // Sincronizar filtro con URL
     useEffect(() => {
@@ -54,6 +57,15 @@ export default function ManageGroups() {
         },
     });
 
+    // Players to add (fetch users)
+    const { data: usersData = { users: [] } } = useQuery({
+        queryKey: ['users-for-groups'],
+        queryFn: async () => {
+            const { data } = await api.get('/users?page=1&limit=500');
+            return data;
+        }
+    });
+
     const { data: seasons = [] } = useQuery({
         queryKey: ['seasons'],
         queryFn: async () => {
@@ -68,6 +80,12 @@ export default function ManageGroups() {
         : groups;
     const paginatedGroups = filteredBySeason.slice((page - 1) * perPage, page * perPage);
     const totalPages = Math.ceil(filteredBySeason.length / perPage);
+
+    const candidatePlayers = (usersData.users || []).filter((u: any) => {
+        if (!u.player) return false;
+        // sin grupo o inactivo o no asignado al grupo expandido
+        return !u.player.currentGroup || u.isActive === false;
+    });
 
     // Mutations
     const createMutation = useMutation({
@@ -93,6 +111,33 @@ export default function ManageGroups() {
         },
         onError: (error: any) => {
             alert(`Error: ${error.response?.data?.error || error.message}`);
+        },
+    });
+
+    const addPlayerMutation = useMutation({
+        mutationFn: async ({ groupId, playerId }: { groupId: string; playerId: string }) => {
+            await api.post(`/groups/${groupId}/players`, { playerId });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['groups'] });
+            setShowAddModal(false);
+            setSelectedGroupId('');
+            setSelectedPlayerId('');
+        },
+        onError: (error: any) => {
+            alert(`Error al añadir jugador: ${error.response?.data?.error || error.message}`);
+        },
+    });
+
+    const removePlayerMutation = useMutation({
+        mutationFn: async ({ groupId, playerId }: { groupId: string; playerId: string }) => {
+            await api.delete(`/groups/${groupId}/players/${playerId}`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['groups'] });
+        },
+        onError: (error: any) => {
+            alert(`Error al quitar jugador: ${error.response?.data?.error || error.message}`);
         },
     });
 
@@ -125,6 +170,53 @@ export default function ManageGroups() {
                     {showForm ? 'Cancelar' : '+ Nuevo Grupo'}
                 </button>
             </div>
+
+            {/* Add player modal */}
+            {showAddModal && selectedGroupId && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-4 w-full max-w-md">
+                        <div className="flex justify-between items-center mb-3">
+                            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Añadir jugador al grupo</h2>
+                            <button onClick={() => setShowAddModal(false)} className="text-slate-500 hover:text-slate-700">✕</button>
+                        </div>
+                        <div className="space-y-3">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Selecciona jugador</label>
+                                <select
+                                    className="w-full border rounded px-2 py-1 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                                    value={selectedPlayerId ?? ''}
+                                    onChange={(e) => setSelectedPlayerId(e.target.value)}
+                                >
+                                    <option value="">-- Elegir --</option>
+                                    {candidatePlayers.map((player: any) => (
+                                        <option key={player.player.id} value={player.player.id}>
+                                            {player.player.name} {player.isActive === false ? '(Inactivo)' : ''} {!player.player.currentGroup ? '(Sin grupo)' : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex justify-end gap-2">
+                                <button
+                                    onClick={() => setShowAddModal(false)}
+                                    className="px-3 py-1 rounded border border-slate-300 dark:border-slate-700"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    disabled={!selectedPlayerId || addPlayerMutation.isPending}
+                                    onClick={() => {
+                                        if (!selectedGroupId || !selectedPlayerId) return;
+                                        addPlayerMutation.mutate({ groupId: selectedGroupId, playerId: selectedPlayerId });
+                                    }}
+                                    className="px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                                >
+                                    {addPlayerMutation.isPending ? 'Añadiendo...' : 'Añadir'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Season filter */}
             <div className="mt-4 flex items-center gap-2">
@@ -197,19 +289,32 @@ export default function ManageGroups() {
                                     Ver →
                                 </Link>
                             </div>
-                            <button
-                                onClick={() => {
-                                    console.log('Toggling group:', group.id, 'Current expanded:', expandedGroup);
-                                    setExpandedGroup(expandedGroup === group.id ? null : group.id);
-                                }}
-                                className={`w-full px-3 py-2 text-xs rounded-lg font-semibold transition-all ${
-                                    expandedGroup === group.id
-                                        ? 'bg-blue-600 dark:bg-blue-700 text-white'
-                                        : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800'
-                                }`}
-                            >
-                                {expandedGroup === group.id ? '▼ Ocultar clasificación' : '▶ Ver clasificación'}
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => {
+                                        setExpandedGroup(expandedGroup === group.id ? null : group.id);
+                                    }}
+                                    className={`w-full px-3 py-2 text-xs rounded-lg font-semibold transition-all ${
+                                        expandedGroup === group.id
+                                            ? 'bg-blue-600 dark:bg-blue-700 text-white'
+                                            : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800'
+                                    }`}
+                                >
+                                    {expandedGroup === group.id ? '▼ Ocultar clasificación' : '▶ Ver clasificación'}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setSelectedGroupId(group.id);
+                                        setShowAddModal(true);
+                                        setSelectedPlayerId(candidatePlayers[0]?.player?.id || '');
+                                    }}
+                                    className="px-3 py-2 text-xs rounded-lg font-semibold bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
+                                    disabled={!candidatePlayers.length}
+                                    title={candidatePlayers.length ? 'Añadir jugador inactivo o sin grupo' : 'No hay jugadores disponibles'}
+                                >
+                                    + Añadir
+                                </button>
+                            </div>
                             <button
                                 onClick={() => handleEditWhatsapp(group)}
                                 className="w-full px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
@@ -231,8 +336,17 @@ export default function ManageGroups() {
                                                     <span className="font-medium text-slate-900 dark:text-white">#{gp.rankingPosition}</span>
                                                     <span className="text-slate-600 dark:text-slate-400 ml-2">{gp.player.name}</span>
                                                 </div>
-                                                <div className="text-xs px-2 py-1 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                                                    {gp.rankingPosition <= 2 ? '📈 Ascenso' : gp.rankingPosition > group.groupPlayers.length - 2 ? '📉 Descenso' : 'Mantiene'}
+                                                <div className="flex items-center gap-2">
+                                                    <div className="text-xs px-2 py-1 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                                                        {gp.rankingPosition <= 2 ? '📈 Ascenso' : gp.rankingPosition > group.groupPlayers.length - 2 ? '📉 Descenso' : 'Mantiene'}
+                                                    </div>
+                                                    <button
+                                                        onClick={() => removePlayerMutation.mutate({ groupId: group.id, playerId: gp.playerId })}
+                                                        className="px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700"
+                                                        title="Quitar del grupo"
+                                                    >
+                                                        ✕
+                                                    </button>
                                                 </div>
                                             </div>
                                         ))}

@@ -9,6 +9,9 @@ export default function SeasonProposals() {
     const queryClient = useQueryClient();
     const [localEntries, setLocalEntries] = useState<any[]>([]);
     const [hasChanges, setHasChanges] = useState(false);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [selectedGroupId, setSelectedGroupId] = useState('');
+    const [selectedPlayerId, setSelectedPlayerId] = useState('');
 
     // Fetch season details and closure
     const { data: season, isLoading } = useQuery({
@@ -44,6 +47,22 @@ export default function SeasonProposals() {
             setLocalEntries(season.closure.entries);
         }
     }, [season]);
+
+    // Inactive or ungrouped players to optionally add
+    const { data: candidateUsers } = useQuery({
+        queryKey: ['inactive-ungrouped-users'],
+        queryFn: async () => {
+            const { data } = await api.get('/users?page=1&limit=500');
+            return data.users as any[];
+        }
+    });
+
+    const candidatePlayers = (candidateUsers || []).filter((u: any) => {
+        if (!u.player) return false;
+        const noGroup = !u.player.currentGroup;
+        const inactive = u.isActive === false;
+        return noGroup || inactive;
+    });
 
     const saveMutation = useMutation({
         mutationFn: async (entries: any[]) => {
@@ -99,6 +118,21 @@ export default function SeasonProposals() {
         },
         onError: () => {
             alert('Error al generar la nueva temporada');
+        }
+    });
+
+    const addPlayerMutation = useMutation({
+        mutationFn: async ({ playerId, toGroupId }: { playerId: string; toGroupId: string }) => {
+            await api.post(`/seasons/${seasonId}/closure/entries/add`, { playerId, toGroupId });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['season-proposal', seasonId] });
+            setShowAddModal(false);
+            setSelectedGroupId('');
+            setSelectedPlayerId('');
+        },
+        onError: () => {
+            alert('No se pudo añadir el jugador');
         }
     });
 
@@ -237,8 +271,20 @@ export default function SeasonProposals() {
 
                     return (
                         <div key={group.id} className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-                            <div className="bg-slate-50 dark:bg-slate-900/50 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+                            <div className="bg-slate-50 dark:bg-slate-900/50 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
                                 <h3 className="font-bold text-lg text-slate-900 dark:text-white">{group.name}</h3>
+                                <button
+                                    disabled={!candidatePlayers.length || addPlayerMutation.isPending}
+                                    onClick={() => {
+                                        setSelectedGroupId(group.id);
+                                        setShowAddModal(true);
+                                        setSelectedPlayerId(candidatePlayers[0]?.player?.id || '');
+                                    }}
+                                    className="text-xs px-3 py-1 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
+                                    title={candidatePlayers.length ? 'Añadir jugador inactivo o sin grupo' : 'No hay jugadores disponibles'}
+                                >
+                                    + Añadir
+                                </button>
                             </div>
                             <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
                                 {groupEntries.map((entry: any) => {
@@ -312,6 +358,57 @@ export default function SeasonProposals() {
                     );
                 })}
             </div>
+
+            {showAddModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 w-full max-w-md">
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Añadir jugador al grupo</h3>
+                        <div className="space-y-3">
+                            <div>
+                                <div className="text-sm text-slate-600 dark:text-slate-300">Grupo destino</div>
+                                <div className="font-semibold text-slate-900 dark:text-white">
+                                    {season.groups.find((g: any) => g.id === selectedGroupId)?.name || '-'}
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Jugador</label>
+                                <select
+                                    value={selectedPlayerId}
+                                    onChange={e => setSelectedPlayerId(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+                                >
+                                    {candidatePlayers.map((u: any) => (
+                                        <option key={u.player.id} value={u.player.id}>
+                                            {u.player.name} ({u.email}) {u.isActive === false ? '• Inactivo' : ''} {u.player.currentGroup ? '• Tiene grupo' : '• Sin grupo'}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                Se añadirá a la propuesta para la siguiente temporada en este grupo.
+                            </p>
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    onClick={() => setShowAddModal(false)}
+                                    className="flex-1 px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white hover:bg-slate-300 dark:hover:bg-slate-600"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    disabled={!selectedPlayerId || addPlayerMutation.isPending}
+                                    onClick={() => {
+                                        if (!selectedPlayerId || !selectedGroupId) return;
+                                        addPlayerMutation.mutate({ playerId: selectedPlayerId, toGroupId: selectedGroupId });
+                                    }}
+                                    className="flex-1 px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
+                                >
+                                    {addPlayerMutation.isPending ? 'Añadiendo...' : 'Añadir'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
