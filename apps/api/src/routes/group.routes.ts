@@ -199,12 +199,6 @@ export async function groupRoutes(fastify: FastifyInstance) {
                 },
             });
 
-            // Update player's currentGroupId
-            await prisma.player.update({
-                where: { id: body.playerId },
-                data: { currentGroupId: id },
-            });
-
             return groupPlayer;
         } catch (error) {
             if (error instanceof z.ZodError) {
@@ -234,12 +228,6 @@ export async function groupRoutes(fastify: FastifyInstance) {
                         playerId,
                     },
                 },
-            });
-
-            // Update player's currentGroupId
-            await prisma.player.update({
-                where: { id: playerId },
-                data: { currentGroupId: null },
             });
 
             return { success: true };

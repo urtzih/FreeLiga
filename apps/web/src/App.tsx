@@ -92,7 +92,7 @@ function App() {
                         />
                         <Route
                             path="/classification"
-                            element={<Navigate to={user?.player?.currentGroupId ? `/groups/${user.player.currentGroupId}` : '/dashboard'} replace />}
+                            element={<Navigate to={user?.player?.currentGroup ? `/groups/${user.player.currentGroup.id}` : '/dashboard'} replace />}
                         />
                         <Route
                             path="/historia"

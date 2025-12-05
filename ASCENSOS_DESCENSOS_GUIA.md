@@ -94,7 +94,7 @@ Ejemplo:
 
 #### Qué sucede al aprobar:
 ✅ Se registra el movimiento en el historial del jugador
-✅ Se actualiza el `currentGroupId` del jugador
+✅ Se crea un registro en `PlayerGroupHistory` con el grupo destino
 ✅ La propuesta pasa a estado `APPROVED`
 
 ---

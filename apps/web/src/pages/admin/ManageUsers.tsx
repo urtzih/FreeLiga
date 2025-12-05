@@ -134,16 +134,6 @@ export default function ManageUsers() {
     };
 
     // Mutations
-    const updateRoleMutation = useMutation({
-        mutationFn: async ({ userId, role }: { userId: string; role: 'PLAYER' | 'ADMIN' }) => {
-            const { data } = await api.put(`/users/${userId}/role`, { role });
-            return data;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['users'] });
-        }
-    });
-
     const createUserMutation = useMutation({
         mutationFn: async (newUser: typeof createForm) => {
             const { data } = await api.post('/users', newUser);
@@ -426,14 +416,8 @@ export default function ManageUsers() {
                                         <th onClick={() => handleSort('group')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
                                             <div className="flex items-center gap-1">Grupo {sortField === 'group' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}</div>
                                         </th>
-                                        <th onClick={() => handleSort('role')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
-                                            <div className="flex items-center gap-1">Rol {sortField === 'role' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}</div>
-                                        </th>
                                         <th onClick={() => handleSort('createdAt')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
                                             <div className="flex items-center gap-1">Fecha Registro {sortField === 'createdAt' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}</div>
-                                        </th>
-                                        <th onClick={() => handleSort('isActive')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
-                                            <div className="flex items-center gap-1">Estado {sortField === 'isActive' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}</div>
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Acciones</th>
                                     </tr>
@@ -453,32 +437,21 @@ export default function ManageUsers() {
                                                 <div className="text-sm text-slate-600 dark:text-slate-400">{user.player?.currentGroup?.name || 'Sin grupo'}</div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <select
-                                                    value={user.role}
-                                                    onChange={e => updateRoleMutation.mutate({ userId: user.id, role: e.target.value as 'PLAYER' | 'ADMIN' })}
-                                                    className="text-sm px-3 py-1 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
-                                                >
-                                                    <option value="PLAYER">Jugador</option>
-                                                    <option value="ADMIN">Admin</option>
-                                                </select>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="text-sm text-slate-600 dark:text-slate-400">{new Date(user.createdAt).toLocaleDateString('es-ES')}</div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <button
-                                                    onClick={() => toggleActivationMutation.mutate({ userId: user.id, isActive: !user.isActive })}
-                                                    className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${user.isActive
-                                                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
-                                                        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50'}`}
-                                                >
-                                                    {user.isActive ? '✓ Activo' : '✗ Inactivo'}
-                                                </button>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex space-x-2">
-                                                    <button onClick={() => handleOpenEditModal(user)} className="text-sm px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">Editar</button>
-                                                    <button onClick={() => { setSelectedUser(user); setShowResetPassword(true); }} className="text-sm px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Resetear Contraseña</button>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <button
+                                                        onClick={() => toggleActivationMutation.mutate({ userId: user.id, isActive: !user.isActive })}
+                                                        className={`text-sm px-3 py-1 rounded-lg font-medium transition-colors ${user.isActive
+                                                            ? 'bg-green-600 text-white hover:bg-green-700'
+                                                            : 'bg-red-600 text-white hover:bg-red-700'}`}
+                                                        title={user.isActive ? 'Desactivar usuario' : 'Activar usuario'}
+                                                    >
+                                                        {user.isActive ? '✓ Activo' : '✗ Inactivo'}
+                                                    </button>
+                                                    <button onClick={() => handleOpenEditModal(user)} className="text-sm px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Editar</button>
+                                                    <button onClick={() => { setSelectedUser(user); setShowResetPassword(true); }} className="text-sm px-3 py-1 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">Resetear</button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -531,23 +504,14 @@ export default function ManageUsers() {
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Teléfono</label>
                                         <input type="tel" value={createForm.phone} onChange={e => setCreateForm({ ...createForm, phone: e.target.value })} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Rol</label>
-                                            <select value={createForm.role} onChange={e => setCreateForm({ ...createForm, role: e.target.value as 'PLAYER' | 'ADMIN' })} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
-                                                <option value="PLAYER">Jugador</option>
-                                                <option value="ADMIN">Admin</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Grupo (temporada activa)</label>
-                                            <select value={createForm.groupId} onChange={e => setCreateForm({ ...createForm, groupId: e.target.value })} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
-                                                <option value="">Sin grupo</option>
-                                                {availableGroups.map((g: any) => (
-                                                    <option key={g.id} value={g.id}>{g.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Grupo (temporada activa)</label>
+                                        <select value={createForm.groupId} onChange={e => setCreateForm({ ...createForm, groupId: e.target.value })} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
+                                            <option value="">Sin grupo</option>
+                                            {availableGroups.map((g: any) => (
+                                                <option key={g.id} value={g.id}>{g.name}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                     <div className="flex space-x-3 mt-6">
                                         <button onClick={() => createUserMutation.mutate(createForm)} disabled={createUserMutation.isPending} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
@@ -584,23 +548,14 @@ export default function ManageUsers() {
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Teléfono</label>
                                         <input type="tel" value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
                                     </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Rol</label>
-                                            <select value={editForm.role} onChange={e => setEditForm({ ...editForm, role: e.target.value as 'PLAYER' | 'ADMIN' })} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                                <option value="PLAYER">Jugador</option>
-                                                <option value="ADMIN">Admin</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Grupo (temporada activa)</label>
-                                            <select value={editForm.groupId} onChange={e => setEditForm({ ...editForm, groupId: e.target.value })} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                                <option value="">Sin grupo</option>
-                                                {availableGroups.map((g: any) => (
-                                                    <option key={g.id} value={g.id}>{g.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Grupo (temporada activa)</label>
+                                        <select value={editForm.groupId} onChange={e => setEditForm({ ...editForm, groupId: e.target.value })} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                            <option value="">Sin grupo</option>
+                                            {availableGroups.map((g: any) => (
+                                                <option key={g.id} value={g.id}>{g.name}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                     <div className="flex space-x-3 mt-6">
                                         <button onClick={handleUpdateUser} disabled={updateUserMutation.isPending} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">

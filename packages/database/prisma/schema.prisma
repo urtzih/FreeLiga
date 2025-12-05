@@ -60,12 +60,10 @@ model Player {
   nickname       String?
   phone          String?
   email          String?
-  currentGroupId String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  currentGroup        Group?             @relation("CurrentGroupPlayers", fields: [currentGroupId], references: [id])
   groupPlayers        GroupPlayer[]
   matchesAsPlayer1    Match[]            @relation("Player1Matches")
   matchesAsPlayer2    Match[]            @relation("Player2Matches")
@@ -74,7 +72,6 @@ model Player {
   closureEntries      SeasonClosureEntry[]
   groupHistories      PlayerGroupHistory[]
 
-  @@index([currentGroupId])
   @@map("players")
 }
 
@@ -108,7 +105,6 @@ model Group {
   season          Season            @relation(fields: [seasonId], references: [id], onDelete: Cascade)
   groupPlayers    GroupPlayer[]
   matches         Match[]
-  currentPlayers  Player[]          @relation("CurrentGroupPlayers")
   promotionRecordsFrom PromotionRecord[] @relation("FromGroup")
   promotionRecordsTo   PromotionRecord[] @relation("ToGroup")
   closureEntriesFrom   SeasonClosureEntry[] @relation("ClosureFromGroup")

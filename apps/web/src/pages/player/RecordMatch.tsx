@@ -10,7 +10,7 @@ export default function RecordMatch() {
     const queryClient = useQueryClient();
 
     const [formData, setFormData] = useState({
-        groupId: user?.player?.currentGroupId || '',
+        groupId: user?.player?.currentGroup?.id || '',
         player1Id: user?.player?.id || '',
         player2Id: '',
         gamesP1: 0,

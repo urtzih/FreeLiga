@@ -51,7 +51,7 @@ Cuando varios jugadores están empatados en posiciones de ascenso o descenso, se
 2. El administrador revisa la propuesta de ascensos/descensos.
 3. El administrador **aprueba** el cierre.
 4. El sistema aplica los movimientos:
-   - Actualiza `currentGroupId` de cada jugador.
+   - Crea registros en `PlayerGroupHistory` para cada jugador.
    - Genera registros de historial (`PlayerGroupHistory`) con la temporada, grupo final, ranking y tipo de movimiento.
 
 ### Persistencia Histórica
@@ -77,7 +77,7 @@ Cuando varios jugadores están empatados en posiciones de ascenso o descenso, se
 
 ### POST `/api/seasons/:id/closure/approve`
 - Aprueba un cierre PENDING y lo marca como APPROVED.
-- Aplica movimientos (actualiza `currentGroupId`).
+- Aplica movimientos (crea registros en `PlayerGroupHistory`).
 - Crea registros históricos (`PlayerGroupHistory`).
 - Retorna el cierre aprobado con todas las entradas.
 

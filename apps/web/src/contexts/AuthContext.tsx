@@ -9,7 +9,6 @@ interface User {
         id: string;
         name: string;
         nickname?: string;
-        currentGroupId?: string;
         currentGroup?: any;
     };
 }

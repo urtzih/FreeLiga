@@ -37,7 +37,7 @@ export default function ManageSeasons() {
         : seasons;
 
     // Obtener años únicos para el filtro
-    const availableYears = Array.from(new Set(
+    const availableYears = Array.from(new Set<number>(
         seasons.flatMap((season: any) => {
             const startYear = new Date(season.startDate).getFullYear();
             const endYear = new Date(season.endDate).getFullYear();

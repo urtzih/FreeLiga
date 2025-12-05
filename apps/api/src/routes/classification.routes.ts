@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '@freesquash/database';
+import { getPlayerCurrentGroup } from '../utils/playerHelpers';
 
 export async function classificationRoutes(fastify: FastifyInstance) {
     // Get global classification with filters
@@ -52,19 +53,23 @@ export async function classificationRoutes(fastify: FastifyInstance) {
             }
 
             // Get all players
-            const players = await prisma.player.findMany({
-                include: {
-                    currentGroup: true,
-                },
-            });
+            const players = await prisma.player.findMany();
 
             // Get all matches with filters
             const matches = await prisma.match.findMany({
                 where: matchWhere,
             });
 
+            // Get current groups for all players
+            const playersWithGroups = await Promise.all(
+                players.map(async (player) => {
+                    const currentGroup = await getPlayerCurrentGroup(player.id);
+                    return { ...player, currentGroup };
+                })
+            );
+
             // Calculate statistics for each player
-            const classification = players.map(player => {
+            const classification = playersWithGroups.map(player => {
                 // Filter matches for this player
                 let playerMatches = matches.filter(
                     m => m.player1Id === player.id || m.player2Id === player.id

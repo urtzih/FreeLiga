@@ -146,7 +146,7 @@ export async function computeSeasonClosure(seasonId: string) {
         closure = await prisma.seasonClosure.create({ data: { seasonId, status: 'PENDING' } });
     } else if (closure.status === 'APPROVED') {
         // Si ya aprobado, devolver directamente con entries
-        return await prisma.seasonClosure.findUnique({ where: { seasonId }, include: { entries: { include: { player: true, fromGroup: true, toGroup: true } } } });
+        return await prisma.seasonClosure.findUnique({ where: { seasonId }, include: { entries: { include: { player: { include: { user: { select: { isActive: true, id: true } } } }, fromGroup: true, toGroup: true } } } });
     } else {
         await prisma.seasonClosureEntry.deleteMany({ where: { closureId: closure.id } });
     }
@@ -193,6 +193,6 @@ export async function computeSeasonClosure(seasonId: string) {
 
     return await prisma.seasonClosure.findUnique({
         where: { seasonId },
-        include: { entries: { include: { player: true, fromGroup: true, toGroup: true } } }
+        include: { entries: { include: { player: { include: { user: { select: { isActive: true, id: true } } } }, fromGroup: true, toGroup: true } } }
     });
 }

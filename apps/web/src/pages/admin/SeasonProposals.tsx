@@ -77,6 +77,18 @@ export default function SeasonProposals() {
         }
     });
 
+    const toggleActiveMutation = useMutation({
+        mutationFn: async (userId: string) => {
+            await api.post(`/users/${userId}/toggle-active`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['season-proposal', seasonId] });
+        },
+        onError: () => {
+            alert('Error al cambiar el estado del jugador');
+        }
+    });
+
     const rolloverMutation = useMutation({
         mutationFn: async () => {
             await api.post(`/seasons/${seasonId}/rollover`, { importPlayers: true });
@@ -174,7 +186,7 @@ export default function SeasonProposals() {
             </div>
 
             {/* Summary Statistics */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
                     <div className="text-sm font-medium text-blue-600 dark:text-blue-400">Total Jugadores</div>
                     <div className="text-3xl font-bold text-blue-900 dark:text-blue-100">{localEntries.length}</div>
@@ -190,6 +202,12 @@ export default function SeasonProposals() {
                 <div className="bg-slate-50 dark:bg-slate-900/20 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
                     <div className="text-sm font-medium text-slate-600 dark:text-slate-400">Mantienen ➡️</div>
                     <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">{stays}</div>
+                </div>
+                <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 border border-orange-200 dark:border-orange-700">
+                    <div className="text-sm font-medium text-orange-600 dark:text-orange-400">Desactivados 🚫</div>
+                    <div className="text-3xl font-bold text-orange-900 dark:text-orange-100">
+                        {localEntries.filter((e: any) => e.player?.user?.isActive === false).length}
+                    </div>
                 </div>
             </div>
 
@@ -230,30 +248,62 @@ export default function SeasonProposals() {
                                     if (movement === 'PROMOTION') statusColor = 'text-green-600 dark:text-green-400';
                                     if (movement === 'RELEGATION') statusColor = 'text-red-600 dark:text-red-400';
 
+                                    const isActive = entry.player?.user?.isActive !== false;
+                                    const userId = entry.player?.user?.id;
+
                                     return (
-                                        <div key={entry.playerId} className="px-4 py-2 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                                            <div className="flex items-center gap-3 flex-1">
-                                                <span className="font-mono text-sm text-slate-400 w-6">#{entry.finalRank}</span>
-                                                <span className="font-medium text-slate-900 dark:text-white flex-1">{entry.player.name}</span>
-                                                <span className="text-xs text-slate-500 dark:text-slate-400">🏆 {entry.matchesWon || 0}</span>
-                                            </div>
-                                            {isApproved ? (
-                                                <div className={`text-xs font-bold ${statusColor} ml-2`}>
-                                                    {movement === 'STAY' && 'Mantiene ➡️'}
-                                                    {movement === 'PROMOTION' && 'Asciende 📈'}
-                                                    {movement === 'RELEGATION' && 'Desciende 📉'}
+                                        <div key={entry.playerId} className={`px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors ${!isActive ? 'opacity-50 bg-red-50 dark:bg-red-900/10' : ''}`}>
+                                            <div className="flex items-center justify-between gap-3">
+                                                <div className="flex items-center gap-3 flex-1">
+                                                    <span className="font-mono text-sm text-slate-400 w-6">#{entry.finalRank}</span>
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className={`font-medium ${isActive ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>
+                                                                {entry.player.name}
+                                                            </span>
+                                                            {!isActive && (
+                                                                <span className="text-xs px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-full font-medium">
+                                                                    Desactivado
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <span className="text-xs text-slate-500 dark:text-slate-400">🏆 {entry.matchesWon || 0}</span>
                                                 </div>
-                                            ) : (
-                                                <select
-                                                    value={movement}
-                                                    onChange={(e) => handleMovementChange(entry.playerId, e.target.value)}
-                                                    className={`text-xs font-bold bg-transparent border-none focus:ring-0 cursor-pointer ${statusColor} ml-2`}
-                                                >
-                                                    <option value="STAY">Mantiene ➡️</option>
-                                                    <option value="PROMOTION">Asciende 📈</option>
-                                                    <option value="RELEGATION">Desciende 📉</option>
-                                                </select>
-                                            )}
+                                                <div className="flex items-center gap-2">
+                                                    {userId && (
+                                                        <button
+                                                            onClick={() => {
+                                                                if (window.confirm(`¿${isActive ? 'Desactivar' : 'Activar'} a ${entry.player.name}? ${!isActive ? 'Podrá participar en la siguiente temporada.' : 'NO participará en la siguiente temporada.'}`)) {
+                                                                    toggleActiveMutation.mutate(userId);
+                                                                }
+                                                            }}
+                                                            disabled={toggleActiveMutation.isPending}
+                                                            className={`text-xs px-2 py-1 rounded transition-colors ${isActive ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50' : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50'}`}
+                                                            title={isActive ? 'Desactivar jugador' : 'Activar jugador'}
+                                                        >
+                                                            {isActive ? '🚫' : '✅'}
+                                                        </button>
+                                                    )}
+                                                    {isApproved ? (
+                                                        <div className={`text-xs font-bold ${statusColor} whitespace-nowrap`}>
+                                                            {movement === 'STAY' && 'Mantiene ➡️'}
+                                                            {movement === 'PROMOTION' && 'Asciende 📈'}
+                                                            {movement === 'RELEGATION' && 'Desciende 📉'}
+                                                        </div>
+                                                    ) : (
+                                                        <select
+                                                            value={movement}
+                                                            onChange={(e) => handleMovementChange(entry.playerId, e.target.value)}
+                                                            className={`text-xs font-bold bg-transparent border-none focus:ring-0 cursor-pointer ${statusColor} whitespace-nowrap`}
+                                                        >
+                                                            <option value="STAY">Mantiene ➡️</option>
+                                                            <option value="PROMOTION">Asciende 📈</option>
+                                                            <option value="RELEGATION">Desciende 📉</option>
+                                                        </select>
+                                                    )}
+                                                </div>
+                                            </div>
                                         </div>
                                     );
                                 })}

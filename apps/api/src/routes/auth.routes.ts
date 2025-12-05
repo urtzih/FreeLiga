@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '@freesquash/database';
 import bcrypt from 'bcrypt';
 import { z } from 'zod';
+import { getPlayerCurrentGroup } from '../utils/playerHelpers';
 
 const registerSchema = z.object({
     email: z.string().email(),
@@ -61,13 +62,22 @@ export async function authRoutes(fastify: FastifyInstance) {
                 role: user.role,
             });
 
+            // Obtener grupo actual basado en temporada activa
+            let currentGroup = null;
+            if (user.player) {
+                currentGroup = await getPlayerCurrentGroup(user.player.id);
+            }
+
             return {
                 token,
                 user: {
                     id: user.id,
                     email: user.email,
                     role: user.role,
-                    player: user.player,
+                    player: user.player ? {
+                        ...user.player,
+                        currentGroup
+                    } : null,
                 },
             };
         } catch (error) {
@@ -108,6 +118,12 @@ export async function authRoutes(fastify: FastifyInstance) {
                 return reply.status(403).send({ error: 'Account is deactivated. Please contact an administrator.' });
             }
 
+            // Obtener grupo actual basado en temporada activa
+            let currentGroup = null;
+            if (user.player) {
+                currentGroup = await getPlayerCurrentGroup(user.player.id);
+            }
+
             // Generate JWT
             const token = fastify.jwt.sign({
                 id: user.id,
@@ -121,7 +137,10 @@ export async function authRoutes(fastify: FastifyInstance) {
                     id: user.id,
                     email: user.email,
                     role: user.role,
-                    player: user.player,
+                    player: user.player ? {
+                        ...user.player,
+                        currentGroup
+                    } : null,
                 },
             };
         } catch (error) {
@@ -143,11 +162,7 @@ export async function authRoutes(fastify: FastifyInstance) {
             const user = await prisma.user.findUnique({
                 where: { id: decoded.id },
                 include: {
-                    player: {
-                        include: {
-                            currentGroup: true,
-                        },
-                    },
+                    player: true,
                 },
             });
 
@@ -155,11 +170,20 @@ export async function authRoutes(fastify: FastifyInstance) {
                 return reply.status(404).send({ error: 'User not found' });
             }
 
+            // Obtener grupo actual basado en temporada activa
+            let currentGroup = null;
+            if (user.player) {
+                currentGroup = await getPlayerCurrentGroup(user.player.id);
+            }
+
             return {
                 id: user.id,
                 email: user.email,
                 role: user.role,
-                player: user.player,
+                player: user.player ? {
+                    ...user.player,
+                    currentGroup
+                } : null,
             };
         } catch (error) {
             fastify.log.error(error);

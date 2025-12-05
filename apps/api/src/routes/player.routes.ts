@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '@freesquash/database';
+import { getPlayerCurrentGroup } from '../utils/playerHelpers';
 
 export async function playerRoutes(fastify: FastifyInstance) {
     // Get all players
@@ -9,11 +10,6 @@ export async function playerRoutes(fastify: FastifyInstance) {
         try {
             const players = await prisma.player.findMany({
                 include: {
-                    currentGroup: {
-                        include: {
-                            season: true,
-                        },
-                    },
                     groupPlayers: {
                         include: {
                             group: true,
@@ -22,7 +18,15 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 },
             });
 
-            return players;
+            // Añadir grupo actual para cada jugador
+            const playersWithCurrentGroup = await Promise.all(
+                players.map(async (player) => {
+                    const currentGroup = await getPlayerCurrentGroup(player.id);
+                    return { ...player, currentGroup };
+                })
+            );
+
+            return playersWithCurrentGroup;
         } catch (error) {
             fastify.log.error(error);
             return reply.status(500).send({ error: 'Internal server error' });
@@ -39,9 +43,6 @@ export async function playerRoutes(fastify: FastifyInstance) {
             const player = await prisma.player.findUnique({
                 where: { id },
                 include: {
-                    currentGroup: {
-                        include: { season: true },
-                    },
                     groupPlayers: {
                         include: {
                             group: { include: { season: true } },
@@ -57,7 +58,10 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 return reply.status(404).send({ error: 'Player not found' });
             }
 
-            return player;
+            // Añadir grupo actual
+            const currentGroup = await getPlayerCurrentGroup(player.id);
+
+            return { ...player, currentGroup };
         } catch (error) {
             fastify.log.error(error);
             return reply.status(500).send({ error: 'Internal server error' });

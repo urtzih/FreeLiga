@@ -33,7 +33,19 @@ export async function seasonRoutes(fastify: FastifyInstance) {
                 where: { id },
                 include: {
                     groups: { include: { groupPlayers: { include: { player: true } }, _count: { select: { matches: true } } } },
-                    closure: { include: { entries: { include: { player: true, fromGroup: true, toGroup: true } } } }
+                    closure: {
+                        include: {
+                            entries: {
+                                include: {
+                                    player: {
+                                        include: { user: { select: { isActive: true, id: true } } }
+                                    },
+                                    fromGroup: true,
+                                    toGroup: true
+                                }
+                            }
+                        }
+                    }
                 },
             });
             if (!season) return reply.status(404).send({ error: 'Season not found' });
@@ -117,7 +129,15 @@ export async function seasonRoutes(fastify: FastifyInstance) {
             // Try to get existing closure
             let closure = await prisma.seasonClosure.findUnique({
                 where: { seasonId: id },
-                include: { entries: { include: { player: true, fromGroup: true, toGroup: true } } }
+                include: {
+                    entries: {
+                        include: {
+                            player: { include: { user: { select: { isActive: true, id: true } } } },
+                            fromGroup: true,
+                            toGroup: true
+                        }
+                    }
+                }
             });
 
             // If doesn't exist, or if entries lack matchesWon, compute it
@@ -157,7 +177,15 @@ export async function seasonRoutes(fastify: FastifyInstance) {
             // Return updated closure
             const closure = await prisma.seasonClosure.findUnique({
                 where: { seasonId: id },
-                include: { entries: { include: { player: true, fromGroup: true, toGroup: true } } }
+                include: {
+                    entries: {
+                        include: {
+                            player: { include: { user: { select: { isActive: true, id: true } } } },
+                            fromGroup: true,
+                            toGroup: true
+                        }
+                    }
+                }
             });
 
             return closure;
@@ -197,14 +225,7 @@ export async function seasonRoutes(fastify: FastifyInstance) {
             // Aplicar movimientos y crear historiales
             await prisma.$transaction(async tx => {
                 for (const entry of closure.entries) {
-                    if (entry.movementType === 'PROMOTION' || entry.movementType === 'RELEGATION') {
-                        if (entry.toGroupId) {
-                            await tx.player.update({
-                                where: { id: entry.playerId },
-                                data: { currentGroupId: entry.toGroupId }
-                            });
-                        }
-                    }
+                    // Ya no es necesario actualizar currentGroupId - se calcula dinámicamente
                     await tx.playerGroupHistory.create({
                         data: {
                             playerId: entry.playerId,
@@ -223,7 +244,15 @@ export async function seasonRoutes(fastify: FastifyInstance) {
 
             const updated = await prisma.seasonClosure.findUnique({
                 where: { seasonId: id },
-                include: { entries: { include: { player: true, fromGroup: true, toGroup: true } } }
+                include: {
+                    entries: {
+                        include: {
+                            player: { include: { user: { select: { isActive: true, id: true } } } },
+                            fromGroup: true,
+                            toGroup: true
+                        }
+                    }
+                }
             });
             return updated;
         } catch (error) {
@@ -298,6 +327,17 @@ export async function seasonRoutes(fastify: FastifyInstance) {
                 // Import players if closure is approved
                 if (season.closure && season.closure.status === 'APPROVED' && season.closure.entries.length > 0) {
                     for (const entry of season.closure.entries) {
+                        // Verificar si el usuario del jugador está activo
+                        const player = await tx.player.findUnique({
+                            where: { id: entry.playerId },
+                            include: { user: { select: { isActive: true } } }
+                        });
+
+                        // Solo importar jugadores con usuario activo
+                        if (!player || !player.user.isActive) {
+                            continue; // Saltar jugadores desactivados
+                        }
+
                         // Find target group in new season
                         const targetGroupName = entry.toGroupId
                             ? season.groups.find(g => g.id === entry.toGroupId)?.name

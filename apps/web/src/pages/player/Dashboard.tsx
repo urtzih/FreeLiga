@@ -25,37 +25,8 @@ export default function Dashboard() {
         enabled: !!user?.player?.id,
     });
 
-    const { data: currentGroup } = useQuery({
-        queryKey: ['currentGroup', user?.player?.currentGroupId],
-        queryFn: async () => {
-            const { data } = await api.get(`/groups/${user?.player?.currentGroupId}`);
-            return data;
-        },
-        enabled: !!user?.player?.currentGroupId,
-    });
-
-    // Perfil completo del jugador (para fallback de grupo si currentGroupId es nulo)
-    const { data: playerFull } = useQuery({
-        queryKey: ['playerFull', user?.player?.id],
-        queryFn: async () => {
-            const { data } = await api.get(`/players/${user?.player?.id}`);
-            return data;
-        },
-        enabled: !!user?.player?.id,
-    });
-
-    // Fallback: si no hay currentGroupId pero sí pertenencias de la temporada activa
-    let fallbackGroup: any = null;
-    if (!user?.player?.currentGroupId && playerFull?.groupPlayers) {
-        const now = new Date();
-        const activeMemberships = playerFull.groupPlayers.filter((gp: any) => {
-            const s = gp.group.season;
-            return new Date(s.startDate) <= now && new Date(s.endDate) >= now;
-        });
-        if (activeMemberships.length > 0) {
-            fallbackGroup = activeMemberships.sort((a: any, b: any) => new Date(b.group.season.startDate).getTime() - new Date(a.group.season.startDate).getTime())[0].group;
-        }
-    }
+    // Obtener currentGroup desde el contexto (ya viene del backend con la temporada activa)
+    const currentGroup = user?.player?.currentGroup;
 
     const myRanking = currentGroup?.groupPlayers.find(
         (gp: any) => gp.playerId === user?.player?.id
@@ -182,7 +153,7 @@ export default function Dashboard() {
                 </div>
             )}
 
-            {!user?.player?.currentGroupId && !fallbackGroup && (
+            {!currentGroup && (
                 <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl p-6">
                     <p className="text-yellow-800 dark:text-yellow-200">
                         No estás asignado a ningún grupo actualmente. Contacta con un administrador para unirte a una liga.
@@ -190,40 +161,7 @@ export default function Dashboard() {
                 </div>
             )}
 
-            {fallbackGroup && (
-                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Grupo Activo (Fallback)</h2>
-                    </div>
-                    <div className="p-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <div>
-                                <div className="flex flex-wrap items-baseline gap-x-4">
-                                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{fallbackGroup.name}</h3>
-                                    {(() => {
-                                        const start = new Date(fallbackGroup.season.startDate);
-                                        const end = new Date(fallbackGroup.season.endDate);
-                                        const hoy = new Date();
-                                        const diasRestantes = Math.ceil((end.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
-                                        return (
-                                            <span className="text-sm text-slate-500 dark:text-slate-400">
-                                                {start.toLocaleDateString('es-ES')} – {end.toLocaleDateString('es-ES')} · {diasRestantes > 0 ? `Quedan ${diasRestantes} día${diasRestantes !== 1 ? 's' : ''}` : 'Temporada finalizada'}
-                                            </span>
-                                        );
-                                    })()}
-                                </div>
-                                <p className="text-slate-600 dark:text-slate-400">{fallbackGroup.season.name}</p>
-                            </div>
-                        </div>
-                        <Link
-                            to={`/groups/${fallbackGroup.id}`}
-                            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                            Ver Detalles del Grupo →
-                        </Link>
-                    </div>
-                </div>
-            )}
+
 
             {/* Partidos Recientes */}
             {playerStats?.recentMatches && playerStats.recentMatches.length > 0 && (

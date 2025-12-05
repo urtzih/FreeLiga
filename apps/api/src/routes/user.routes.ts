@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '@freesquash/database';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
+import { getPlayerCurrentGroup } from '../utils/playerHelpers';
 
 declare module 'fastify' {
     interface FastifyInstance {
@@ -56,11 +57,7 @@ export async function userRoutes(fastify: FastifyInstance) {
                     skip,
                     take: parseInt(limit),
                     include: {
-                        player: {
-                            include: {
-                                currentGroup: true,
-                            },
-                        },
+                        player: true,
                     },
                     orderBy: {
                         createdAt: 'desc',
@@ -69,8 +66,22 @@ export async function userRoutes(fastify: FastifyInstance) {
                 prisma.user.count({ where }),
             ]);
 
+            // Añadir currentGroup para cada usuario
+            const usersWithGroups = await Promise.all(
+                users.map(async (user) => {
+                    let currentGroup = null;
+                    if (user.player) {
+                        currentGroup = await getPlayerCurrentGroup(user.player.id);
+                    }
+                    return {
+                        ...user,
+                        player: user.player ? { ...user.player, currentGroup } : undefined,
+                    };
+                })
+            );
+
             return {
-                users,
+                users: usersWithGroups,
                 pagination: {
                     page: parseInt(page),
                     limit: parseInt(limit),
@@ -99,11 +110,7 @@ export async function userRoutes(fastify: FastifyInstance) {
             const user = await prisma.user.findUnique({
                 where: { id },
                 include: {
-                    player: {
-                        include: {
-                            currentGroup: true,
-                        },
-                    },
+                    player: true,
                 },
             });
 
@@ -312,6 +319,35 @@ export async function userRoutes(fastify: FastifyInstance) {
             if (error instanceof z.ZodError) {
                 return reply.status(400).send({ error: error.errors });
             }
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // Toggle user active status (admin only)
+    fastify.post('/:id/toggle-active', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            const { id } = request.params as { id: string };
+
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            const user = await prisma.user.findUnique({ where: { id } });
+            if (!user) {
+                return reply.status(404).send({ error: 'User not found' });
+            }
+
+            const updated = await prisma.user.update({
+                where: { id },
+                data: { isActive: !user.isActive }
+            });
+
+            return { success: true, isActive: updated.isActive };
+        } catch (error) {
             fastify.log.error(error);
             return reply.status(500).send({ error: 'Internal server error' });
         }

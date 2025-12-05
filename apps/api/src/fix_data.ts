@@ -137,7 +137,7 @@ async function main() {
 
     // Obtener jugadores del Grupo 1
     const group1Players = await prisma.player.findMany({
-        where: { currentGroupId: 'group_1' }
+        // where: { currentGroupId: 'group_1' } // Campo eliminado
     });
 
     if (group1Players.length < 2) {

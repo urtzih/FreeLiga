@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '@freesquash/database';
 import { z } from 'zod';
 import { calculateGroupRankings } from '../services/ranking.service';
+import { getPlayerCurrentGroupId } from '../utils/playerHelpers';
 
 const createMatchSchema = z.object({
     groupId: z.string(),
@@ -297,12 +298,9 @@ export async function matchRoutes(fastify: FastifyInstance) {
 
             // If not admin, verify it's from their active group
             if (!isAdmin) {
-                const player = await prisma.player.findUnique({
-                    where: { id: decoded.playerId },
-                    select: { currentGroupId: true },
-                });
+                const currentGroupId = await getPlayerCurrentGroupId(decoded.playerId);
 
-                if (!player?.currentGroupId || match.groupId !== player.currentGroupId) {
+                if (!currentGroupId || match.groupId !== currentGroupId) {
                     return reply.status(403).send({ error: 'Solo puedes eliminar partidos de tu grupo activo' });
                 }
             }
