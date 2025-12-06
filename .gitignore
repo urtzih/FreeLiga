@@ -11,11 +11,15 @@ dist/
 build/
 
 # Environment
-# .env
+.env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
+
+# Production builds
+dist-production-*/
 
 # Logs
 logs
