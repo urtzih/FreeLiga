@@ -14,13 +14,20 @@ A full-stack web application for managing a squash league with ranked groups, ad
 - **Axios** for API requests
 
 ### Backend
-- **Node.js** with TypeScript
+- **Node.js 20** with TypeScript
 - **Fastify** web framework
 - **Prisma ORM** for database access
-- **MySQL** database (XAMPP)
+- **MySQL 8.0** database
 - **JWT** authentication
 - **bcrypt** for password hashing
 - **Zod** for validation
+
+### Infrastructure
+- **Docker** with multi-stage builds (development/production)
+- **docker-compose** for local orchestration
+- **Railway** for backend production (Node 20 + Docker)
+- **Vercel** for frontend production (static CDN)
+- **MySQL on Docker** for local & production databases
 
 ## 📋 Features
 
@@ -66,99 +73,81 @@ A full-stack web application for managing a squash league with ranked groups, ad
 
 ## 🛠️ Setup Instructions
 
-### Prerequisites
-- Node.js 18+ and npm
-- PostgreSQL database
-- Git
+### Prerequisites (Local Development)
+- **Docker** (v20+) and **docker-compose**
+- **Git**
+- Windows, macOS, or Linux
 
-### 1. Clone the Repository
+### Option 1: Quick Start with Docker (Recommended)
 
+1. **Clone & Setup**
 ```bash
-cd c:\xampp\htdocs\personal\FreeLiga
+git clone <repo-url>
+cd FreeLiga
+docker-compose up -d
 ```
 
-### 2. Install Dependencies
+2. **Wait for Services**
+- MySQL: http://localhost (via Adminer on 8080)
+- Backend API: http://localhost:3001
+- Frontend: http://localhost:4173
+- Adminer (Database UI): http://localhost:8080
 
+3. **Test Login**
+- Email: `admin@freesquash.com`
+- Password: `123456`
+
+**That's it!** All services (MySQL, API, Web) running with hot reload enabled.
+
+### Option 2: Local Development without Docker
+
+#### Prerequisites
+- Node.js 20+ and npm
+- MySQL 8.0 (install locally or use Docker MySQL container only)
+
+#### Setup
+
+1. **Install Dependencies**
 ```bash
-# Install root dependencies
-npm install
-
-# Install workspace dependencies
 npm install --workspaces
 ```
 
-### 3. Database Setup
-
-#### Option A: Local PostgreSQL
-
-1. Create a PostgreSQL database:
-```sql
-CREATE DATABASE freesquash;
-```
-
-2. Set up environment variables:
-
-**packages/database/.env**
+2. **Database Configuration**
+Create `.env.local` in project root:
 ```env
-DATABASE_URL="postgresql://postgres:password@localhost:5432/freesquash"
+DATABASE_URL="mysql://freeliga:freeliga123@localhost:3306/freeliga"
 ```
 
-**apps/api/.env**
-```env
-PORT=3001
-NODE_ENV=development
-DATABASE_URL="postgresql://postgres:password@localhost:5432/freesquash"
-JWT_SECRET="your-super-secret-jwt-key-change-in-production"
-FRONTEND_URL="http://localhost:5173"
-```
-
-#### Option B: Supabase (Recommended for Production)
-
-1. Create a project at [supabase.com](https://supabase.com)
-2. Get your database connection string from Project Settings > Database
-3. Update `.env` files with your Supabase URL
-
-### 4. Initialize Database
-
+3. **Start MySQL (Docker only)**
 ```bash
-# Generate Prisma client
-npm run db:generate
+docker run --name freesquash-db \
+  -e MYSQL_ROOT_PASSWORD=rootpass \
+  -e MYSQL_USER=freeliga \
+  -e MYSQL_PASSWORD=freeliga123 \
+  -e MYSQL_DATABASE=freeliga \
+  -p 3306:3306 \
+  -d mysql:8.0
+```
 
-# Push schema to database (for development)
-npm run db:push
-
-# Or run migrations (for production)
+4. **Initialize Database**
+```bash
 cd packages/database
-npx prisma migrate dev --name init
+npx prisma db push
 ```
 
-### 5. Create Admin User (Optional)
-
-Open Prisma Studio:
+5. **Load Seed Data (Optional)**
 ```bash
-npm run db:studio
+mysql -h localhost -u freeliga -p freeliga123 freeliga < seed-real-data.sql
 ```
 
-1. Create a User with `role = ADMIN`
-2. Set password hash (you can generate one by registering normally first, then changing the role)
-
-### 6. Start Development Servers
-
+6. **Start Development Servers**
 ```bash
-# Start both frontend and backend
-npm run dev
+# Terminal 1: Backend
+npm run dev:api  # Runs on http://localhost:3001
 
-# Or separately:
-npm run dev:api  # Backend on http://localhost:3001
-npm run dev:web  # Frontend on http://localhost:5173
+# Terminal 2: Frontend
+npm run dev:web  # Runs on http://localhost:5173
 ```
-
-### 7. Access the Application
-
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:3001
-- API Health Check: http://localhost:3001/health
-- Prisma Studio: `npm run db:studio`
 
 ## 📁 Project Structure
 
@@ -229,40 +218,98 @@ freesquash-league/
    - **Injury match**: Set `matchStatus = INJURY` - should not affect rankings
 4. View group rankings to verify tie-breaking logic
 
-## 🚢 Deployment
+## 🚢 Deployment Guide
 
-### Frontend (Vercel)
-```bash
-cd apps/web
-npm run build
-# Deploy dist/ folder to Vercel
-```
+### Backend Deployment (Railway)
 
-### Backend (Railway/Render)
-```bash
-cd apps/api
-npm run build
-# Deploy with start command: node dist/server.js
-```
+1. **Create Railway Account** at [railway.app](https://railway.app)
 
-### Database (Supabase)
-- Use Supabase connection string in production
+2. **Connect GitHub Repository**
+   - Go to Dashboard → New Project → GitHub Repo
+   - Select `FreeLiga` repository
+
+3. **Configure Environment Variables**
+   In Railway dashboard, add:
+   ```
+   DATABASE_URL=mysql://user:password@host:3306/database
+   JWT_SECRET=your-secret-key-here-change-this
+   FRONTEND_URL=https://your-vercel-domain.vercel.app
+   ALLOWED_ORIGINS=https://your-vercel-domain.vercel.app
+   NODE_ENV=production
+   ```
+
+4. **Deploy**
+   - Railway auto-detects Dockerfile
+   - Sets start command: `node apps/api/dist/server.js`
+   - Deployment URL provided in dashboard
+
+### Frontend Deployment (Vercel)
+
+1. **Create Vercel Account** at [vercel.com](https://vercel.com)
+
+2. **Import Project**
+   - Go to Dashboard → Add New → Project → Import Git Repo
+   - Select `FreeLiga` repository
+
+3. **Configure Build**
+   - Framework: `Vite`
+   - Root Directory: `apps/web`
+   - Build Command: `npm run build --workspace=apps/web`
+   - Output Directory: `dist`
+
+4. **Set Environment Variables**
+   ```
+   VITE_API_URL=https://your-railway-backend-url.up.railway.app
+   ```
+
+5. **Deploy**
+   - Vercel auto-builds and deploys
+   - Gets free HTTPS certificate
+   - Automatic deployments on git push
+
+### Database
+
+**Option A: MySQL on Railway**
+- Add MySQL service in Railway dashboard
+- Connection string auto-generated in `DATABASE_URL`
 - Run migrations: `npx prisma migrate deploy`
+
+**Option B: Managed MySQL (Supabase, PlanetScale, AWS RDS)**
+- Get connection string from provider
+- Set `DATABASE_URL` in Railway environment
+- Run migrations: `npx prisma migrate deploy`
+
+### Post-Deployment Verification
+
+```bash
+# Test backend health
+curl https://your-railway-backend-url.up.railway.app/health
+
+# Test login (admin credentials)
+curl -X POST https://your-railway-backend-url.up.railway.app/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@freesquash.com","password":"123456"}'
+```
+
+Visit frontend URL and verify login works end-to-end.
 
 ## 🐛 Troubleshooting
 
-### Database connection issues
-- Verify PostgreSQL is running
-- Check DATABASE_URL in .env files
-- Ensure database exists
+### Docker Issues
+- **Services won't start**: Check `docker-compose logs <service-name>`
+- **Port already in use**: Kill existing containers: `docker-compose down -v`
+- **Database not syncing**: Run `docker-compose exec api npx prisma db push`
 
-### Port conflicts
-- Change PORT in apps/api/.env
-- Update proxy in apps/web/vite.config.ts
+### Database Connection Issues
+- **Can't connect to MySQL**: Verify MySQL container is healthy: `docker-compose ps`
+- **Prisma client missing**: Run `npm install --workspaces` and `npx prisma generate`
 
-### Module not found errors
-- Run `npm install --workspaces`
-- Run `npm run db:generate`
+### Port Conflicts
+- MySQL: 3306 (mapped to localhost)
+- Backend API: 3001
+- Frontend: 4173
+- Adminer: 8080
+- Check with `netstat -ano | findstr :PORT` (Windows) or `lsof -i :PORT` (Mac/Linux)
 
 ## 📝 License
 

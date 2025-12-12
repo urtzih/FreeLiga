@@ -1,0 +1,33 @@
+# Development Dockerfile for Backend (with hot reload)
+FROM node:20-bullseye-slim
+
+WORKDIR /app
+
+# Ensure OpenSSL 1.1 is available for Prisma
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openssl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy package files
+COPY package*.json ./
+COPY apps/api/package*.json ./apps/api/
+COPY packages/database/package*.json ./packages/database/
+COPY tsconfig.json ./
+
+# Install all dependencies (including dev)
+RUN npm install
+
+# Copy source code
+COPY apps/api ./apps/api
+COPY packages/database ./packages/database
+
+# Generate Prisma Client
+RUN cd packages/database && npx prisma generate
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3001/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+
+EXPOSE 3001
+
+CMD ["npm", "run", "dev", "--workspace=apps/api"]

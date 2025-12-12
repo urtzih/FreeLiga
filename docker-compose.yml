@@ -1,0 +1,91 @@
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: freeliga-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: freeliga
+      MYSQL_USER: freeliga
+      MYSQL_PASSWORD: freeliga123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - freeliga-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # Backend API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: freeliga-api
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+      DATABASE_URL: mysql://freeliga:freeliga123@mysql:3306/freeliga
+      JWT_SECRET: dev-secret-key-change-in-production
+      FRONTEND_URL: http://localhost:5173
+      ALLOWED_ORIGINS: http://localhost:5173,http://localhost:3000
+    ports:
+      - "3001:3001"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./apps/api/src:/app/apps/api/src
+      - ./packages/database/src:/app/packages/database/src
+      - ./packages/database/prisma:/app/packages/database/prisma
+    networks:
+      - freeliga-network
+    command: npm run dev --workspace=apps/api
+
+  # Frontend Dev Server
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile.dev
+    container_name: freeliga-web
+    environment:
+      VITE_API_URL: http://localhost:3001
+      VITE_API_TIMEOUT: 30000
+    ports:
+      - "4173:4173"
+    depends_on:
+      - api
+    volumes:
+      - ./apps/web/src:/app/src
+      - ./apps/web/index.html:/app/index.html
+      - ./apps/web/tsconfig.json:/app/tsconfig.json
+      - ./apps/web/vite.config.ts:/app/vite.config.ts
+      - /app/node_modules
+    networks:
+      - freeliga-network
+    command: npm run dev -- --host 0.0.0.0 --port 4173
+
+  # Adminer (web UI for MySQL)
+  adminer:
+    image: adminer:4
+    container_name: freeliga-adminer
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+    networks:
+      - freeliga-network
+
+volumes:
+  mysql_data:
+
+networks:
+  freeliga-network:
+    driver: bridge
