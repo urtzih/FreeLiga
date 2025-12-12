@@ -1,8 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { lazy, Suspense } from 'react';
+const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/auth/Login'));
-const Register = lazy(() => import('./pages/auth/Register'));
 const Dashboard = lazy(() => import('./pages/player/Dashboard'));
 const GroupView = lazy(() => import('./pages/player/GroupView'));
 // Eliminado: GlobalClassification fusionado en GroupView
@@ -64,12 +64,12 @@ function App() {
                 <Routes>
                     {/* Public routes */}
                     <Route
-                        path="/login"
-                        element={!isAuthenticated ? <Login /> : <Navigate to={defaultRoute} replace />}
+                        path="/"
+                        element={!isAuthenticated ? <Home /> : <Navigate to={defaultRoute} replace />}
                     />
                     <Route
-                        path="/register"
-                        element={!isAuthenticated ? <Register /> : <Navigate to={defaultRoute} replace />}
+                        path="/login"
+                        element={!isAuthenticated ? <Login /> : <Navigate to={defaultRoute} replace />}
                     />
 
                     {/* Protected player routes */}
@@ -194,9 +194,8 @@ function App() {
                         />
                     </Route>
 
-                    {/* Default redirect */}
-                    <Route path="/" element={<Navigate to={defaultRoute} replace />} />
-                    <Route path="*" element={<Navigate to={defaultRoute} replace />} />
+                    {/* Default redirect for unknown routes */}
+                    <Route path="*" element={<Navigate to={isAuthenticated ? defaultRoute : "/"} replace />} />
                 </Routes>
             </Suspense>
         </BrowserRouter>
