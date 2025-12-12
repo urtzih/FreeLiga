@@ -146,7 +146,7 @@ mysql -h localhost -u freeliga -p freeliga123 freeliga < seed-real-data.sql
 npm run dev:api  # Runs on http://localhost:3001
 
 # Terminal 2: Frontend
-npm run dev:web  # Runs on http://localhost:5173
+npm run dev:web  # Runs on http://localhost:4173
 ```
 
 ## 📁 Project Structure

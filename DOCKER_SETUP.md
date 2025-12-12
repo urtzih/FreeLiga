@@ -34,7 +34,7 @@ docker-compose logs -f mysql
 ```
 
 ### 3. Acceder a la Aplicación
-- **Frontend (Web)**: http://localhost:5173
+- **Frontend (Web)**: http://localhost:4173
 - **Backend API**: http://localhost:3001
 - **MySQL**: localhost:3306 (usuario: freeliga, password: freeliga123)
 
@@ -122,7 +122,7 @@ docker-compose logs mysql
 ```
 ┌─────────────────────────────────────┐
 │       Frontend (Vite)               │
-│     http://localhost:5173           │
+│     http://localhost:4173           │
 │      (hot reload enabled)           │
 └──────────────┬──────────────────────┘
                │ HTTP (CORS)

@@ -20,7 +20,7 @@ docker-compose up -d
 
 ## 2️⃣ Acceder a la App
 
-- **Frontend**: http://localhost:5173
+- **Frontend**: http://localhost:4173
 - **Backend API**: http://localhost:3001
 - **Base de datos**: localhost:3306 (usuario: `freeliga`, contraseña: `freeliga123`)
 
@@ -89,7 +89,7 @@ npx prisma generate
 ## 📊 Estructura
 
 ```
-localhost:5173 (Frontend React)
+localhost:4173 (Frontend React)
     ↓ HTTP + CORS
 localhost:3001/api/* (Backend Fastify)
     ↓ Prisma ORM

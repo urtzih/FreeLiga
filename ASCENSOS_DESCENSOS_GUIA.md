@@ -12,7 +12,7 @@ El sistema de ascensos y descensos permite que los jugadores cambien de grupo au
 
 Cuando una temporada llega a su fin:
 
-1. Accede a **http://localhost:5173/admin/seasons**
+1. Accede a **http://localhost:4173/admin/seasons**
 2. Verifica que la fecha de fin de la temporada sea anterior a hoy
 3. El botón **"Movimientos"** debería estar activo (naranja oscuro)
 
@@ -27,7 +27,7 @@ Estado de botones:
 ### **PASO 2: Ver Propuesta de Ascensos/Descensos**
 
 1. Haz clic en el botón **"Movimientos"** para una temporada finalizada
-2. Se abre **http://localhost:5173/admin/seasons/{seasonId}/proposals**
+2. Se abre **http://localhost:4173/admin/seasons/{seasonId}/proposals**
 
 En esta página verás:
 
@@ -201,7 +201,7 @@ Cada movimiento queda registrado:
 - En la siguiente temporada, si no tienen movimiento, se mantienen en el mismo grupo
 
 ### **¿Cómo veo el historial de un jugador?**
-1. Ve a **http://localhost:5173/admin/users**
+1. Ve a **http://localhost:4173/admin/users**
 2. Abre la pestaña **"Historial de Jugadores"**
 3. Busca el jugador
 4. Verás su historial de cambios entre grupos

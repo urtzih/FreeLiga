@@ -42,7 +42,7 @@ FreeSquash League es una plataforma web para gestionar ligas de squash con grupo
 
 ### 1. Registro en la Plataforma
 
-1. **Accede a la aplicación** en tu navegador (http://localhost:5173 en desarrollo)
+1. **Accede a la aplicación** en tu navegador (http://localhost:4173 en desarrollo)
 2. **Haz clic en "Regístrate"** en la página de inicio de sesión
 3. **Completa el formulario de registro**:
    - **Nombre Completo*** (obligatorio): Tu nombre completo

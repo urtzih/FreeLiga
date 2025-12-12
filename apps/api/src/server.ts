@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
@@ -19,9 +20,15 @@ const fastify = Fastify({
 
 async function start() {
     try {
+        // Compute allowed origins (comma-separated list)
+        const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:4173')
+            .split(',')
+            .map((o: string) => o.trim())
+            .filter(Boolean);
+
         // Register CORS
         await fastify.register(cors, {
-            origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+            origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
             credentials: true,
         });
 
@@ -47,8 +54,8 @@ async function start() {
                     description: 'API documentation for FreeSquash League',
                     version: '1.0.0',
                 },
-                host: 'localhost:3001',
-                schemes: ['http'],
+                host: process.env.SWAGGER_HOST || 'localhost:3001',
+                schemes: process.env.SWAGGER_SCHEMES ? process.env.SWAGGER_SCHEMES.split(',') : ['http'],
                 consumes: ['application/json'],
                 produces: ['application/json'],
                 securityDefinitions: {
@@ -104,12 +111,12 @@ async function start() {
 }
 
 // Handle unhandled rejections
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
 // Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', (error: unknown) => {
     console.error('Uncaught Exception:', error);
 });
 
