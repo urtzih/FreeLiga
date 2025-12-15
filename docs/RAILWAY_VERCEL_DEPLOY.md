@@ -9,7 +9,7 @@ Guía completa para desplegar **FreeSquash League** a producción usando **Railw
 - GitHub account with FreeLiga repository pushed
 - Railway account ([railway.app](https://railway.app))
 - Vercel account ([vercel.com](https://vercel.com))
-- MySQL database (Railway managed or external)
+- MySQL database (Railway Service)
 
 ---
 
@@ -24,21 +24,20 @@ Guía completa para desplegar **FreeSquash League** a producción usando **Railw
 5. Choose **FreeLiga** repository
 6. Confirm and create
 
-### Step 2: Add MySQL Database Service (Optional)
+### Step 2: Add MySQL Database Service
 
-If you don't have an external database:
-
-1. In Railway Dashboard: **New → Database → MySQL**
-2. Railway auto-generates connection string in `DATABASE_URL`
-3. Keep for next step
+1. In Railway Dashboard: Click **New → Database → MySQL**
+2. Railway will create a new service and automatically set the `DATABASE_URL` environment variable for your project (if they are in the same project).
+3. Wait for the database to be "Active".
 
 ### Step 3: Configure Environment Variables
 
 In **Railway Dashboard → Project → Variables**:
 
 ```env
-# Database connection (from MySQL service or external provider)
-DATABASE_URL=mysql://username:password@host:3306/database_name
+# Database connection
+# (Railway usually sets this automatically, but verify it exists)
+DATABASE_URL=mysql://...
 
 # JWT authentication secret
 JWT_SECRET=your-super-secret-jwt-key-min-32-chars-recommended
