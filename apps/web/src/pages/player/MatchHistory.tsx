@@ -25,7 +25,11 @@ export default function MatchHistory() {
         queryFn: async () => {
             const { data } = await api.get('/seasons');
             return data;
-        }
+        },
+        staleTime: 0,
+        gcTime: 0,
+        refetchOnMount: 'always',
+        refetchOnWindowFocus: true
     });
 
     // Fetch all groups
@@ -34,7 +38,11 @@ export default function MatchHistory() {
         queryFn: async () => {
             const { data } = await api.get('/groups');
             return data;
-        }
+        },
+        staleTime: 0,
+        gcTime: 0,
+        refetchOnMount: 'always',
+        refetchOnWindowFocus: true
     });
 
     // Filter groups by selected season
@@ -44,7 +52,7 @@ export default function MatchHistory() {
     }, [allGroups, selectedSeason]);
 
 
-    const { data: matches = [], isLoading } = useQuery({
+    const { data: matches = [], isLoading, refetch: refetchMatches } = useQuery({
         queryKey: ['matches', isAdmin ? 'all' : user?.player?.id],
         queryFn: async () => {
             // Admins see all matches, players see only their own
@@ -55,6 +63,10 @@ export default function MatchHistory() {
             return data;
         },
         enabled: isAdmin || !!user?.player?.id,
+        staleTime: 0,
+        gcTime: 0,
+        refetchOnMount: 'always',
+        refetchOnWindowFocus: true
     });
 
     // Delete mutation
@@ -353,7 +365,10 @@ export default function MatchHistory() {
             <EditMatchModal
                 match={editingMatch}
                 isOpen={!!editingMatch}
-                onClose={() => setEditingMatch(null)}
+                onClose={() => {
+                    setEditingMatch(null);
+                    refetchMatches();
+                }}
             />
         </div>
     );

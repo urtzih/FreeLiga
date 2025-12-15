@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import api from '../../lib/api';
 import Loader from '../../components/Loader';
+import { useAdminQuery } from '../../hooks/useAdminQuery';
 
 export default function ManageSeasons() {
     const queryClient = useQueryClient();
     const [showForm, setShowForm] = useState(false);
     const [yearFilter, setYearFilter] = useState<string>('');
+    const [deleteError, setDeleteError] = useState<string>('');
     const [formData, setFormData] = useState({
         name: '',
         startDate: '',
@@ -20,7 +22,7 @@ export default function ManageSeasons() {
         endDate: '',
     });
 
-    const { data: seasons = [], isLoading } = useQuery({
+    const { data: seasons = [], isLoading } = useAdminQuery({
         queryKey: ['seasons'],
         queryFn: async () => {
             const { data } = await api.get('/seasons');
@@ -77,14 +79,17 @@ export default function ManageSeasons() {
 
     const deleteMutation = useMutation({
         mutationFn: async (id: string) => {
-            await api.delete(`/seasons/${id}`);
+            const response = await api.delete(`/seasons/${id}`);
+            return response.data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['seasons'] });
-            alert('Temporada eliminada correctamente');
+            alert('✅ Temporada eliminada correctamente');
         },
         onError: (error: any) => {
-            alert(`Error al eliminar la temporada: ${error.response?.data?.error || error.message}`);
+            console.error('Delete season error:', error.response);
+            const errorMsg = error.response?.data?.error || error.message || 'Error desconocido';
+            setDeleteError(errorMsg);
         }
     });
 
@@ -395,6 +400,39 @@ export default function ManageSeasons() {
                     </div>
                 </div>
             )}
-        </div>
+            {/* Modal de error de eliminación */}
+            {deleteError && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border-2 border-red-500">
+                        <div className="bg-red-500 p-4 flex items-center">
+                            <svg className="w-6 h-6 text-white mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <h3 className="text-xl font-bold text-white">No se puede eliminar</h3>
+                        </div>
+                        
+                        <div className="p-6">
+                            <div className="mb-6 text-slate-700 dark:text-slate-300 whitespace-pre-line">
+                                {deleteError}
+                            </div>
+                            
+                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+                                <p className="text-sm text-blue-800 dark:text-blue-300">
+                                    <strong>💡 Protección de datos históricos:</strong><br/>
+                                    Este sistema protege automáticamente el historial de partidos, clasificaciones y ascensos/descensos. 
+                                    No se pueden eliminar temporadas con datos para preservar la integridad del historial de la liga.
+                                </p>
+                            </div>
+
+                            <button
+                                onClick={() => setDeleteError('')}
+                                className="w-full px-4 py-3 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-medium transition-colors"
+                            >
+                                Entendido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}        </div>
     );
 }

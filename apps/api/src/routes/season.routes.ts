@@ -14,6 +14,11 @@ export async function seasonRoutes(fastify: FastifyInstance) {
     // List all seasons
     fastify.get('/', { onRequest: [fastify.authenticate] }, async (request, reply) => {
         try {
+            // Set no-cache headers for admin endpoints
+            reply.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+            reply.header('Pragma', 'no-cache');
+            reply.header('Expires', '0');
+            
             const seasons = await prisma.season.findMany({
                 include: { groups: { include: { _count: { select: { groupPlayers: true, matches: true } } } }, closure: true },
                 orderBy: { startDate: 'desc' },
@@ -434,7 +439,17 @@ export async function seasonRoutes(fastify: FastifyInstance) {
             const season = await prisma.season.findUnique({
                 where: { id },
                 include: {
-                    groups: true,
+                    groups: {
+                        include: {
+                            _count: {
+                                select: {
+                                    groupPlayers: true,
+                                    matches: true,
+                                }
+                            }
+                        }
+                    },
+                    closure: true,
                 }
             });
 
@@ -444,8 +459,24 @@ export async function seasonRoutes(fastify: FastifyInstance) {
 
             // Check if season has groups
             if (season.groups && season.groups.length > 0) {
+                const totalPlayers = season.groups.reduce((sum, g) => sum + g._count.groupPlayers, 0);
+                const totalMatches = season.groups.reduce((sum, g) => sum + g._count.matches, 0);
+                
                 return reply.status(400).send({ 
-                    error: 'No se puede eliminar una temporada que tiene grupos asociados. Elimina los grupos primero.' 
+                    error: `No se puede eliminar esta temporada porque contiene:\n\n` +
+                           `• ${season.groups.length} grupo(s)\n` +
+                           `• ${totalPlayers} inscripción(es) de jugadores\n` +
+                           `• ${totalMatches} partido(s) jugado(s)\n\n` +
+                           `Para proteger el historial de la liga, no se pueden eliminar temporadas con datos. ` +
+                           `Si deseas ocultar esta temporada, márcala como inactiva en lugar de eliminarla.`
+                });
+            }
+
+            // Check if season has closure (historical data)
+            if (season.closure) {
+                return reply.status(400).send({ 
+                    error: `No se puede eliminar esta temporada porque tiene un cierre de temporada guardado con datos históricos de ascensos/descensos.\n\n` +
+                           `Para proteger el historial de la liga, no se pueden eliminar temporadas cerradas.`
                 });
             }
 

@@ -22,8 +22,7 @@ export default function PlayerProgress() {
     queryFn: async () => {
       const { data } = await api.get(`/players/${playerId}/matches-by-date`);
       return data;
-    },
-    staleTime: 60_000
+    }
   });
 
   const { data: movements, isLoading: movementsLoading, error: movementsError } = useQuery<MovementRecord[]>({
@@ -32,8 +31,7 @@ export default function PlayerProgress() {
     queryFn: async () => {
       const { data } = await api.get(`/players/${playerId}/movements`);
       return data;
-    },
-    staleTime: 60_000
+    }
   });
 
   // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONS/RETURNS

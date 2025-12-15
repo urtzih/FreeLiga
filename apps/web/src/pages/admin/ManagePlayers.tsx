@@ -1,9 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
 import api from '../../lib/api';
 import Loader from '../../components/Loader';
+import { useAdminQuery } from '../../hooks/useAdminQuery';
 
 export default function ManagePlayers() {
-    const { data: players = [], isLoading } = useQuery({
+    const { data: players = [], isLoading } = useAdminQuery({
         queryKey: ['players'],
         queryFn: async () => {
             const { data } = await api.get('/players');

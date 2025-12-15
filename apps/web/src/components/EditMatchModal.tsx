@@ -43,6 +43,7 @@ export default function EditMatchModal({ match, isOpen, onClose }: EditMatchModa
             queryClient.invalidateQueries({ queryKey: ['matches'] });
             queryClient.invalidateQueries({ queryKey: ['playerStats'] });
             queryClient.invalidateQueries({ queryKey: ['classification'] });
+            queryClient.invalidateQueries({ queryKey: ['group'] });
             onClose();
         },
         onError: (err: any) => {

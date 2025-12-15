@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
 import PlayerHistory from './PlayerHistory';
+import { useAdminQuery } from '../../hooks/useAdminQuery';
 
 interface User {
     id: string;
@@ -75,7 +76,7 @@ export default function ManageUsers() {
     });
 
     // Fetch admin stats for available groups (active season)
-    const { data: adminStats } = useQuery({
+    const { data: adminStats } = useAdminQuery({
         queryKey: ['adminStatsForUsers'],
         queryFn: async () => {
             const { data } = await api.get('/admin/stats');
@@ -85,7 +86,7 @@ export default function ManageUsers() {
     const availableGroups = adminStats?.activeSeason?.groups || [];
 
     // Fetch users (paginated & filtered)
-    const { data, isLoading } = useQuery<UsersResponse>({
+    const { data, isLoading } = useAdminQuery<UsersResponse>({
         queryKey: ['users', page, debouncedSearchTerm],
         queryFn: async () => {
             const { data } = await api.get(`/users?page=${page}&limit=20&search=${encodeURIComponent(debouncedSearchTerm)}`);

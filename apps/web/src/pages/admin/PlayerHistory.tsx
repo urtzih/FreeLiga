@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import api from '../../lib/api';
+import { useAdminQuery } from '../../hooks/useAdminQuery';
 import { Line } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
@@ -92,7 +92,7 @@ export default function PlayerHistory() {
     const [viewMode, setViewMode] = useState<'timeline' | 'chart'>('chart');
 
     // Fetch all users with complete history
-    const { data: players = [], isLoading } = useQuery({
+    const { data: players = [], isLoading } = useAdminQuery({
         queryKey: ['playerHistory'],
         queryFn: async () => {
             const { data } = await api.get('/admin/player-history');

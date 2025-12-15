@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../../lib/api';
+import { useAdminQuery } from '../../hooks/useAdminQuery';
 
 export default function ManageGroups() {
     const queryClient = useQueryClient();
@@ -41,7 +42,7 @@ export default function ManageGroups() {
     };
 
     // Data fetching
-    const { data: adminStats } = useQuery({
+    const { data: adminStats } = useAdminQuery({
         queryKey: ['adminStatsForUsers'],
         queryFn: async () => {
             const { data } = await api.get('/admin/stats');
@@ -49,7 +50,7 @@ export default function ManageGroups() {
         },
     });
 
-    const { data: groups = [] } = useQuery({
+    const { data: groups = [] } = useAdminQuery({
         queryKey: ['groups'],
         queryFn: async () => {
             const { data } = await api.get('/groups');
@@ -58,7 +59,7 @@ export default function ManageGroups() {
     });
 
     // Players to add (fetch users)
-    const { data: usersData = { users: [] } } = useQuery({
+    const { data: usersData = { users: [] } } = useAdminQuery({
         queryKey: ['users-for-groups'],
         queryFn: async () => {
             const { data } = await api.get('/users?page=1&limit=500');
@@ -66,7 +67,7 @@ export default function ManageGroups() {
         }
     });
 
-    const { data: seasons = [] } = useQuery({
+    const { data: seasons = [] } = useAdminQuery({
         queryKey: ['seasons'],
         queryFn: async () => {
             const { data } = await api.get('/seasons');

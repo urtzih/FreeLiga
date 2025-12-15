@@ -1,7 +1,8 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import api from '../../lib/api';
+import { useAdminQuery } from '../../hooks/useAdminQuery';
 
 export default function SeasonProposals() {
     const { seasonId } = useParams();
@@ -14,7 +15,7 @@ export default function SeasonProposals() {
     const [selectedPlayerId, setSelectedPlayerId] = useState('');
 
     // Fetch season details and closure
-    const { data: season, isLoading } = useQuery({
+    const { data: season, isLoading, refetch } = useAdminQuery({
         queryKey: ['season-proposal', seasonId],
         queryFn: async () => {
             const { data: seasonData } = await api.get(`/seasons/${seasonId}`);
@@ -49,7 +50,7 @@ export default function SeasonProposals() {
     }, [season]);
 
     // Inactive or ungrouped players to optionally add
-    const { data: candidateUsers } = useQuery({
+    const { data: candidateUsers } = useAdminQuery({
         queryKey: ['inactive-ungrouped-users'],
         queryFn: async () => {
             const { data } = await api.get('/users?page=1&limit=500');
@@ -87,9 +88,10 @@ export default function SeasonProposals() {
         mutationFn: async () => {
             await api.post(`/seasons/${seasonId}/closure/approve`);
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['season-proposal', seasonId] });
-            alert('Propuesta aprobada correctamente. Los movimientos se han aplicado.');
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ['season-proposal', seasonId] });
+            await refetch();
+            alert('Propuesta aprobada correctamente. Los movimientos se han aplicado. Ahora puedes generar la siguiente temporada.');
         },
         onError: () => {
             alert('Error al aprobar la propuesta');
