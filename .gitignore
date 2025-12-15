@@ -49,3 +49,4 @@ lerna-debug.log*
 packages/database/prisma/migrations/
 .env.production.example
 docs/freesquash_liga.sql
+.vercel
