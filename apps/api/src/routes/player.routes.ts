@@ -319,6 +319,7 @@ export async function playerRoutes(fastify: FastifyInstance) {
 
             return history.map(h => ({
                 seasonName: h.season.name,
+                seasonEndDate: h.season.endDate,
                 groupName: h.group?.name || 'Sin grupo',
                 movement: h.movementType || 'STAY',
                 finalRank: h.finalRank || 0

@@ -7,7 +7,7 @@ import { Chart as ChartJS, LineElement, PointElement, CategoryScale, LinearScale
 ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, BarElement, Tooltip, Legend, Title, Filler);
 
 interface MatchByDate { date: string; result: 'WIN' | 'LOSS'; opponent: string; score: string; }
-interface MovementRecord { seasonName: string; groupName: string; movement: 'PROMOTION' | 'RELEGATION' | 'STAY'; finalRank: number; }
+interface MovementRecord { seasonName: string; seasonEndDate: string; groupName: string; movement: 'PROMOTION' | 'RELEGATION' | 'STAY'; finalRank: number; }
 
 export default function PlayerProgress() {
   const { user } = useAuth();
@@ -139,24 +139,37 @@ export default function PlayerProgress() {
     ]
   };
 
-  // Gráfico: Ascensos/Descensos por temporada
+  // Gráfico: Evolución de Grupo por Temporada
   const movementChartData = {
-    labels: movements.map(m => m.seasonName),
+    labels: movements.map(m => {
+      try {
+        return new Date(m.seasonEndDate).toLocaleDateString('es-ES', { year: 'numeric', month: 'short' });
+      } catch (e) {
+        return m.seasonName;
+      }
+    }),
     datasets: [
       {
-        label: 'Posición Final',
-        data: movements.map(m => m.finalRank),
-        backgroundColor: movements.map(m =>
-          m.movement === 'PROMOTION' ? 'rgba(34,197,94,0.8)' :
-            m.movement === 'RELEGATION' ? 'rgba(239,68,68,0.8)' :
-              'rgba(148,163,184,0.8)'
-        ),
-        borderColor: movements.map(m =>
+        label: 'Nivel de Grupo',
+        data: movements.map(m => {
+          // Extraer número de grupo (ej: "Grupo 1" -> 1)
+          const match = m.groupName.match(/\d+/);
+          return match ? parseInt(match[0]) : 0;
+        }),
+        borderColor: 'rgb(99,102,241)',
+        backgroundColor: 'rgba(99,102,241,0.1)',
+        borderWidth: 3,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 6,
+        pointHoverRadius: 8,
+        pointBackgroundColor: movements.map(m =>
           m.movement === 'PROMOTION' ? 'rgb(34,197,94)' :
             m.movement === 'RELEGATION' ? 'rgb(239,68,68)' :
               'rgb(148,163,184)'
         ),
-        borderWidth: 2
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2
       }
     ]
   };
@@ -232,44 +245,62 @@ export default function PlayerProgress() {
         )}
       </div>
 
-      {/* Gráfico: Ascensos/Descensos */}
+      {/* Gráfico: Evolución de Grupo por Temporada */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Historial de Ascensos y Descensos</h2>
+        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Evolución de Grupo por Temporada</h2>
         {movements.length === 0 ? (
           <p className="text-slate-500 dark:text-slate-400">No hay historial de movimientos entre grupos</p>
         ) : (
           <>
-            <Bar data={movementChartData} options={{
+            <Line data={movementChartData} options={{
               responsive: true,
               plugins: {
                 legend: { display: false },
                 tooltip: {
                   callbacks: {
+                    title: (items) => {
+                      const idx = items[0].dataIndex;
+                      return movements[idx].seasonName;
+                    },
                     label: (item) => {
                       const idx = item.dataIndex;
                       const mov = movements[idx];
-                      const movText = mov.movement === 'PROMOTION' ? '🟢 Ascenso' : mov.movement === 'RELEGATION' ? '🔴 Descenso' : '⚪ Se mantiene';
-                      return [`Posición: ${mov.finalRank}`, `${movText}`, `Grupo: ${mov.groupName}`];
+                      const movText = mov.movement === 'PROMOTION' ? '📈 Ascenso' : mov.movement === 'RELEGATION' ? '📉 Descenso' : '➡️ Se mantiene';
+                      return [`${mov.groupName}`, `${movText}`, `Posición final: ${mov.finalRank}`];
                     }
                   }
                 }
               },
               scales: {
-                x: { title: { display: true, text: 'Temporada' } },
-                y: { reverse: true, beginAtZero: false, title: { display: true, text: 'Posición Final (1 = mejor)' }, ticks: { stepSize: 1 } }
+                x: { 
+                  title: { display: true, text: 'Temporada' },
+                  grid: { display: false }
+                },
+                y: { 
+                  reverse: true,
+                  beginAtZero: false,
+                  title: { display: true, text: 'Grupo (1 = mejor nivel)' },
+                  ticks: { 
+                    stepSize: 1,
+                    callback: function(value) {
+                      return 'Grupo ' + value;
+                    }
+                  },
+                  grid: { color: 'rgba(148,163,184,0.1)' }
+                }
               }
             }} />
-            <div className="mt-4 flex items-center justify-center gap-6 text-sm">
+            <div className="mt-6 flex items-center justify-center gap-6 text-sm">
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-green-500"></div>
+                <div className="w-4 h-4 rounded-full bg-green-500 border-2 border-white"></div>
                 <span className="text-slate-700 dark:text-slate-300">Ascenso</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-red-500"></div>
+                <div className="w-4 h-4 rounded-full bg-red-500 border-2 border-white"></div>
                 <span className="text-slate-700 dark:text-slate-300">Descenso</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-slate-400"></div>
+                <div className="w-4 h-4 rounded-full bg-slate-400 border-2 border-white"></div>
                 <span className="text-slate-700 dark:text-slate-300">Se mantiene</span>
               </div>
             </div>
