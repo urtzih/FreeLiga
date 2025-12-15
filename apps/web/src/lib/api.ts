@@ -9,6 +9,11 @@ const api = axios.create({
     baseURL,
 });
 
+// Debug helper: expone la base del API en producción para verificar Vercel env
+try {
+    (globalThis as any).__API_BASE__ = baseURL;
+} catch {}
+
 // Add JWT token to requests
 api.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
