@@ -1,276 +1,160 @@
-# 🚀 Railway + Vercel Production Deployment Guide
+# 🚀 Guía de Despliegue en Producción: Railway + Vercel
 
-Guía completa para desplegar **FreeSquash League** a producción usando **Railway** (backend) y **Vercel** (frontend).
-
----
-
-## 📋 Prerequisites
-
-- GitHub account with FreeLiga repository pushed
-- Railway account ([railway.app](https://railway.app))
-- Vercel account ([vercel.com](https://vercel.com))
-- MySQL database (Railway Service)
+Guía completa para desplegar **FreeSquash League** a producción utilizando **Railway** (para el Backend y Base de Datos) y **Vercel** (para el Frontend).
 
 ---
 
-## 🔧 Backend Deployment (Railway)
+## 📋 Prerrequisitos
 
-### Step 1: Create Railway Account & Project
+- Cuenta de GitHub con el repositorio de FreeLiga subido.
+- Cuenta en Railway ([railway.app](https://railway.app)).
+- Cuenta en Vercel ([vercel.com](https://vercel.com)).
 
-1. Go to [railway.app](https://railway.app)
-2. Sign up / Sign in with GitHub
-3. Create new project: **Dashboard → New Project**
-4. Select **Deploy from GitHub Repo**
-5. Choose **FreeLiga** repository
-6. Confirm and create
+---
 
-### Step 2: Add MySQL Database Service
+## 🔧 Despliegue del Backend (Railway)
 
-1. In Railway Dashboard: Click **New → Database → MySQL**
-2. Railway will create a new service and automatically set the `DATABASE_URL` environment variable for your project (if they are in the same project).
-3. Wait for the database to be "Active".
+### Paso 1: Crear Proyecto en Railway
 
-### Step 3: Configure Environment Variables
+1. Ve a [railway.app](https://railway.app) e inicia sesión con GitHub.
+2. Crea un nuevo proyecto: **Dashboard → New Project**.
+3. Selecciona **Deploy from GitHub Repo**.
+4. Elige el repositorio **FreeLiga**.
+5. **IMPORTANTE**: Railway intentará detectar múltiples aplicaciones.
+   - Si te pregunta qué carpetas desplegar, selecciona solo la raíz o asegúrate de que luego configuraremos solo el backend.
+   - Si crea automáticamente servicios para `apps/web` y `apps/api`, puedes **borrar el servicio `web`** más tarde, ya que usaremos Vercel para eso.
 
-In **Railway Dashboard → Project → Variables**:
+### Paso 2: Añadir Base de Datos MySQL
+
+1. En el Dashboard de tu proyecto en Railway, haz clic en el botón **New (Nuevo)** o haz clic derecho en el lienzo.
+2. Selecciona **Database → MySQL**.
+3. Railway creará un servicio de MySQL. Espera a que esté en verde (Online).
+4. Este servicio generará automáticamente variables como `DATABASE_URL`.
+
+
+### Paso 3: Configurar Variables de Entorno (CRUCIAL)
+
+**⚠️ IMPORTANTE**: Si el despliegue falla la primera vez, es normal. Necesitamos configurar las variables **ANTES** de que el servidor pueda arrancar correctamente.
+
+1. Haz clic en tu servicio del repositorio (ej. `@freesquash/api` o `FreeLiga`).
+2. Ve a la pestaña **Variables**.
+3. Añade las siguientes variables (puedes usar el botón "Raw Editor" para pegar varias a la vez):
 
 ```env
-# Database connection
-# (Railway usually sets this automatically, but verify it exists)
-DATABASE_URL=mysql://...
+# Conexión a Base de Datos
+# Railway suele autocompletar esto si escribes "${{MySQL.DATABASE_URL}}"
+# O puedes copiar el valor de la pestaña "Variables" del servicio MySQL.
+DATABASE_URL=${{MySQL.DATABASE_URL}}
 
-# JWT authentication secret
-JWT_SECRET=your-super-secret-jwt-key-min-32-chars-recommended
+# Secreto para autenticación JWT
+# Escribe una cadena larga y aleatoria
+JWT_SECRET=tu-secreto-super-seguro-minimo-32-caracteres
 
-# Frontend URL (will update after Vercel deployment)
-FRONTEND_URL=https://your-vercel-domain.vercel.app
+# URL del Frontend (Vercel)
+# Por ahora pon una temporal, luego volveremos a actualizarla cuando tengamos la de Vercel
+FRONTEND_URL=https://tu-dominio-en-vercel.vercel.app
 
-# Allowed CORS origins (comma-separated if multiple)
-ALLOWED_ORIGINS=https://your-vercel-domain.vercel.app
+# Orígenes CORS permitidos
+ALLOWED_ORIGINS=https://tu-dominio-en-vercel.vercel.app
 
-# Environment
+# Entorno
 NODE_ENV=production
+PORT=3001
 ```
 
-**Important**: Change `JWT_SECRET` to a strong random string in production!
+> **Nota sobre `DATABASE_URL`**: En Railway, puedes referenciar variables de otros servicios. Si escribes `${{MySQL.DATABASE_URL}}`, Railway cogerá automáticamente la URL de tu servicio MySQL dentro del mismo proyecto. ¡Es la forma recomendada!
 
-Generate secure JWT secret:
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-```
+### Paso 4: Configurar Ajustes de Despliegue
 
-### Step 4: Configure Deployment Settings
+Asegúrate de que Railway sabe cómo construir tu API.
+Ve a **Settings (Configuración)** del servicio API:
 
-In **Railway Dashboard → Deployments**:
+- **Root Directory**: Déjalo vacío (`/`) si es un monorepo, o `apps/api` si lo prefieres, pero el Dockerfile está en la raíz.
+- **Build Command**: Déjalo vacío (usaremos Docker).
+- **Start Command**: Déjalo vacío.
 
-- **Root Directory**: leave empty (monorepo root)
-- **Builder**: Docker
-- **Dockerfile**: `./Dockerfile`
-- **Start Command**: Leave empty (auto-detected from Dockerfile)
+**Verifica el Dockerfile**:
+Railway debería detectar el `Dockerfile` en la raíz automáticamente.
 
-### Step 5: Deploy
+### Paso 5: Desplegar (Redeploy)
 
-Railway auto-deploys on:
-- Git push to main branch
-- Manual trigger via Dashboard → Deploy button
+Si el primer despliegue falló:
+1. Ve a la pestaña **Deployments**.
+2. Haz clic en **Redeploy** (o Trigger Deploy) ahora que las variables están configuradas.
+3. Observa los **Logs**. Deberías ver "Server listening on port 3001".
 
-Check deployment logs:
-```
-Dashboard → Logs → View all logs
-```
+### Paso 6: Obtener URL del Backend
 
-### Step 6: Get Backend URL
-
-After successful deployment:
-1. Go to **Railway Dashboard → Project**
-2. Select **API** service
-3. Copy **Public URL** (format: `https://xxx.up.railway.app`)
-4. Save this for Vercel configuration
+Una vez desplegado y en verde:
+1. Ve a **Settings** → **Networking**.
+2. Genera un dominio (Generate Domain) si no tienes uno.
+3. Copia esa URL (ej: `https://freeliga-production.up.railway.app`).
 
 ---
 
-## 🌐 Frontend Deployment (Vercel)
+## 🌐 Despliegue del Frontend (Vercel)
 
-### Step 1: Create Vercel Account & Import Project
+### Paso 1: Importar Proyecto en Vercel
 
-1. Go to [vercel.com](https://vercel.com)
-2. Sign up / Sign in with GitHub
-3. Import Git Repository: **Add New → Project → Import Git Repo**
-4. Select **FreeLiga** repository
-5. Click **Import**
+1. Ve a [vercel.com](https://vercel.com) → **Add New** → **Project**.
+2. Importa el repositorio **FreeLiga**.
 
-### Step 2: Configure Build Settings
+### Paso 2: Configurar Build
 
-Vercel should auto-detect, but verify:
+Vercel detectará que es un proyecto Vite, pero como es un monorepo, ajusta lo siguiente:
 
 - **Framework Preset**: Vite
-- **Root Directory**: `apps/web`
-- **Build Command**: `npm run build --workspace=apps/web`
-- **Output Directory**: `dist`
-- **Install Command**: `npm install --workspaces`
+- **Root Directory**: Haz clic en "Edit" y selecciona `apps/web`.
+- **Build Settings**:
+    - Build Command: `npm run build --workspace=apps/web` (o dejarlo por defecto si Vercel lo detecta bien dentro de la carpeta).
+    - Output Directory: `dist`
+    - Install Command: `npm install` (Vercel suele manejar esto bien en monorepos).
 
-**Note**: A `vercel.json` file has been added to `apps/web` to handle client-side routing (SPA rewrites). Ensure this file is pushed to GitHub.
+### Paso 3: Variables de Entorno
 
-### Step 3: Add Environment Variables
-
-In **Vercel Dashboard → Project Settings → Environment Variables**:
+En la sección **Environment Variables** antes de desplegar:
 
 ```env
-VITE_API_URL=https://your-railway-backend-url.up.railway.app
+VITE_API_URL=https://tu-backend-en-railway.up.railway.app
 ```
 
-Replace `your-railway-backend-url` with the Railway public URL from Step 6 above.
+*Pega aquí la URL que obtuviste en el Paso 6 del Backend.*
 
-### Step 4: Deploy
+### Paso 4: Desplegar
 
-Click **Deploy** button. Vercel will:
-1. Install dependencies
-2. Build React/Vite app
-3. Generate static dist/ folder
-4. Deploy to global CDN
+Haz clic en **Deploy**.
 
-Deployment URL: `https://xxxx.vercel.app`
+**Nota**: Hemos añadido un archivo `vercel.json` en `apps/web` para que la navegación funcione correctamente (evita errores 404 al recargar).
 
-### Step 5: Update Railway FRONTEND_URL
+### Paso 5: Actualizar Backend en Railway
 
-Now that you have Vercel URL:
+Ahora que tienes la URL final de Vercel (ej: `https://freeliga.vercel.app`):
 
-1. Go back to **Railway Dashboard**
-2. Select **API** service → **Variables**
-3. Update `FRONTEND_URL` to your Vercel URL
-4. Railway auto-redeploys with new variables
+1. Vuelve a **Railway**.
+2. Ve a las variables de tu API.
+3. Actualiza `FRONTEND_URL` y `ALLOWED_ORIGINS` con tu URL real de Vercel.
+4. El backend se reiniciará automáticamente.
 
 ---
 
-## ✅ Verification Checklist
+## �️ Solución de Problemas Comunes
 
-### Backend (Railway)
+### El Build falla en Railway
+- **Causa**: Falta la variable `DATABASE_URL` durante el build (Prisma la necesita para generar el cliente).
+- **Solución**: Asegúrate de haber añadido la variable `DATABASE_URL` (usando la referencia `${{MySQL.DATABASE_URL}}`) en la pestaña Variables **antes** de que termine el build. Si falló, añádela y dale a "Redeploy".
 
-```bash
-# Test health endpoint
-curl https://your-railway-url.up.railway.app/health
+### Veo dos servicios fallando en Railway (api y web)
+- **Causa**: Railway ha intentado desplegar todo el monorepo.
+- **Solución**: Borra el servicio `web` de Railway (clic derecho -> Delete). Solo necesitamos el servicio `api` y el servicio `MySQL`.
 
-# Test API connection
-curl https://your-railway-url.up.railway.app/api/seasons
-
-# Test login
-curl -X POST https://your-railway-url.up.railway.app/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@freesquash.com","password":"123456"}'
-```
-
-Should return JWT token.
-
-### Frontend (Vercel)
-
-1. Visit `https://your-vercel-domain.vercel.app`
-2. Should load React app (no blank page)
-3. Try login with:
-   - Email: `admin@freesquash.com`
-   - Password: `123456`
-4. Verify API calls work (check Network tab in DevTools)
-
-### Database
-
-Verify seed data loaded:
-```bash
-# If MySQL is accessible from your machine
-mysql -h host -u freeliga -p freeliga123 freeliga -e "SELECT COUNT(*) as user_count FROM users;"
-```
-
-Should return: `75` (admin + 74 players)
+### Error de Conexión a Base de Datos
+- **Verificación**: Comprueba que la variable `DATABASE_URL` en el servicio API coincide con la Connection URL del servicio MySQL. La referencia `${{MySQL.DATABASE_URL}}` es la forma más segura.
 
 ---
 
-## 🔄 Continuous Deployment
+## 📊 URLs de Producción
 
-Both Railway and Vercel auto-deploy on git push:
-
-```bash
-# Make changes locally
-git add .
-git commit -m "Update feature"
-git push origin main
-
-# Railway & Vercel automatically build and deploy
-# Check progress in respective dashboards
-```
-
----
-
-## 🔐 Security Best Practices
-
-1. **Change JWT_SECRET**: Use strong random value, NOT default
-2. **HTTPS Only**: Both Railway and Vercel provide free HTTPS
-3. **CORS Validation**: Only allow your Vercel domain in `ALLOWED_ORIGINS`
-4. **Database Credentials**: Use environment variables, never commit to git
-5. **Version Control**: Keep `.env` and `.env.production` out of git (check `.gitignore`)
-
----
-
-## 🛠️ Troubleshooting
-
-### Railway Build Fails
-
-Check **Railway Dashboard → Logs**:
-
-```
-Error: npm install failed
-→ Solution: Ensure package.json valid, run locally first
-
-Error: Prisma generation failed
-→ Solution: Run npx prisma generate locally, commit node_modules if needed
-```
-
-### Vercel Build Fails
-
-Check **Vercel Dashboard → Deployments → Build Logs**:
-
-```
-Error: Module not found (apps/web/src/...)
-→ Solution: Check import paths, ensure files exist
-
-Error: VITE_API_URL not set
-→ Solution: Add environment variable in Vercel dashboard
-```
-
-### API & Frontend Can't Communicate
-
-1. **Check VITE_API_URL**: Must point to Railway public URL
-2. **Check CORS**: Verify Vercel domain in Railway `ALLOWED_ORIGINS`
-3. **Check JWT**: Verify `JWT_SECRET` same on Railway (no drift after changes)
-4. **Browser DevTools**: Check Network tab for 401/403 errors
-
-### Database Connection Error
-
-1. **Verify DATABASE_URL**: Format must be `mysql://user:pass@host:port/db`
-2. **Test Locally**: Run against production database locally first
-3. **Check Firewall**: Ensure Railway/VPC allows MySQL port (3306)
-4. **MySQL Credentials**: Verify user has SELECT/INSERT/UPDATE/DELETE permissions
-
----
-
-## 📊 Production URLs
-
-After deployment, update bookmarks:
-
-| Service | URL |
+| Servicio | URL |
 |---------|-----|
-| Frontend | `https://your-vercel-domain.vercel.app` |
-| Backend API | `https://your-railway-url.up.railway.app` |
-| API Docs | `https://your-railway-url.up.railway.app/documentation` |
-| Health Check | `https://your-railway-url.up.railway.app/health` |
-
----
-
-## 📞 Support & Resources
-
-- **Railway Docs**: https://docs.railway.app
-- **Vercel Docs**: https://vercel.com/docs
-- **Prisma Docs**: https://www.prisma.io/docs
-- **Fastify Docs**: https://www.fastify.io/docs/latest
-
----
-
-**Last Updated**: December 2025  
-**Status**: Production Ready
+| Frontend (Vercel) | `https://tu-proyecto.vercel.app` |
+| Backend API (Railway) | `https://tu-proyecto.up.railway.app` |
