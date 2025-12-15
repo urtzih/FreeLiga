@@ -27,6 +27,16 @@ const updateUserSchema = z.object({
     isActive: z.boolean().optional(),
 });
 
+const createUserSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(6),
+    name: z.string().min(2),
+    nickname: z.string().optional(),
+    phone: z.string().optional(),
+    role: z.enum(['PLAYER', 'ADMIN']).default('PLAYER'),
+    groupId: z.string().optional(),
+});
+
 export async function userRoutes(fastify: FastifyInstance) {
     // Get all users (admin only)
     fastify.get('/', {
@@ -90,6 +100,86 @@ export async function userRoutes(fastify: FastifyInstance) {
                 },
             };
         } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // Create user (admin only)
+    fastify.post('/', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            const body = createUserSchema.parse(request.body);
+
+            // Check if user already exists
+            const existingUser = await prisma.user.findUnique({
+                where: { email: body.email },
+            });
+
+            if (existingUser) {
+                return reply.status(400).send({ error: 'El email ya está registrado' });
+            }
+
+            // Hash password
+            const hashedPassword = await bcrypt.hash(body.password, 10);
+
+            // Create user with player if role is PLAYER
+            const userData: any = {
+                email: body.email,
+                password: hashedPassword,
+                role: body.role,
+                isActive: true,
+            };
+
+            if (body.role === 'PLAYER') {
+                userData.player = {
+                    create: {
+                        name: body.name,
+                        nickname: body.nickname,
+                        phone: body.phone,
+                        email: body.email,
+                    },
+                };
+            }
+
+            const user = await prisma.user.create({
+                data: userData,
+                include: {
+                    player: true,
+                },
+            });
+
+            // If groupId is provided, add player to group
+            if (body.groupId && user.player) {
+                await prisma.groupPlayer.create({
+                    data: {
+                        groupId: body.groupId,
+                        playerId: user.player.id,
+                    },
+                });
+            }
+
+            // Get current group
+            let currentGroup = null;
+            if (user.player) {
+                currentGroup = await getPlayerCurrentGroup(user.player.id);
+            }
+
+            return {
+                ...user,
+                player: user.player ? { ...user.player, currentGroup } : null,
+            };
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                return reply.status(400).send({ error: error.errors });
+            }
             fastify.log.error(error);
             return reply.status(500).send({ error: 'Internal server error' });
         }
