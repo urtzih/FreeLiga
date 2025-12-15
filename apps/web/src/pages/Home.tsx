@@ -17,7 +17,7 @@ export default function Home() {
                             />
                         </div>
 
-                        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-6">
+                        <h1 className="text-5xl sm:text-6xl lg:text-7xl leading-[1.1] font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-6">
                             FreeSquash League
                         </h1>
                         <p className="text-xl sm:text-2xl text-gray-700 mb-4 max-w-3xl mx-auto">
