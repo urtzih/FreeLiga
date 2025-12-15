@@ -138,7 +138,9 @@ Vercel detectará que es un proyecto Vite, pero como es un **monorepo**, debes c
 3. **Build Settings**:
    - **Build Command**: Déjalo en `npm run build` (Vercel añade automáticamente el workspace correcto al detectar la raíz)
    - **Output Directory**: `dist` (por defecto de Vite)
-   - **Install Command**: `npm i ⚠️ CRÍTICO
+   - **Install Command**: `npm install --prefix=../..` (recomendado por Vercel para monorepos)
+      - Alternativa: `npm ci --prefix=../..` para instalaciones reproducibles
+      - Si usas `pnpm`, Vercel suele autodetectarlo; puedes dejar este campo vacío para que use la detección automática
 
 **ANTES de hacer el primer deploy**, configura las variables de entorno:
 
@@ -168,8 +170,8 @@ Ahora que tienes la URL final de Vercel, **DEBES** actualizar el backend para pe
 1. Vuelve a **Railway** → Servicio API → **Variables**
 2. Actualiza estas dos variables con tu URL **real** de Vercel:
    ```env
-   FRONTEND_URL=https://tu-proyecto-real.vercel.app
-   ALLOWED_ORIGINS=https://tu-proyecto-real.vercel.app
+   FRONTEND_URL=https://free-liga-1rowpktnc-urtzihs-projects.vercel.app
+   ALLOWED_ORIGINS=https://free-liga-1rowpktnc-urtzihs-projects.vercel.app
    ```
 3. Railway reiniciará el backend automáticamente (30 segundos aprox.)
 
