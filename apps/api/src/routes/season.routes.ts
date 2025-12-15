@@ -429,11 +429,39 @@ export async function seasonRoutes(fastify: FastifyInstance) {
             const decoded = request.user as any;
             const { id } = request.params as { id: string };
             if (decoded.role !== 'ADMIN') return reply.status(403).send({ error: 'Forbidden' });
+            
+            // Check if season exists
+            const season = await prisma.season.findUnique({
+                where: { id },
+                include: {
+                    groups: true,
+                }
+            });
+
+            if (!season) {
+                return reply.status(404).send({ error: 'Temporada no encontrada' });
+            }
+
+            // Check if season has groups
+            if (season.groups && season.groups.length > 0) {
+                return reply.status(400).send({ 
+                    error: 'No se puede eliminar una temporada que tiene grupos asociados. Elimina los grupos primero.' 
+                });
+            }
+
             await prisma.season.delete({ where: { id } });
             return { success: true };
-        } catch (error) {
+        } catch (error: any) {
             fastify.log.error(error);
-            return reply.status(500).send({ error: 'Internal server error' });
+            
+            // Handle foreign key constraint errors
+            if (error.code === 'P2003') {
+                return reply.status(400).send({ 
+                    error: 'No se puede eliminar esta temporada porque tiene datos relacionados (grupos, partidos, etc.)' 
+                });
+            }
+            
+            return reply.status(500).send({ error: 'Error interno del servidor' });
         }
     });
 }

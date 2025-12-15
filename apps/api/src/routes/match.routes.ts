@@ -14,6 +14,13 @@ const createMatchSchema = z.object({
     matchStatus: z.enum(['PLAYED', 'INJURY', 'CANCELLED']).default('PLAYED'),
 });
 
+const updateMatchSchema = z.object({
+    date: z.string().datetime().optional(),
+    gamesP1: z.number().int().min(0).max(3).optional(),
+    gamesP2: z.number().int().min(0).max(3).optional(),
+    matchStatus: z.enum(['PLAYED', 'INJURY', 'CANCELLED']).optional(),
+});
+
 export async function matchRoutes(fastify: FastifyInstance) {
     // Get all matches
     fastify.get('/', {
@@ -188,7 +195,7 @@ export async function matchRoutes(fastify: FastifyInstance) {
     }, async (request, reply) => {
         try {
             const { id } = request.params as { id: string };
-            const body = createMatchSchema.partial().parse(request.body);
+            const body = updateMatchSchema.parse(request.body);
 
             const existingMatch = await prisma.match.findUnique({
                 where: { id },
@@ -201,11 +208,8 @@ export async function matchRoutes(fastify: FastifyInstance) {
             // Check permissions: Admin or one of the players involved
             const decoded = request.user as any;
             if (decoded.role !== 'ADMIN') {
-                const userPlayer = await prisma.player.findUnique({
-                    where: { userId: decoded.id }
-                });
-
-                if (!userPlayer || (userPlayer.id !== existingMatch.player1Id && userPlayer.id !== existingMatch.player2Id)) {
+                // For non-admin users, they must be one of the players in the match
+                if (!decoded.playerId || (decoded.playerId !== existingMatch.player1Id && decoded.playerId !== existingMatch.player2Id)) {
                     return reply.status(403).send({ error: 'No tienes permiso para editar este partido' });
                 }
             }

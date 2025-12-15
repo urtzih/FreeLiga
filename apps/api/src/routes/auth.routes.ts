@@ -55,18 +55,19 @@ export async function authRoutes(fastify: FastifyInstance) {
                 },
             });
 
-            // Generate JWT
-            const token = fastify.jwt.sign({
-                id: user.id,
-                email: user.email,
-                role: user.role,
-            });
-
             // Obtener grupo actual basado en temporada activa
             let currentGroup = null;
             if (user.player) {
                 currentGroup = await getPlayerCurrentGroup(user.player.id);
             }
+
+            // Generate JWT
+            const token = fastify.jwt.sign({
+                id: user.id,
+                email: user.email,
+                role: user.role,
+                playerId: user.player?.id || null,
+            });
 
             return {
                 token,
@@ -129,6 +130,7 @@ export async function authRoutes(fastify: FastifyInstance) {
                 id: user.id,
                 email: user.email,
                 role: user.role,
+                playerId: user.player?.id || null,
             });
 
             return {

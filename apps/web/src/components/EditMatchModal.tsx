@@ -61,10 +61,20 @@ export default function EditMatchModal({ match, isOpen, onClose }: EditMatchModa
         e.preventDefault();
         setError('');
 
-        const payload = {
-            ...formData,
+        const payload: any = {
+            matchStatus: formData.matchStatus,
             date: formData.date ? new Date(formData.date).toISOString() : undefined
         };
+
+        // Only include games if match status is PLAYED
+        if (formData.matchStatus === 'PLAYED') {
+            payload.gamesP1 = formData.gamesP1;
+            payload.gamesP2 = formData.gamesP2;
+        } else {
+            // For INJURY/CANCELLED, set games to 0
+            payload.gamesP1 = 0;
+            payload.gamesP2 = 0;
+        }
 
         mutation.mutate(payload);
     };
