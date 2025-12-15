@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import api from '../../lib/api';
+import Loader from '../../components/Loader';
 
 export default function ManageSeasons() {
     const queryClient = useQueryClient();
@@ -255,7 +256,7 @@ export default function ManageSeasons() {
 
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                 {isLoading ? (
-                    <div className="p-12 text-center">Cargando...</div>
+                    <div className="p-12 text-center"><Loader /></div>
                 ) : (
                     <table className="w-full">
                         <thead className="bg-slate-50 dark:bg-slate-900">

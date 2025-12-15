@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
 import EditMatchModal from '../../components/EditMatchModal';
+import Loader from '../../components/Loader';
 
 export default function MatchHistory() {
     const { user, isAdmin } = useAuth();
@@ -211,7 +212,7 @@ export default function MatchHistory() {
             {/* Match List */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                 {isLoading ? (
-                    <div className="p-12 text-center text-slate-600 dark:text-slate-400">Cargando...</div>
+                    <div className="p-12 text-center"><Loader /></div>
                 ) : filteredMatches.length === 0 ? (
                     <div className="p-12 text-center text-slate-600 dark:text-slate-400">
                         {matches.length === 0 ? 'No hay partidos registrados todavía' : 'No se encontraron partidos con los filtros aplicados'}

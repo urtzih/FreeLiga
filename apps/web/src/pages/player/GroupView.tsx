@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import api from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
+import Loader from '../../components/Loader';
 import { Bar } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
@@ -51,7 +52,7 @@ export default function GroupView() {
     ) || [];
 
     if (isLoading || loadingClassification) {
-        return <div className="text-center py-12">Cargando...</div>;
+        return <div className="py-12"><Loader /></div>;
     }
 
     if (!group) {

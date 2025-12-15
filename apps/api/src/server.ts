@@ -1,6 +1,8 @@
 /// <reference types="node" />
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import compress from '@fastify/compress';
+import etag from '@fastify/etag';
 import jwt from '@fastify/jwt';
 import { authRoutes } from './routes/auth.routes';
 import { playerRoutes } from './routes/player.routes';
@@ -31,6 +33,12 @@ async function start() {
             origin: allowedOrigins.length === 1 ? allowedOrigins[0] : allowedOrigins,
             credentials: true,
         });
+
+        // Compression (gzip/br)
+        await fastify.register(compress, { global: true });
+
+        // ETag for conditional GET
+        await fastify.register(etag, { weak: true });
 
         // Register JWT
         await fastify.register(jwt, {

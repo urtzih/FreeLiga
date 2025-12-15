@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
+import Loader from '../../components/Loader';
 
 interface BugReport {
   id: string;
@@ -69,7 +70,7 @@ export default function ManageBugs() {
           <h2 className="text-xl font-bold text-slate-900 dark:text-white">Listado de Bugs</h2>
         </div>
         {isLoading ? (
-          <div className="p-12 text-center text-slate-600 dark:text-slate-400">Cargando...</div>
+          <div className="p-12 text-center"><Loader /></div>
         ) : (
           <div className="divide-y divide-slate-200 dark:divide-slate-700">
             {bugs.map(bug => (

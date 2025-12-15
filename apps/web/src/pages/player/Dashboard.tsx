@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
+import Loader from '../../components/Loader';
 
 export default function Dashboard() {
     const { user, loading } = useAuth();
@@ -35,10 +36,7 @@ export default function Dashboard() {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-4 text-slate-600 dark:text-slate-400">Cargando...</p>
-                </div>
+                <Loader />
             </div>
         );
     }

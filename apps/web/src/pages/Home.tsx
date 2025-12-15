@@ -245,7 +245,7 @@ export default function Home() {
             <footer className="bg-gray-900 text-gray-300 py-8">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <p className="text-sm">
-                        © 2024 FreeSquash
+                        © 2025 FreeSquash League. Todos los derechos reservados.
                     </p>
                     <p className="text-xs mt-2 text-gray-500">
                         Sistema interno de gestión de liga
