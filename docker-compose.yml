@@ -3,7 +3,7 @@ services:
   mysql:
     image: mysql:8.0
     container_name: freeliga-mysql
-    env_file: .env
+    env_file: .env.local
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -28,7 +28,7 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: freeliga-api
-    env_file: .env
+    env_file: .env.local
     environment:
       NODE_ENV: ${NODE_ENV}
       PORT: ${PORT}
@@ -55,7 +55,7 @@ services:
       context: ./apps/web
       dockerfile: Dockerfile.dev
     container_name: freeliga-web
-    env_file: .env
+    env_file: .env.local
     environment:
       VITE_API_URL: ${VITE_API_URL}
       VITE_API_TIMEOUT: ${VITE_API_TIMEOUT}
