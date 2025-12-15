@@ -110,6 +110,8 @@ Vercel should auto-detect, but verify:
 - **Output Directory**: `dist`
 - **Install Command**: `npm install --workspaces`
 
+**Note**: A `vercel.json` file has been added to `apps/web` to handle client-side routing (SPA rewrites). Ensure this file is pushed to GitHub.
+
 ### Step 3: Add Environment Variables
 
 In **Vercel Dashboard → Project Settings → Environment Variables**:

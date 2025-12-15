@@ -15,7 +15,7 @@ export default defineConfig({
         host: '0.0.0.0',
         proxy: {
             '/api': {
-                target: 'http://localhost:3001',
+                target: process.env.VITE_API_URL || 'http://localhost:3001',
                 changeOrigin: true,
             },
         },
@@ -27,9 +27,9 @@ export default defineConfig({
         rollupOptions: {
             output: {
                 manualChunks: {
-                    react: ['react','react-dom','react-router-dom'],
-                    vendor_chart: ['chart.js','react-chartjs-2'],
-                    tanstack: ['@tanstack/react-query','@tanstack/react-table']
+                    react: ['react', 'react-dom', 'react-router-dom'],
+                    vendor_chart: ['chart.js', 'react-chartjs-2'],
+                    tanstack: ['@tanstack/react-query', '@tanstack/react-table']
                 }
             }
         }
