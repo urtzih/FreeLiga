@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Build base URL from env (Vercel) or fallback to relative for local dev
-const envBase = (import.meta as any)?.env?.VITE_API_URL as string | undefined;
+const envBase = import.meta.env.VITE_API_URL as string | undefined;
 const normalizedBase = envBase ? envBase.replace(/\/$/, '') : '';
 const baseURL = normalizedBase ? `${normalizedBase}/api` : '/api';
 
@@ -12,6 +12,7 @@ const api = axios.create({
 // Debug helper: expone la base del API en producción para verificar Vercel env
 try {
     (globalThis as any).__API_BASE__ = baseURL;
+    (globalThis as any).__VITE_ENV__ = import.meta.env.VITE_API_URL;
 } catch {}
 
 // Add JWT token to requests
