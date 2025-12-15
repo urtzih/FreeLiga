@@ -41,6 +41,9 @@ FROM base AS builder
 
 WORKDIR /app
 
+# Build database package
+RUN npm run build --workspace=packages/database
+
 # Build backend TypeScript to JavaScript
 RUN npm run build --workspace=apps/api
 
@@ -67,6 +70,7 @@ COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/packages/database/prisma ./packages/database/prisma
+COPY --from=builder /app/packages/database/dist ./packages/database/dist
 
 # Create non-root user for security
 RUN groupadd -g 1001 nodejs && useradd -u 1001 -g nodejs -s /bin/sh -m nodejs
