@@ -90,6 +90,18 @@ async function start() {
             transformStaticCSP: (header: any) => header,
         });
 
+        // Cache-Control for safe GET list endpoints
+        const CACHEABLE_PREFIXES = ['/api/groups', '/api/seasons', '/api/classification', '/api/players', '/api/matches'];
+        fastify.addHook('onSend', (request: any, reply: any, payload: any, done: any) => {
+            if (request.method === 'GET') {
+                const urlPath = (request.url || '').split('?')[0];
+                if (CACHEABLE_PREFIXES.some((p) => urlPath.startsWith(p))) {
+                    reply.header('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
+                }
+            }
+            done();
+        });
+
         // Register routes
         await fastify.register(authRoutes, { prefix: '/api/auth' });
         await fastify.register(playerRoutes, { prefix: '/api/players' });

@@ -34,7 +34,7 @@ Eliminados porque ya no son necesarios con la dockerización completa:
 - `Dockerfile` - Build backend (multi-stage)
 - `Dockerfile.dev` - Desarrollo backend con hot reload
 - `.dockerignore` - Exclusiones build
-- `docker-compose.yml` - Orquestación local (MySQL + API + Web + Adminer)
+- `docker-compose.yml` - Orquestación local (MySQL + API + Web)
 - `railway.json` - Config Railway backend
 - `DOCKER_SETUP.md` - Docs Docker completa
 - `QUICK_START.md` - Guía rápida

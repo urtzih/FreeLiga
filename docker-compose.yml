@@ -73,18 +73,7 @@ services:
       - freeliga-network
     command: npm run dev -- --host 0.0.0.0 --port 4173
 
-  # Adminer (web UI for MySQL)
-  adminer:
-    image: adminer:4
-    container_name: freeliga-adminer
-    environment:
-      ADMINER_DEFAULT_SERVER: mysql
-    ports:
-      - "8080:8080"
-    depends_on:
-      - mysql
-    networks:
-      - freeliga-network
+  
 
 volumes:
   mysql_data:

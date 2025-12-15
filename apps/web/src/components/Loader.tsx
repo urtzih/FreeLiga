@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface LoaderProps {
   label?: string;
   size?: 'sm' | 'md' | 'lg';

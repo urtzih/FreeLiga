@@ -15,7 +15,7 @@ A full-stack web application for managing a squash league with ranked groups, ad
 
 ### Backend
 - **Node.js 20** with TypeScript
-- **Fastify** web framework
+- **Fastify** web framework with compression (@fastify/compress) and ETag support
 - **Prisma ORM** for database access
 - **MySQL 8.0** database
 - **JWT** authentication
@@ -60,6 +60,14 @@ A full-stack web application for managing a squash league with ranked groups, ad
 - [x] Season management (CRUD)
 - [x] Group management (CRUD)
 - [x] Player management (view)
+- [x] Bug report management with status tracking
+
+#### Performance & UX
+- [x] Animated progress bar loader (replaces static loading text)
+- [x] HTTP compression (gzip/br) for 60-90% response reduction
+- [x] ETag support for conditional GETs (304 Not Modified)
+- [x] Cache-Control headers on safe GET endpoints (60s max-age, 120s stale-while-revalidate)
+- [x] React Query with 60s staleTime to minimize unnecessary refetches
 
 ### 🔮 Future Enhancements (Post-MVP)
 - [ ] Promotion/Relegation system
@@ -88,10 +96,9 @@ docker-compose up -d
 ```
 
 2. **Wait for Services**
-- MySQL: http://localhost (via Adminer on 8080)
-- Backend API: http://localhost:3001
-- Frontend: http://localhost:4173
-- Adminer (Database UI): http://localhost:8080
+- MySQL: localhost (container `freeliga-mysql` on 3306)
+- Backend API: http://localhost:3001 (with compression, ETag, cache headers)
+- Frontend: http://localhost:4173 (with animated loaders)
 
 3. **Test Login**
 - Email: `admin@freesquash.com`
@@ -308,7 +315,6 @@ Visit frontend URL and verify login works end-to-end.
 - MySQL: 3306 (mapped to localhost)
 - Backend API: 3001
 - Frontend: 4173
-- Adminer: 8080
 - Check with `netstat -ano | findstr :PORT` (Windows) or `lsof -i :PORT` (Mac/Linux)
 
 ## 📝 License
