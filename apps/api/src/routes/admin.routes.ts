@@ -32,16 +32,13 @@ export async function adminRoutes(fastify: FastifyInstance) {
                 prisma.group.count({
                     where: {
                         season: {
-                            endDate: { gte: now },
+                            isActive: true,
                         },
                     },
                 }),
                 prisma.season.findFirst({
                     where: {
-                        endDate: { gte: now },
-                    },
-                    orderBy: {
-                        startDate: 'asc',
+                        isActive: true,
                     },
                     include: {
                         groups: {
