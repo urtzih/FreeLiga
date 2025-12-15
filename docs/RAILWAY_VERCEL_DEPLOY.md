@@ -66,29 +66,57 @@ PORT=3001
 
 ### Paso 4: Configurar Ajustes de Despliegue
 
-Asegúrate de que Railway sabe cómo construir tu API.
-Ve a **Settings (Configuración)** del servicio API:
+Ve a **Settings (Configuración)** del servicio API y verifica/configura:
 
-- **Root Directory**: Déjalo vacío (`/`) si es un monorepo, o `apps/api` si lo prefieres, pero el Dockerfile está en la raíz.
-- **Build Command**: Déjalo vacío (usaremos Docker).
-- **Start Command**: Déjalo vacío.
+**Build (Construcción):**
+- **Builder**: Dockerfile
+- **Dockerfile Path**: `./Dockerfile`
+- **Custom Build Command**: `npm run build --workspace=@freesquash/api`
+- **Watch Paths**: `/apps/api/**` (para redesplegar solo cuando cambien archivos del backend)
 
-**Verifica el Dockerfile**:
-Railway debería detectar el `Dockerfile` en la raíz automáticamente.
+**Deploy (Despliegue):**
+- **Custom Start Command**: `node apps/api/dist/server.js`
 
-### Paso 5: Desplegar (Redeploy)
+**Networking (Redes):**
+1. Ve a la sección **Public Networking**
+2. Click en **Generate Domain** ⚠️ **OBLIGATORIO**
+3. Railway generará una URL como: `https://freesquashapi-production.up.railway.app`
+4. **Guarda esta URL** - la necesitarás para configurar Vercel
 
-Si el primer despliegue falló:
+**Healthcheck:**
+- **Healthcheck Path**: `/health` (asegura que Railway espera a que el servidor esté listo antes de marcar el deploy como exitoso)
+
+**Resource Limits (Opcional):**
+- CPU: 2 vCPU (máximo del plan Hobby)
+- Memory: 1 GB (máximo del plan Hobby)
+
+### Paso 5: Verificar Deployment
+
 1. Ve a la pestaña **Deployments**.
-2. Haz clic en **Redeploy** (o Trigger Deploy) ahora que las variables están configuradas.
-3. Observa los **Logs**. Deberías ver "Server listening on port 3001".
+2. El deployment debería estar en progreso o completado.
+3. Haz clic en el deployment más reciente para ver los **Logs**.
+4. Busca en los logs: `"Server listening on port 3001"` o `"🚀 Server running on http://0.0.0.0:3001"`
 
-### Paso 6: Obtener URL del Backend
+Si el deployment falla, verifica:
+- Variables de entorno configuradas correctamente
+- Logs del build (errores de compilación TypeScript)
+- Logs del runtime (errores de conexión a BD)
 
-Una vez desplegado y en verde:
-1. Ve a **Settings** → **Networking**.
-2. Genera un dominio (Generate Domain) si no tienes uno.
-3. Copia esa URL (ej: `https://freeliga-production.up.railway.app`).
+### Paso 6: Probar el Backend
+
+Una vez desplegado exitosamente (ícono verde ✅):
+
+1. Copia la URL pública generada (de Networking → Public Domain)
+2. Prueba el healthcheck en tu navegador:
+   ```
+   https://tu-url.up.railway.app/health
+   ```
+   Deberías ver: `{"status":"ok","timestamp":"..."}`
+
+3. Prueba la documentación Swagger:
+   ```
+   https://tu-url.up.railway.app/documentation
+   ```
 
 ---
 
@@ -101,19 +129,64 @@ Una vez desplegado y en verde:
 
 ### Paso 2: Configurar Build
 
-Vercel detectará que es un proyecto Vite, pero como es un monorepo, ajusta lo siguiente:
+Vercel detectará que es un proyecto Vite, pero como es un **monorepo**, debes configurar manualmente:
 
-- **Framework Preset**: Vite
-- **Root Directory**: Haz clic en "Edit" y selecciona `apps/web`.
-- **Build Settings**:
-    - Build Command: `npm run build --workspace=apps/web` (o dejarlo por defecto si Vercel lo detecta bien dentro de la carpeta).
-    - Output Directory: `dist`
-    - Install Command: `npm install` (Vercel suele manejar esto bien en monorepos).
+1. **Framework Preset**: Vite (se autodetecta)
+2. **Root Directory**: 
+   - Haz clic en **Edit** junto a Root Directory
+   - Selecciona `apps/web` (⚠️ muy importante para monorepos)
+3. **Build Settings**:
+   - **Build Command**: Déjalo en `npm run build` (Vercel añade automáticamente el workspace correcto al detectar la raíz)
+   - **Output Directory**: `dist` (por defecto de Vite)
+   - **Install Command**: `npm i ⚠️ CRÍTICO
 
-### Paso 3: Variables de Entorno
+**ANTES de hacer el primer deploy**, configura las variables de entorno:
 
-En la sección **Environment Variables** antes de desplegar:
+1. En la pantalla de configuración de Vercel, busca **Environment Variables**
+2. Añade la siguiente variable (aplica a **Production, Preview, Development**):
 
+```env
+VITE_API_URL=https://tu-backend-railway-url.up.railway.app
+```
+
+**Importante:**
+- Pega la URL **exacta** que generaste en Railway (Paso 6 del Backend)
+- **NO incluyas barra final** (no uses `/` al final de la URL)
+- Ejemplo correcto: `https://freesquashapi-production.up.railway.app`
+- Ejemplo incorrecto: ~~`https://freesquashapi-production.up.railway.app/`~~
+
+**Si olvidaste añadirla antes del deploy:**
+1. Revisa la configuración final (Root Directory = `apps/web`, variables añadidas)
+2. Haz clic en **Deploy**
+3. Espera a que termine el build (2-3 minutos)
+4. Vercel te mostrará una URL de producción cuando termine
+CORS en Railway (CRUCIAL)
+
+Ahora que tienes la URL final de Vercel, **DEBES** actualizar el backend para permitir peticiones desde el frontend:
+
+1. Vuelve a **Railway** → Servicio API → **Variables**
+2. Actualiza estas dos variables con tu URL **real** de Vercel:
+   ```env
+   FRONTEND_URL=https://tu-proyecto-real.vercel.app
+   ALLOWED_ORIGINS=https://tu-proyecto-real.vercel.app
+   ```
+3. Railway reiniciará el backend automáticamente (30 segundos aprox.)
+
+**⚠️ Sin esto, el frontend mostrará errores CORS y no podrá comunicarse con el backend.**
+
+### Paso 6: Verificar Integración Completa
+
+1. Abre tu frontend en Vercel: `https://tu-proyecto.vercel.app`
+2. Intenta hacer login:
+   - Email: `admin@freesquash.com`
+   - Password: `123456`
+3. Si el login funciona, ¡enhorabuena! 🎉 El despliegue está completo.
+
+**Si el login falla:**
+- Abre **DevTools** (F12) → **Console** y **Network**
+- Busca errores CORS (verifica `ALLOWED_ORIGINS` en Railway)
+- Verifica que `VITE_API_URL` en Vercel apunte a la URL correcta de Railway
+- Prueba el endpoint directamente: `https://tu-railway-url.up.railway.app/api/auth/login`
 ```env
 VITE_API_URL=https://tu-backend-en-railway.up.railway.app
 ```
