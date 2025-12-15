@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { lazy, Suspense } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/auth/Login'));
 const Dashboard = lazy(() => import('./pages/player/Dashboard'));
@@ -60,6 +61,7 @@ function App() {
 
     return (
         <BrowserRouter>
+            <SpeedInsights />
             <Suspense fallback={<div className="flex items-center justify-center min-h-screen text-slate-600">Cargando módulo...</div>}>
                 <Routes>
                     {/* Public routes */}
