@@ -30,7 +30,6 @@ FreeSquash League es una plataforma web para gestionar ligas de squash con grupo
 - Contactar con otros jugadores del grupo
 
 **Administrador (ADMIN)**
-- Todas las funciones de jugador
 - Crear y gestionar temporadas
 - Crear y gestionar grupos
 - Asignar jugadores a grupos

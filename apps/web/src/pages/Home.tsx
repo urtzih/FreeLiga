@@ -199,10 +199,6 @@ export default function Home() {
                         <ul className="space-y-2 text-gray-700">
                             <li className="flex items-start">
                                 <span className="text-purple-600 mr-2">✓</span>
-                                <span>Todas las funciones de jugador</span>
-                            </li>
-                            <li className="flex items-start">
-                                <span className="text-purple-600 mr-2">✓</span>
                                 <span>Crear y gestionar temporadas</span>
                             </li>
                             <li className="flex items-start">

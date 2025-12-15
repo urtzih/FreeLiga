@@ -48,3 +48,4 @@ lerna-debug.log*
 # Prisma
 packages/database/prisma/migrations/
 .env.production.example
+docs/freesquash_liga.sql
