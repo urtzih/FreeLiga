@@ -109,13 +109,13 @@ Una vez desplegado exitosamente (ícono verde ✅):
 1. Copia la URL pública generada (de Networking → Public Domain)
 2. Prueba el healthcheck en tu navegador:
    ```
-   https://tu-url.up.railway.app/health
+   https://freesquashapi-production.up.railway.app/health
    ```
    Deberías ver: `{"status":"ok","timestamp":"..."}`
 
 3. Prueba la documentación Swagger:
    ```
-   https://tu-url.up.railway.app/documentation
+   https://freesquashapi-production.up.railway.app/documentation
    ```
 
 ---
@@ -146,7 +146,7 @@ Vercel detectará que es un proyecto Vite, pero como es un **monorepo**, debes c
 2. Añade la siguiente variable (aplica a **Production, Preview, Development**):
 
 ```env
-VITE_API_URL=https://tu-backend-railway-url.up.railway.app
+VITE_API_URL=https://freesquashapi-production.up.railway.app
 ```
 
 **Importante:**
@@ -154,6 +154,7 @@ VITE_API_URL=https://tu-backend-railway-url.up.railway.app
 - **NO incluyas barra final** (no uses `/` al final de la URL)
 - Ejemplo correcto: `https://freesquashapi-production.up.railway.app`
 - Ejemplo incorrecto: ~~`https://freesquashapi-production.up.railway.app/`~~
+- ✅ **URL confirmada funcionando**: `https://freesquashapi-production.up.railway.app`
 
 **Si olvidaste añadirla antes del deploy:**
 1. Revisa la configuración final (Root Directory = `apps/web`, variables añadidas)
@@ -186,12 +187,12 @@ Ahora que tienes la URL final de Vercel, **DEBES** actualizar el backend para pe
 - Abre **DevTools** (F12) → **Console** y **Network**
 - Busca errores CORS (verifica `ALLOWED_ORIGINS` en Railway)
 - Verifica que `VITE_API_URL` en Vercel apunte a la URL correcta de Railway
-- Prueba el endpoint directamente: `https://tu-railway-url.up.railway.app/api/auth/login`
+- Prueba el endpoint directamente: `https://freesquashapi-production.up.railway.app/api/auth/login`
 ```env
-VITE_API_URL=https://tu-backend-en-railway.up.railway.app
+VITE_API_URL=https://freesquashapi-production.up.railway.app
 ```
 
-*Pega aquí la URL que obtuviste en el Paso 6 del Backend.*
+*✅ URL confirmada funcionando (healthcheck OK)*
 
 ### Paso 4: Desplegar
 
@@ -230,4 +231,4 @@ Ahora que tienes la URL final de Vercel (ej: `https://freeliga.vercel.app`):
 | Servicio | URL |
 |---------|-----|
 | Frontend (Vercel) | `https://tu-proyecto.vercel.app` |
-| Backend API (Railway) | `https://tu-proyecto.up.railway.app` |
+| Backend API (Railway) | `https://freesquashapi-production.up.railway.app` ✅ |
