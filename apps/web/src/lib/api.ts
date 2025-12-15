@@ -1,7 +1,12 @@
 import axios from 'axios';
 
+// Build base URL from env (Vercel) or fallback to relative for local dev
+const envBase = (import.meta as any)?.env?.VITE_API_URL as string | undefined;
+const normalizedBase = envBase ? envBase.replace(/\/$/, '') : '';
+const baseURL = normalizedBase ? `${normalizedBase}/api` : '/api';
+
 const api = axios.create({
-    baseURL: '/api',
+    baseURL,
 });
 
 // Add JWT token to requests
