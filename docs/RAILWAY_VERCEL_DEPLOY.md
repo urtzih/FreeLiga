@@ -232,5 +232,5 @@ Ahora que tienes la URL final de Vercel (ej: `https://freeliga.vercel.app`):
 
 | Servicio | URL |
 |---------|-----|
-| Frontend (Vercel) | `https://tu-proyecto.vercel.app` |
+| Frontend (Vercel) | `https://free-liga-web.vercel` |
 | Backend API (Railway) | `https://freesquashapi-production.up.railway.app` ✅ |
