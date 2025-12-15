@@ -31,10 +31,8 @@ export default function EditMatchModal({ match, isOpen, onClose }: EditMatchModa
 
     const mutation = useMutation({
         mutationFn: async (data: any) => {
-            console.log('🚀 Sending PUT request to', `/matches/${match.id}`, data);
             try {
                 const response = await api.put(`/matches/${match.id}`, data);
-                console.log('✅ Response received:', response);
                 return response.data;
             } catch (error) {
                 console.error('❌ PUT request failed:', error);

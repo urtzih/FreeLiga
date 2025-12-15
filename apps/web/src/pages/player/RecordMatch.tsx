@@ -51,7 +51,6 @@ export default function RecordMatch() {
 
     const mutation = useMutation({
         mutationFn: async (data: any) => {
-            console.log('Enviando datos de partido:', data);
             const payload = {
                 ...data,
                 date: new Date(data.date).toISOString(),
@@ -64,7 +63,6 @@ export default function RecordMatch() {
             return response.data;
         },
         onSuccess: () => {
-            console.log('Partido registrado con éxito');
             queryClient.invalidateQueries({ queryKey: ['playerStats'] });
             queryClient.invalidateQueries({ queryKey: ['group'] });
             queryClient.invalidateQueries({ queryKey: ['classification'] });

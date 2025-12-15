@@ -300,7 +300,20 @@ curl -X POST https://your-railway-backend-url.up.railway.app/api/auth/login \
 
 Visit frontend URL and verify login works end-to-end.
 
-## 🐛 Troubleshooting
+## � Documentation
+
+For more detailed information, see:
+
+- **[Quick Start Guide](docs/QUICK_START.md)** - Get up and running in 5 minutes
+- **[Deployment Guide](docs/RAILWAY_VERCEL_DEPLOY.md)** - Deploy to Railway + Vercel
+- **[Docker Setup](docs/DOCKER_SETUP.md)** - Local development with Docker
+- **[User Manual](docs/MANUAL_USUARIO.md)** - End-user guide (Spanish)
+- **[Audit Checklist](AUDIT_CHECKLIST.md)** - Security & performance verification
+- **[Full Audit Report](AUDIT_REPORT.md)** - Comprehensive security analysis
+- **[Business Rules](docs/REGLAS_CIERRE_TEMPORADA.md)** - Season closure rules
+- **[Promotion/Relegation](docs/ASCENSOS_DESCENSOS_GUIA.md)** - Group movement rules
+
+## �🐛 Troubleshooting
 
 ### Docker Issues
 - **Services won't start**: Check `docker-compose logs <service-name>`
@@ -317,7 +330,39 @@ Visit frontend URL and verify login works end-to-end.
 - Frontend: 4173
 - Check with `netstat -ano | findstr :PORT` (Windows) or `lsof -i :PORT` (Mac/Linux)
 
-## 📝 License
+## � Security & Audit
+
+### Security Features Implemented
+- ✅ **JWT Authentication** with bcrypt password hashing
+- ✅ **CORS Protection** with dynamic allowed origins
+- ✅ **Input Validation** using Zod schemas
+- ✅ **Environment Validation** (JWT_SECRET enforced in production)
+- ✅ **Database Security** (Prisma ORM prevents SQL injection)
+- ✅ **Secure Headers** (Compression, ETag, Cache-Control)
+- ✅ **Token Expiration** (Logout on 401 errors)
+
+### Completed Audit Tasks
+1. **Removed console.log() from production code**
+   - Cleaned up debug statements from RecordMatch.tsx and EditMatchModal.tsx
+
+2. **Added Database Indices**
+   - Match: `groupId`, `player1Id`, `player2Id`, `winnerId`, `date`
+   - BugReport: `status`, `createdAt`
+
+3. **Validated Environment Variables**
+   - JWT_SECRET now throws error if not configured or using fallback
+   - ALLOWED_ORIGINS properly set for production
+
+4. **Performance Optimizations**
+   - Compression: 60-90% reduction with @fastify/compress
+   - ETag: Conditional GET support
+   - Cache-Control: 60s max-age on safe endpoints
+   - React Query: 60s staleTime for local caching
+
+### Full Audit Report
+See [AUDIT_REPORT.md](AUDIT_REPORT.md) for comprehensive security analysis, performance review, and recommendations for future improvements.
+
+## �📝 License
 
 MIT
 

@@ -153,6 +153,7 @@ model Match {
   @@index([groupId])
   @@index([player1Id])
   @@index([player2Id])
+  @@index([winnerId])
   @@index([date])
   @@map("matches")
 }
@@ -240,5 +241,6 @@ model BugReport {
   updatedAt   DateTime  @updatedAt
 
   @@index([status])
+  @@index([createdAt])
   @@map("bug_reports")
 }

@@ -22,6 +22,15 @@ const fastify = Fastify({
 
 async function start() {
     try {
+        // Validate critical environment variables
+        const jwtSecret = process.env.JWT_SECRET;
+        if (!jwtSecret) {
+            throw new Error('CRITICAL: JWT_SECRET is not configured! Set in environment variables.');
+        }
+        if (jwtSecret === 'your-super-secret-jwt-key-change-in-production') {
+            throw new Error('CRITICAL: JWT_SECRET is using the insecure default value! Change immediately in production.');
+        }
+
         // Compute allowed origins (comma-separated list)
         const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:4173')
             .split(',')
@@ -42,7 +51,7 @@ async function start() {
 
         // Register JWT
         await fastify.register(jwt, {
-            secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
+            secret: jwtSecret,
         });
 
         // JWT Authentication Decorator
