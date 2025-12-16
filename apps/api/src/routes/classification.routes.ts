@@ -52,21 +52,34 @@ export async function classificationRoutes(fastify: FastifyInstance) {
                 ];
             }
 
-            // Get all players
-            const players = await prisma.player.findMany();
+            // Get players based on groupId filter
+            let players;
+            if (groupId) {
+                // If filtering by group, get only players in that group
+                const groupPlayers = await prisma.groupPlayer.findMany({
+                    where: { groupId },
+                    include: { player: true }
+                });
+                players = groupPlayers.map(gp => gp.player);
+            } else {
+                // Otherwise get all players
+                players = await prisma.player.findMany();
+            }
 
             // Get all matches with filters
             const matches = await prisma.match.findMany({
                 where: matchWhere,
             });
 
-            // Get current groups for all players
-            const playersWithGroups = await Promise.all(
-                players.map(async (player) => {
-                    const currentGroup = await getPlayerCurrentGroup(player.id);
-                    return { ...player, currentGroup };
-                })
-            );
+            // Get current groups for all players (only if not filtering by groupId)
+            const playersWithGroups = groupId 
+                ? players.map(p => ({ ...p, currentGroup: null }))
+                : await Promise.all(
+                    players.map(async (player) => {
+                        const currentGroup = await getPlayerCurrentGroup(player.id);
+                        return { ...player, currentGroup };
+                    })
+                );
 
             // Calculate statistics for each player
             const classification = playersWithGroups.map(player => {
@@ -123,7 +136,7 @@ export async function classificationRoutes(fastify: FastifyInstance) {
                 };
             });
 
-            // Sort by wins (descending), then by win percentage, then by averás
+            // Sort by wins (descending), then by win percentage, then by average
             const sorted = classification.sort((a, b) => {
                 if (b.wins !== a.wins) {
                     return b.wins - a.wins;
@@ -134,8 +147,9 @@ export async function classificationRoutes(fastify: FastifyInstance) {
                 return b.average - a.average;
             });
 
-            // Filter out players with no matches (optional, depending on requirement)
-            const filtered = sorted.filter(p => p.totalMatches > 0);
+            // Filter out players with no matches ONLY if not filtering by groupId
+            // When viewing a specific group, show all players even if they haven't played
+            const filtered = groupId ? sorted : sorted.filter(p => p.totalMatches > 0);
 
             return filtered;
         } catch (error) {

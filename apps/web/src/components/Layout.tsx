@@ -36,7 +36,7 @@ export default function Layout() {
                                     alt="FreeSquash Logo"
                                     className="h-10 w-10 rounded-full object-cover border border-slate-200 dark:border-slate-700"
                                 />
-                                <span className="hidden sm:inline text-xl font-bold text-slate-800 dark:text-white">
+                                <span className="text-xl font-bold text-slate-800 dark:text-white">
                                     FreeSquash
                                 </span>
                             </Link>

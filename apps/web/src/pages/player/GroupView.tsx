@@ -314,28 +314,40 @@ export default function GroupView() {
                         <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                             {group.groupPlayers
                                 .filter((gp: any) => gp.player.user?.role !== 'ADMIN')
-                                .map((gp: any, index: number) => (
-                                    <tr key={gp.id} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center space-x-2">
-                                                {index < 2 && <span className="text-xl">🏆</span>}
-                                                {index >= totalPlayers - 2 && <span className="text-xl">⚠️</span>}
-                                                <span className="text-sm font-bold text-slate-600 dark:text-slate-400">
-                                                    #{gp.rankingPosition}
-                                                </span>
-                                                <div>
-                                                    <p className="font-medium text-slate-900 dark:text-white">{gp.player.name}</p>
-                                                    {gp.player.nickname && (
-                                                        <p className="text-sm text-slate-500 dark:text-slate-400">"{gp.player.nickname}"</p>
-                                                    )}
+                                .map((gp: any, index: number) => {
+                                    const isCurrentUser = gp.playerId === user?.player?.id;
+                                    return (
+                                        <tr 
+                                            key={gp.id} 
+                                            className={`hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors ${isCurrentUser ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                                        >
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center space-x-2">
+                                                    {index < 2 && <span className="text-xl">🏆</span>}
+                                                    {index >= totalPlayers - 2 && <span className="text-xl">⚠️</span>}
+                                                    <span className="text-sm font-bold text-slate-600 dark:text-slate-400">
+                                                        #{gp.rankingPosition}
+                                                    </span>
+                                                    <div>
+                                                        <p className={`font-medium ${isCurrentUser ? 'text-blue-600 dark:text-blue-400' : 'text-slate-900 dark:text-white'}`}>
+                                                            {gp.player.name} {isCurrentUser && '(Tú)'}
+                                                        </p>
+                                                        {gp.player.nickname && (
+                                                            <p className="text-sm text-slate-500 dark:text-slate-400">"{gp.player.nickname}"</p>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <ContactButtons phone={gp.player.phone} />
-                                        </td>
-                                    </tr>
-                                ))}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {isCurrentUser ? (
+                                                    <span className="text-sm text-slate-400 dark:text-slate-500 italic">Eres tú</span>
+                                                ) : (
+                                                    <ContactButtons phone={gp.player.phone} />
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                         </tbody>
                     </table>
                 </div>
