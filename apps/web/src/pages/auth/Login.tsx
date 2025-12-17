@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function Login() {
@@ -34,11 +34,13 @@ export default function Login() {
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 px-4">
             <div className="max-w-md w-full">
                 <div className="text-center mb-8">
-                    <img
-                        src="/logo.jpg"
-                        alt="FreeSquash Logo"
-                        className="mx-auto w-24 h-24 rounded-full object-cover border-4 border-white dark:border-slate-700 shadow-lg mb-4"
-                    />
+                    <Link to="/" className="inline-block">
+                        <img
+                            src="/logo.jpg"
+                            alt="FreeSquash Logo"
+                            className="mx-auto w-24 h-24 rounded-full object-cover border-4 border-white dark:border-slate-700 shadow-lg mb-4 hover:scale-105 transition-transform cursor-pointer"
+                        />
+                    </Link>
                     <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Bienvenido de nuevo</h2>
                     <p className="text-slate-600 dark:text-slate-400 mt-2">Inicia sesión en FreeSquash League</p>
                 </div>

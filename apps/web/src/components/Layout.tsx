@@ -78,6 +78,12 @@ export default function Layout() {
                                         Bugs
                                     </Link>
                                     <Link
+                                        to="/admin/help"
+                                        className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                                    >
+                                        Ayuda
+                                    </Link>
+                                    <Link
                                         to="/matches/history"
                                         className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                                     >
@@ -117,9 +123,10 @@ export default function Layout() {
                                             </svg>
                                         </button>
                                         <div className="absolute left-0 w-44 rounded-lg shadow-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 py-2 hidden group-hover:block z-50">
-                                            <Link to="/progress" className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700" >Progreso</Link>
-                                            <Link to="/matches/history" className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700" >Mis partidos</Link>
+                                            <Link to="/progress" className="" >Progreso</Link>
+                                            <Link to="/matches/history" className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700" >Mis partidos</Link>block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700
                                             <Link to="/historia" className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700" >General</Link>
+                                            <Link to="/help" className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700" > Ayuda</Link>
                                         </div>
                                     </div>
                                 </>
@@ -186,6 +193,9 @@ export default function Layout() {
                                     <Link to="/admin/bugs" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                                         🐞 Bugs
                                     </Link>
+                                    <Link to="/admin/help" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                                        📚 Ayuda
+                                    </Link>
                                     <Link to="/matches/history" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                                         ⚽ Ver todos los partidos
                                     </Link>
@@ -200,7 +210,7 @@ export default function Layout() {
                                         🏆 {grupoLabel}
                                     </Link>
                                     <Link to="/matches/record" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                                        ⚽ Registrar Partido
+                                        🎾 Registrar Partido
                                     </Link>
                                     <details className="px-1" open>
                                         <summary className="list-none cursor-pointer block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-700/40">
@@ -210,6 +220,7 @@ export default function Layout() {
                                             <Link to="/progress" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">📈 Progreso</Link>
                                             <Link to="/matches/history" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">📜 Mis partidos</Link>
                                             <Link to="/historia" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">📅 General</Link>
+                                            <Link to="/help" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">📚 Ayuda</Link>
                                         </div>
                                     </details>
                                 </>

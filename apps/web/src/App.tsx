@@ -21,6 +21,8 @@ const BugReport = lazy(() => import('./pages/BugReport'));
 const PlayerProgress = lazy(() => import('./pages/PlayerProgress'));
 const Profile = lazy(() => import('./pages/player/Profile'));
 const History = lazy(() => import('./pages/player/History'));
+const Help = lazy(() => import('./pages/player/Help'));
+const AdminHelp = lazy(() => import('./pages/admin/AdminHelp'));
 import Layout from './components/Layout';
 
 function ProtectedRoute({
@@ -145,6 +147,14 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
+                        <Route
+                            path="/help"
+                            element={
+                                <ProtectedRoute>
+                                    <Help />
+                                </ProtectedRoute>
+                            }
+                        />
 
                         {/* Admin routes */}
                         <Route
@@ -192,6 +202,14 @@ function App() {
                             element={
                                 <ProtectedRoute adminOnly>
                                     <ManageBugs />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/admin/help"
+                            element={
+                                <ProtectedRoute adminOnly>
+                                    <AdminHelp />
                                 </ProtectedRoute>
                             }
                         />

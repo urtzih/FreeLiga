@@ -1,0 +1,371 @@
+export default function Help() {
+    return (
+        <div className="max-w-4xl mx-auto space-y-8">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl p-8 text-white shadow-lg">
+                <h1 className="text-3xl font-bold mb-2">📚 Manual de Usuario</h1>
+                <p className="text-blue-100">Guía completa para jugadores de FreeSquash League</p>
+            </div>
+
+            {/* Cómo Entrar */}
+            <section className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">🔐 Cómo Entrar en la Plataforma</h2>
+                <div className="space-y-4 text-slate-600 dark:text-slate-400">
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Primera Vez</h3>
+                        <ol className="list-decimal list-inside space-y-2 ml-4">
+                            <li>Abre tu navegador (Chrome, Firefox, Safari, Edge...)</li>
+                            <li>Escribe en la barra de direcciones la dirección web de FreeSquash League (te la habrá dado el administrador)</li>
+                            <li>Te aparecerá una pantalla de inicio de sesión con un logo de squash</li>
+                            <li>Introduce tu <strong>correo electrónico</strong> (el que te dio el administrador)</li>
+                            <li>Introduce tu <strong>contraseña</strong> (normalmente es "123456" la primera vez)</li>
+                            <li>Haz clic en el botón azul "Iniciar Sesión"</li>
+                        </ol>
+                    </div>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4">
+                        <p className="text-sm"><strong>💡 Consejo:</strong> Después de entrar por primera vez, ve a "Perfil" (arriba a la derecha, donde está tu nombre) y cambia tu contraseña por una que recuerdes mejor. También puedes actualizar tu teléfono para que otros jugadores te puedan contactar.</p>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">¿He olvidado mi contraseña?</h3>
+                        <p>Contacta con el administrador de la liga por teléfono o email. Él puede restablecer tu contraseña.</p>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">¿Por qué no me deja entrar?</h3>
+                        <p>Si aparece un mensaje de error en rojo diciendo "Credenciales inválidas", puede ser por:</p>
+                        <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
+                            <li>Has escrito mal el correo electrónico (revisa que no tenga espacios ni mayúsculas incorrectas)</li>
+                            <li>Has escrito mal la contraseña</li>
+                            <li>Tu cuenta está desactivada (contacta con el administrador)</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            {/* Introducción */}
+            <section className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">¿Qué es FreeSquash League?</h2>
+                <p className="text-slate-600 dark:text-slate-400 mb-4">
+                    FreeSquash League es una página web que te permite organizar tu participación en la liga de squash. 
+                    Piensa en ella como una agenda digital donde registras tus partidos, ves con quién tienes que jugar, 
+                    y consultas tu posición en la clasificación.
+                </p>
+                <div className="space-y-3 text-slate-600 dark:text-slate-400">
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">¿Cómo funciona la liga?</h3>
+                        <p>La liga se divide en <strong>temporadas</strong> (normalmente 2 meses de duración). Cada temporada tiene varios <strong>grupos</strong> de jugadores de nivel similar. Por ejemplo:</p>
+                        <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
+                            <li>Grupo 1: Los mejores jugadores</li>
+                            <li>Grupo 2: Jugadores de nivel intermedio-alto</li>
+                            <li>Grupo 3: Jugadores de nivel intermedio</li>
+                            <li>Y así sucesivamente...</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">¿Qué tengo que hacer?</h3>
+                        <p>Durante cada temporada, debes jugar un partido contra cada uno de los jugadores de tu grupo. Tú y tu rival acordáis cuándo jugar (por teléfono o WhatsApp), jugáis el partido, y después el ganador o perdedor registra el resultado en esta página web.</p>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Ascensos y Descensos</h3>
+                        <p>Al final de cada temporada:</p>
+                        <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
+                            <li>🏆 Los 2 mejores de cada grupo <strong>suben</strong> al grupo superior (mejores rivales)</li>
+                            <li>⬇️ Los 2 últimos de cada grupo <strong>bajan</strong> al grupo inferior</li>
+                            <li>➡️ El resto se queda en el mismo grupo</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            {/* Dashboard */}
+            <section className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">🏠 Página de Inicio (Dashboard)</h2>
+                <p className="text-slate-600 dark:text-slate-400 mb-4">
+                    Cuando entras en la página web después de iniciar sesión, lo primero que ves es tu página de inicio. 
+                    Aquí tienes un resumen de toda tu información.
+                </p>
+                <div className="space-y-4 text-slate-600 dark:text-slate-400">
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">¿Qué significa cada número?</h3>
+                        <ul className="list-disc list-inside space-y-2 ml-4">
+                            <li><strong>Racha Actual:</strong> Si has ganado varios partidos seguidos, verás algo como "🔥 3W" (3 victorias consecutivas). Si has perdido, verás "❄️ 2L" (2 derrotas consecutivas). Es como una racha de buena o mala suerte.</li>
+                            <li><strong>Victorias/Derrotas:</strong> El número total de partidos que has ganado y perdido desde que empezaste en la liga. Por ejemplo: "15 victorias, 8 derrotas".</li>
+                            <li><strong>Win Rate:</strong> Es un porcentaje que indica qué proporción de partidos has ganado. Si dice "65%", significa que has ganado 65 de cada 100 partidos jugados.</li>
+                            <li><strong>Diferencia de Sets:</strong> Un partido se juega al mejor de 5 sets (primero en ganar 3 sets gana). Esta estadística suma todos los sets que has ganado y le resta los que has perdido. Un número positivo es bueno.</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Mi Grupo Actual</h3>
+                        <p>Aquí ves:</p>
+                        <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
+                            <li>En qué grupo estás (ejemplo: "Grupo 2")</li>
+                            <li>Tu posición actual en la clasificación (ejemplo: "3º de 8")</li>
+                            <li>Con quién te falta jugar todavía</li>
+                        </ul>
+                        <p className="mt-2">Si haces clic en el nombre del grupo, verás más detalles: la clasificación completa y todos los partidos del grupo.</p>
+                    </div>
+                </div>
+            </section>
+
+            {/* Registrar Partido */}
+            <section className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">🎾 Cómo Registrar un Partido (Paso a Paso)</h2>
+                <div className="space-y-4 text-slate-600 dark:text-slate-400">
+                    <p>Después de jugar un partido, alguien tiene que registrar el resultado en la web. Puede hacerlo el ganador o el perdedor, da igual. Solo se registra UNA vez.</p>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Instrucciones Detalladas</h3>
+                        <ol className="list-decimal list-inside space-y-3 ml-4">
+                            <li>
+                                <strong>Entra en "Registrar Partido"</strong>
+                                <p className="ml-6 mt-1">En el menú de arriba de la página, busca el botón que dice "Registrar". Haz clic en él. Se abrirá un formulario (una página con campos para rellenar).</p>
+                            </li>
+                            <li>
+                                <strong>Selecciona contra quién has jugado</strong>
+                                <p className="ml-6 mt-1">Verás una lista desplegable (un menú que se abre hacia abajo) con nombres de jugadores. Busca y selecciona el nombre de tu rival. <em>Solo aparecen las personas contra las que todavía NO has jugado en esta temporada.</em></p>
+                            </li>
+                            <li>
+                                <strong>Introduce el resultado</strong>
+                                <p className="ml-6 mt-1">Aquí indicas quién ganó y por cuánto. El formato es siempre <strong>3-0</strong>, <strong>3-1</strong> o <strong>3-2</strong> (el primero en ganar 3 sets gana el partido).</p>
+                                <ul className="list-disc list-inside ml-6 mt-1 space-y-1">
+                                    <li>Si tú ganaste 3-0, escribe "3-0" y selecciona que TÚ ganaste</li>
+                                    <li>Si tu rival ganó 3-1, escribe "3-1" y selecciona que tu RIVAL ganó</li>
+                                    <li>Si alguien se lesionó y no se pudo terminar el partido, marca la casilla "Lesión"</li>
+                                </ul>
+                            </li>
+                            <li>
+                                <strong>Selecciona la fecha</strong>
+                                <p className="ml-6 mt-1">Haz clic en el calendario que aparece y selecciona el día en que jugasteis. Normalmente será el día de hoy o ayer.</p>
+                            </li>
+                            <li>
+                                <strong>Haz clic en "Registrar Partido"</strong>
+                                <p className="ml-6 mt-1">Al final del formulario hay un botón azul que dice "Registrar Partido". Haz clic en él. Si todo está correcto, verás un mensaje de confirmación en verde que dice "Partido registrado exitosamente".</p>
+                            </li>
+                        </ol>
+                    </div>
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4">
+                        <p className="text-sm"><strong>⚠️ Muy Importante:</strong></p>
+                        <ul className="list-disc list-inside ml-4 mt-2 text-sm space-y-1">
+                            <li>Solo puedes jugar UNA vez contra cada persona de tu grupo</li>
+                            <li>El resultado solo se registra UNA vez (no lo registréis los dos)</li>
+                            <li>La clasificación se actualiza automáticamente al instante</li>
+                            <li>Si te equivocas, puedes editar o borrar el partido desde "Mis partidos"</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            {/* Clasificación y Grupos */}
+            <section className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">📊 Clasificación y Grupos</h2>
+                <div className="space-y-4 text-slate-600 dark:text-slate-400">
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Cómo Funciona</h3>
+                        <ul className="list-disc list-inside space-y-2 ml-4">
+                            <li><strong>Estadísticas del Grupo:</strong> Tabla con victorias, derrotas, partidos restantes, lesiones y diferencia de sets</li>
+                            <li><strong>Clasificación Actual:</strong> Ranking oficial del grupo con información de contacto de tus rivales</li>
+                            <li><strong>Ascensos y Descensos:</strong>
+                                <ul className="list-disc list-inside ml-6 mt-1">
+                                    <li>🏆 Los 2 primeros ascienden al grupo superior</li>
+                                    <li>⚠️ Los 2 últimos descienden al grupo inferior</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Contactar Rivales</h3>
+                        <p>En la clasificación puedes ver botones de WhatsApp y Email para contactar a tus rivales y coordinar partidos.</p>
+                    </div>
+                </div>
+            </section>
+
+            {/* Historial de Partidos */}
+            <section className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">📜 Historial de Partidos</h2>
+                <div className="space-y-4 text-slate-600 dark:text-slate-400">
+                    <p>Accede a todos tus partidos jugados a lo largo de las temporadas.</p>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Filtros Disponibles</h3>
+                        <ul className="list-disc list-inside space-y-1 ml-4">
+                            <li><strong>Búsqueda:</strong> Busca partidos por nombre del oponente</li>
+                            <li><strong>Rango de fechas:</strong> Filtra por fecha de inicio y fin</li>
+                            <li><strong>Temporada:</strong> Selecciona una temporada específica</li>
+                            <li><strong>Grupo:</strong> Filtra por grupo (se ajusta según la temporada)</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Editar/Eliminar Partidos</h3>
+                        <p>Puedes editar o eliminar tus propios partidos si cometiste un error al registrarlos. Los administradores pueden modificar cualquier partido.</p>
+                    </div>
+                </div>
+            </section>
+
+            {/* Progreso del Jugador */}
+            <section className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">📈 Progreso del Jugador</h2>
+                <div className="space-y-4 text-slate-600 dark:text-slate-400">
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Gráficos de Evolución</h3>
+                        <ul className="list-disc list-inside space-y-1 ml-4">
+                            <li><strong>Victorias y Derrotas por Fecha:</strong> Gráfico de línea mostrando tu progreso acumulado con línea de tendencia</li>
+                            <li><strong>Evolución de Grupo:</strong> Gráfico que muestra en qué grupo has estado en cada temporada
+                                <ul className="list-disc list-inside ml-6 mt-1">
+                                    <li>Línea ascendente = estás bajando de grupo (números más altos)</li>
+                                    <li>Línea descendente = estás subiendo de grupo (números más bajos)</li>
+                                    <li>Puntos verdes = Ascenso en esa temporada</li>
+                                    <li>Puntos rojos = Descenso en esa temporada</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Filtro de Fechas</h3>
+                        <p>Puedes filtrar los gráficos por rango de fechas para analizar períodos específicos.</p>
+                    </div>
+                </div>
+            </section>
+
+            {/* Perfil */}
+            <section className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">👤 Perfil de Usuario</h2>
+                <div className="space-y-4 text-slate-600 dark:text-slate-400">
+                    <p>En tu perfil puedes:</p>
+                    <ul className="list-disc list-inside space-y-1 ml-4">
+                        <li>Ver tu información personal (nombre, apodo, email, teléfono)</li>
+                        <li>Ver tu grupo actual y temporada activa</li>
+                        <li>Cambiar tu contraseña</li>
+                        <li>Actualizar tu información de contacto</li>
+                    </ul>
+                </div>
+            </section>
+
+            {/* Reportar Bugs */}
+            <section className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">🐛 Reportar Problemas</h2>
+                <div className="space-y-4 text-slate-600 dark:text-slate-400">
+                    <p>Si encuentras algún error o problema en la aplicación:</p>
+                    <ol className="list-decimal list-inside space-y-2 ml-4">
+                        <li>Ve a la sección "Reportar Bug" desde el menú</li>
+                        <li>Escribe una descripción detallada del problema</li>
+                        <li>Envía el reporte</li>
+                        <li>Los administradores recibirán tu reporte y lo resolverán lo antes posible</li>
+                    </ol>
+                </div>
+            </section>
+
+            {/* Consejos */}
+            <section className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl p-6 border border-green-200 dark:border-green-700">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">💡 Consejos y Mejores Prácticas</h2>
+                <ul className="space-y-2 text-slate-600 dark:text-slate-400">
+                    <li>✅ Registra tus partidos lo antes posible después de jugarlos</li>
+                    <li>✅ Contacta a tus rivales con antelación para coordinar horarios</li>
+                    <li>✅ Revisa regularmente tu clasificación y partidos pendientes</li>
+                    <li>✅ Aprovecha el período de la temporada para jugar todos tus partidos</li>
+                    <li>✅ Verifica bien el resultado antes de registrar un partido</li>
+                    <li>✅ Mantén tu información de contacto actualizada</li>
+                </ul>
+            </section>
+
+            {/* Solución de Problemas */}
+            <section className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">🔧 Problemas Comunes y Soluciones</h2>
+                <div className="space-y-4 text-slate-600 dark:text-slate-400">
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">"No veo mi grupo" o "Dice que no tengo grupo"</h3>
+                        <p>Puede ser porque:</p>
+                        <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
+                            <li>La temporada todavía no ha empezado (el administrador la activará cuando esté lista)</li>
+                            <li>Eres nuevo y el administrador todavía no te ha asignado a un grupo</li>
+                            <li>Contacta con el administrador si llevas más de un día sin ver tu grupo</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">"No aparece mi rival en la lista para registrar partido"</h3>
+                        <p>Esto es normal si:</p>
+                        <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
+                            <li>Ya has jugado contra esa persona (solo se puede jugar una vez contra cada uno)</li>
+                            <li>Esa persona no está en tu grupo</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">"Registré mal el resultado, ¿puedo cambiarlo?"</h3>
+                        <p>Sí, puedes:</p>
+                        <ol className="list-decimal list-inside ml-4 mt-2 space-y-1">
+                            <li>Ve a "Más" → "Mis partidos" en el menú de arriba</li>
+                            <li>Busca el partido que quieres cambiar</li>
+                            <li>Haz clic en el botón "Editar" (icono de lápiz)</li>
+                            <li>Cambia el resultado y guarda</li>
+                            <li>Si prefieres borrarlo, haz clic en el botón rojo "Eliminar" (icono de papelera)</li>
+                        </ol>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">"Los números no cuadran" o "Mi clasificación es incorrecta"</h3>
+                        <p>Si crees que hay un error en las estadísticas o clasificación:</p>
+                        <ol className="list-decimal list-inside ml-4 mt-2 space-y-1">
+                            <li>Primero verifica en "Mis partidos" que todos los resultados estén bien registrados</li>
+                            <li>Recuerda que las estadísticas del Dashboard muestran TODOS tus partidos (todas las temporadas), mientras que en tu grupo solo ves los partidos de la temporada actual</li>
+                            <li>Si sigue sin cuadrar, repórtalo como un bug (ver sección siguiente)</li>
+                        </ol>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">"La página va muy lenta" o "No carga"</h3>
+                        <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
+                            <li>Recarga la página: presiona F5 en tu teclado o el botón de recargar del navegador (flecha circular)</li>
+                            <li>Cierra el navegador completamente y vuelve a abrirlo</li>
+                            <li>Verifica tu conexión a Internet</li>
+                            <li>Si el problema persiste, contacta con el administrador</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            {/* Reportar Bugs Ampliado */}
+            <section className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-6 border border-red-200 dark:border-red-700">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">🐛 ¿Has Encontrado un Error?</h2>
+                <div className="space-y-4 text-slate-600 dark:text-slate-400">
+                    <p>Si algo no funciona como se describe en este manual, o ves información incorrecta, es posible que hayas encontrado un "bug" (error en el programa).</p>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Ejemplos de Bugs que Deberías Reportar</h3>
+                        <ul className="list-disc list-inside ml-4 space-y-1">
+                            <li>Un partido se registra dos veces cuando solo lo has guardado una vez</li>
+                            <li>Los números de victorias/derrotas no coinciden con tus partidos</li>
+                            <li>No puedes hacer clic en un botón que debería funcionar</li>
+                            <li>Aparece un mensaje de error extraño con código o letras raras</li>
+                            <li>Tu clasificación no se actualiza después de registrar un partido</li>
+                            <li>Ves información de otro jugador en tu perfil</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Cómo Reportar un Bug (Paso a Paso)</h3>
+                        <ol className="list-decimal list-inside ml-4 space-y-2">
+                            <li>
+                                <strong>Busca el enlace "Reportar Bug"</strong>
+                                <p className="ml-6 mt-1">Lo puedes encontrar en dos sitios:</p>
+                                <ul className="list-disc list-inside ml-6 mt-1">
+                                    <li>Abajo del todo en la página, en el pie de página (footer), junto a "Contacto"</li>
+                                    <li>Haz clic en ese enlace</li>
+                                </ul>
+                            </li>
+                            <li>
+                                <strong>Describe el problema</strong>
+                                <p className="ml-6 mt-1">Se abrirá un cuadro de texto. Escribe con tus propias palabras qué ha pasado. Cuanto más detalle des, mejor:</p>
+                                <ul className="list-disc list-inside ml-6 mt-1 space-y-1">
+                                    <li>¿Qué estabas intentando hacer?</li>
+                                    <li>¿Qué esperabas que pasara?</li>
+                                    <li>¿Qué pasó en realidad?</li>
+                                    <li>¿Has intentado varias veces y siempre pasa lo mismo?</li>
+                                </ul>
+                                <p className="ml-6 mt-2"><strong>Ejemplo:</strong> "Intenté registrar mi partido contra Juan. Gané 3-1, pero cuando le di a guardar apareció un error que decía 'Invalid score'. Lo intenté 3 veces y siempre igual."</p>
+                            </li>
+                            <li>
+                                <strong>Envía el reporte</strong>
+                                <p className="ml-6 mt-1">Haz clic en el botón "Enviar Reporte". Recibirás un mensaje de confirmación. El administrador verá tu reporte y trabajará en solucionarlo.</p>
+                            </li>
+                        </ol>
+                    </div>
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 mt-4">
+                        <p className="text-sm"><strong>Recuerda:</strong> No hay "reportes tontos". Si crees que algo no funciona bien, repórtalo. Es mejor reportar algo que resulta no ser un problema, que quedarse callado y que el error afecte a más gente.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    );
+}
