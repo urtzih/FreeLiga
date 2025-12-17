@@ -3,6 +3,7 @@ import { useAuth } from './contexts/AuthContext';
 import { lazy, Suspense } from 'react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import Loader from './components/Loader';
+import ErrorBoundary from './components/ErrorBoundary';
 const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/auth/Login'));
 const Dashboard = lazy(() => import('./pages/player/Dashboard'));
@@ -63,10 +64,11 @@ function App() {
     const defaultRoute = isAdmin ? '/admin' : '/dashboard';
 
     return (
-        <BrowserRouter>
-            <SpeedInsights />
-            <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader label="Cargando módulo..." /></div>}>
-                <Routes>
+        <ErrorBoundary>
+            <BrowserRouter>
+                <SpeedInsights />
+                <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader label="Cargando módulo..." /></div>}>
+                    <Routes>
                     {/* Public routes */}
                     <Route
                         path="/"
@@ -220,6 +222,7 @@ function App() {
                 </Routes>
             </Suspense>
         </BrowserRouter>
+        </ErrorBoundary>
     );
 }
 

@@ -2,8 +2,25 @@ import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api';
 
+interface Match {
+    id: string;
+    gamesP1: number;
+    gamesP2: number;
+    matchStatus: 'PLAYED' | 'INJURY' | 'CANCELLED';
+    date: string;
+    player1: { name: string };
+    player2: { name: string };
+}
+
+interface UpdateMatchData {
+    matchStatus: string;
+    date?: string;
+    gamesP1?: number;
+    gamesP2?: number;
+}
+
 interface EditMatchModalProps {
-    match: any;
+    match: Match;
     isOpen: boolean;
     onClose: () => void;
 }
@@ -30,7 +47,7 @@ export default function EditMatchModal({ match, isOpen, onClose }: EditMatchModa
     }, [match]);
 
     const mutation = useMutation({
-        mutationFn: async (data: any) => {
+        mutationFn: async (data: UpdateMatchData) => {
             try {
                 const response = await api.put(`/matches/${match.id}`, data);
                 return response.data;
@@ -46,10 +63,11 @@ export default function EditMatchModal({ match, isOpen, onClose }: EditMatchModa
             queryClient.invalidateQueries({ queryKey: ['group'] });
             onClose();
         },
-        onError: (err: any) => {
-            const errorData = err.response?.data?.error;
+        onError: (err: unknown) => {
+            const error = err as { response?: { data?: { error?: unknown } } };
+            const errorData = error.response?.data?.error;
             if (Array.isArray(errorData)) {
-                setError(errorData.map((e: any) => e.message || JSON.stringify(e)).join(', '));
+                setError(errorData.map((e: { message?: string }) => e.message || JSON.stringify(e)).join(', '));
             } else if (typeof errorData === 'object' && errorData !== null) {
                 setError(JSON.stringify(errorData));
             } else {
@@ -62,7 +80,7 @@ export default function EditMatchModal({ match, isOpen, onClose }: EditMatchModa
         e.preventDefault();
         setError('');
 
-        const payload: any = {
+        const payload: UpdateMatchData = {
             matchStatus: formData.matchStatus,
             date: formData.date ? new Date(formData.date).toISOString() : undefined
         };

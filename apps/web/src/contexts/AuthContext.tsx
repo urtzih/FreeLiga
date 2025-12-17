@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../lib/api';
 
+interface CurrentGroup {
+    id: string;
+    name: string;
+    seasonId: string;
+}
+
 interface User {
     id: string;
     email: string;
@@ -9,7 +15,7 @@ interface User {
         id: string;
         name: string;
         nickname?: string;
-        currentGroup?: any;
+        currentGroup?: CurrentGroup;
     };
 }
 

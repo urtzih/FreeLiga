@@ -123,10 +123,10 @@ export default function Layout() {
                                             </svg>
                                         </button>
                                         <div className="absolute left-0 w-44 rounded-lg shadow-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 py-2 hidden group-hover:block z-50">
-                                            <Link to="/progress" className="" >Progreso</Link>
-                                            <Link to="/matches/history" className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700" >Mis partidos</Link>block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700
-                                            <Link to="/historia" className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700" >General</Link>
-                                            <Link to="/help" className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700" > Ayuda</Link>
+                                            <Link to="/progress" className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">Progreso</Link>
+                                            <Link to="/matches/history" className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">Mis partidos</Link>
+                                            <Link to="/historia" className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">General</Link>
+                                            <Link to="/help" className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">Ayuda</Link>
                                         </div>
                                     </div>
                                 </>

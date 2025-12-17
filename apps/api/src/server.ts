@@ -4,6 +4,7 @@ import cors from '@fastify/cors';
 import compress from '@fastify/compress';
 import etag from '@fastify/etag';
 import jwt from '@fastify/jwt';
+import rateLimit from '@fastify/rate-limit';
 import { authRoutes } from './routes/auth.routes';
 import { playerRoutes } from './routes/player.routes';
 import { groupRoutes } from './routes/group.routes';
@@ -43,6 +44,15 @@ async function start() {
             credentials: true,
         });
 
+        // Rate limiting
+        await fastify.register(rateLimit, {
+            max: 100, // Max requests per window
+            timeWindow: '1 minute', // Time window
+            cache: 10000, // Cache size
+            allowList: ['127.0.0.1'], // Whitelist localhost
+            redis: undefined, // Use in-memory for now
+        });
+
         // Compression (gzip/br)
         await fastify.register(compress, { global: true });
 
@@ -61,6 +71,16 @@ async function start() {
             } catch (err) {
                 reply.status(401).send({ error: 'Unauthorized' });
             }
+        });
+
+        // Health check endpoint
+        fastify.get('/health', async (request, reply) => {
+            return {
+                status: 'ok',
+                timestamp: new Date().toISOString(),
+                uptime: process.uptime(),
+                environment: process.env.NODE_ENV || 'development',
+            };
         });
 
         // Register Swagger
@@ -119,11 +139,6 @@ async function start() {
         await fastify.register(userRoutes, { prefix: '/api/users' });
         await fastify.register(adminRoutes, { prefix: '/api/admin' });
         await fastify.register(bugRoutes, { prefix: '/api/bugs' });
-
-        // Health check
-        fastify.get('/health', async () => {
-            return { status: 'ok', timestamp: new Date().toISOString() };
-        });
 
         // Start server
         const port = parseInt(process.env.PORT || '3001');
