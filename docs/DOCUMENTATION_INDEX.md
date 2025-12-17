@@ -13,6 +13,7 @@ Complete navigation guide for FreeSquash League documentation.
 | [AUDIT_CHECKLIST.md](#audit-checklist) | Security verification | 10 min | Security-conscious users |
 | [AUDIT_REPORT.md](#audit-report) | Technical analysis (37KB) | 30 min | Developers, Auditors |
 | [MVP_STATUS.md](#mvp-status) | Project status snapshot | 5 min | Project managers |
+| [FUTURE_OPTIMIZATIONS.md](#future-optimizations) | Post-MVP scaling plan | 15 min | Developers, DBAs |
 
 ---
 
@@ -291,6 +292,61 @@ Coverage:           Setup, Deployment, Rules, User Guide, Security
 1. **QUICK_START.md** - Project overview
 2. **SETUP_AND_DEPLOYMENT.md** § Local Development
 3. **AUDIT_REPORT.md** - Technical deep dive
+4. **FUTURE_OPTIMIZATIONS.md** - Scaling and performance roadmap
+
+---
+
+## FUTURE_OPTIMIZATIONS.md
+
+**Document:** [FUTURE_OPTIMIZATIONS.md](FUTURE_OPTIMIZATIONS.md)  
+**Purpose:** Long-term database and infrastructure optimization roadmap  
+**When to read:** When planning scalability or experiencing performance issues
+
+### Who Should Read This
+- **Backend Developers:** Understand future performance optimization plans
+- **Database Administrators:** Database scaling strategies for 50k+ matches
+- **DevOps Engineers:** Infrastructure planning for production growth
+
+### What You'll Learn
+- Current database optimization status (indexes, stats tables)
+- Phase 2 optimizations (6-12 months): Redis caching, query optimization
+- Phase 3 optimizations (2-3 years): Table partitioning, archiving strategies
+- Performance monitoring KPIs and tools
+- Migration checklists and rollback plans
+
+### Key Information
+
+**Current Optimizations (Implemented Dec 2025):**
+- ✅ Composite indexes on `matches` table for common query patterns
+- ✅ `PlayerSeasonStats` table for precalculated statistics
+- ✅ Index on `createdAt` for pagination
+
+**Phase 2 (When to implement: 5,000+ matches):**
+- Redis caching layer for dashboards
+- Cursor-based pagination for match history
+- Automated stats recalculation on match insert/update
+
+**Phase 3 (When to implement: 20,000+ matches):**
+- Table partitioning by year
+- Season archiving to JSON snapshots
+- Read replicas for analytics
+
+**Projected Data Growth:**
+- **Year 1:** ~5,000 matches
+- **Year 3:** ~15,000 matches
+- **Year 5:** ~25,000 matches
+
+### Navigation Within Document
+1. **Current Status** - What's already optimized
+2. **Phase 2 Optimizations** - Next 6-12 months
+3. **Phase 3 Optimizations** - 2-3 years out
+4. **Monitoring & Metrics** - How to measure performance
+5. **Migration Plans** - Step-by-step implementation guides
+
+### Related Documents
+- [SETUP_AND_DEPLOYMENT.md](SETUP_AND_DEPLOYMENT.md) - Current database setup
+- [MVP_STATUS.md](MVP_STATUS.md) - Current project status
+- Database schema: `packages/database/prisma/schema.prisma`
 
 ---
 

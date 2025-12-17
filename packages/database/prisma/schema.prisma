@@ -71,6 +71,7 @@ model Player {
   promotionRecords    PromotionRecord[]
   closureEntries      SeasonClosureEntry[]
   groupHistories      PlayerGroupHistory[]
+  seasonStats         PlayerSeasonStats[]
 
   @@map("players")
 }
@@ -87,6 +88,7 @@ model Season {
   groups Group[]
   closure SeasonClosure?
   groupHistories PlayerGroupHistory[]
+  seasonStats PlayerSeasonStats[]
   previousSeasonId String?
   previousSeason   Season? @relation("SeasonRollover", fields: [previousSeasonId], references: [id])
   nextSeasons      Season[] @relation("SeasonRollover")
@@ -110,6 +112,7 @@ model Group {
   closureEntriesFrom   SeasonClosureEntry[] @relation("ClosureFromGroup")
   closureEntriesTo     SeasonClosureEntry[] @relation("ClosureToGroup")
   groupHistories       PlayerGroupHistory[]
+  seasonStats          PlayerSeasonStats[]
 
   @@index([seasonId])
   @@map("groups")
@@ -155,6 +158,10 @@ model Match {
   @@index([player2Id])
   @@index([winnerId])
   @@index([date])
+  @@index([createdAt])
+  @@index([groupId, date])
+  @@index([player1Id, date])
+  @@index([player2Id, date])
   @@map("matches")
 }
 
@@ -225,6 +232,31 @@ model PlayerGroupHistory {
   @@index([playerId])
   @@index([seasonId])
   @@map("player_group_history")
+}
+
+model PlayerSeasonStats {
+  id          String   @id @default(cuid())
+  playerId    String
+  seasonId    String
+  groupId     String?
+  wins        Int      @default(0)
+  losses      Int      @default(0)
+  setsWon     Int      @default(0)
+  setsLost    Int      @default(0)
+  injuries    Int      @default(0)
+  winRate     Float    @default(0)
+  setDiff     Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  player Player  @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  season Season  @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  group  Group?  @relation(fields: [groupId], references: [id])
+
+  @@unique([playerId, seasonId])
+  @@index([seasonId])
+  @@index([groupId])
+  @@map("player_season_stats")
 }
 
 model BugReport {
