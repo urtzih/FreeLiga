@@ -306,8 +306,7 @@ For more detailed information, see:
 
 - **[Quick Start Guide](docs/QUICK_START.md)** - Get up and running in 5 minutes
 - **[Deployment Guide](docs/RAILWAY_VERCEL_DEPLOY.md)** - Deploy to Railway + Vercel
-- **[Docker Setup](docs/DOCKER_SETUP.md)** - Local development with Docker
-- **[User Manual](docs/MANUAL_USUARIO.md)** - End-user guide (Spanish)
+- **[Docker Setup](docs/DOCKER_SETUP.md)** - Local development with Docker- **[Logging System](docs/LOGGING_SYSTEM.md)** - Structured logging, analysis & dashboards- **[User Manual](docs/MANUAL_USUARIO.md)** - End-user guide (Spanish)
 - **[Audit Checklist](AUDIT_CHECKLIST.md)** - Security & performance verification
 - **[Full Audit Report](AUDIT_REPORT.md)** - Comprehensive security analysis
 - **[Business Rules](docs/REGLAS_CIERRE_TEMPORADA.md)** - Season closure rules

@@ -1,0 +1,121 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # ========================================
+  # Logs de archivos de la API FreeSquash
+  # ========================================
+  - job_name: freesquash-api
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: freesquash-api
+          app: freesquash
+          env: ${ENV:-development}
+          __path__: /var/log/freesquash/*.log
+    
+    # Pipeline para parsear JSON
+    pipeline_stages:
+      # Parsear JSON
+      - json:
+          expressions:
+            level: level
+            time: time
+            msg: msg
+            type: type
+            operation: operation
+            userId: userId
+            matchId: matchId
+            groupId: groupId
+            duration: duration
+            error: error
+      
+      # Convertir level numérico a texto
+      - template:
+          source: level_name
+          template: '{{ if eq .level "10" }}TRACE{{ else if eq .level "20" }}DEBUG{{ else if eq .level "30" }}INFO{{ else if eq .level "40" }}WARN{{ else if eq .level "50" }}ERROR{{ else if eq .level "60" }}FATAL{{ else }}UNKNOWN{{ end }}'
+      
+      # Añadir labels dinámicos
+      - labels:
+          level_name:
+          type:
+          operation:
+      
+      # Timestamp
+      - timestamp:
+          source: time
+          format: RFC3339
+      
+      # Output
+      - output:
+          source: msg
+
+  # ========================================
+  # Logs de TODOS los contenedores Docker
+  # ========================================
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: name
+            values: ['freeliga-*', 'freesquash-*']
+    
+    relabel_configs:
+      # Nombre del contenedor
+      - source_labels: ['__meta_docker_container_name']
+        target_label: container_name
+        replacement: '$1'
+        action: replace
+        regex: '/(.+)'
+      
+      # ID del contenedor
+      - source_labels: ['__meta_docker_container_id']
+        target_label: container_id
+        action: replace
+      
+      # Nombre de la imagen
+      - source_labels: ['__meta_docker_container_image']
+        target_label: image
+        action: replace
+      
+      # Labels del contenedor
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: service
+        action: replace
+      
+      # Log path
+      - source_labels: ['__meta_docker_container_id']
+        target_label: __path__
+        replacement: '/var/lib/docker/containers/$1/*-json.log'
+        action: replace
+    
+    pipeline_stages:
+      # Parsear formato Docker JSON
+      - docker: {}
+      
+      # Intentar parsear JSON del contenido si es API
+      - match:
+          selector: '{container_name="freeliga-api"}'
+          stages:
+            - json:
+                expressions:
+                  level: level
+                  msg: msg
+                  type: type
+                  event: event
+                  userId: userId
+                  adminEmail: adminEmail
+                  targetEmail: targetEmail
+            - labels:
+                level:
+                type:
+                event:

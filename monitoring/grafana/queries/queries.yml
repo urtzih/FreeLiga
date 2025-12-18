@@ -1,0 +1,55 @@
+apiVersion: 1
+
+# Consultas guardadas para FreeSquash
+# Estas aparecerán en el Explore de Grafana
+
+queries:
+  - name: "Todos los logs"
+    description: "Ver todos los logs de la aplicación"
+    datasource: "Loki"
+    query: '{job="freesquash-api"}'
+    
+  - name: "Solo errores"
+    description: "Filtrar solo logs de nivel ERROR"
+    datasource: "Loki"
+    query: '{job="freesquash-api"} | json | level="50"'
+    
+  - name: "Eventos de negocio"
+    description: "Ver eventos de negocio (partidos creados, usuarios registrados, etc)"
+    datasource: "Loki"
+    query: '{job="freesquash-api"} | json | type="business_event"'
+    
+  - name: "Requests HTTP"
+    description: "Ver todas las peticiones HTTP con detalles"
+    datasource: "Loki"
+    query: '{job="freesquash-api"} | json | type="http_request"'
+    
+  - name: "Errores y warnings"
+    description: "Errores (50) y warnings (40)"
+    datasource: "Loki"
+    query: '{job="freesquash-api"} | json | level=~"40|50"'
+    
+  - name: "Requests lentos"
+    description: "Requests HTTP con tiempo de respuesta > 1000ms"
+    datasource: "Loki"
+    query: '{job="freesquash-api"} | json | type="http_request" | responseTime > 1000'
+    
+  - name: "Partidos creados"
+    description: "Eventos de creación de partidos"
+    datasource: "Loki"
+    query: '{job="freesquash-api"} | json | event="match_created"'
+    
+  - name: "Usuarios registrados"
+    description: "Eventos de registro de usuarios"
+    datasource: "Loki"
+    query: '{job="freesquash-api"} | json | event="user_registered"'
+    
+  - name: "Autenticación"
+    description: "Eventos relacionados con login/logout"
+    datasource: "Loki"
+    query: '{job="freesquash-api"} | json | action=~"login|logout"'
+    
+  - name: "Operaciones de base de datos"
+    description: "Logs de operaciones con la base de datos"
+    datasource: "Loki"
+    query: '{job="freesquash-api"} | json | type=~"database.*"'

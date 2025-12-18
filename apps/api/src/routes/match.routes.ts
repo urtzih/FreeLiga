@@ -3,6 +3,7 @@ import { prisma } from '@freesquash/database';
 import { z } from 'zod';
 import { calculateGroupRankings } from '../services/ranking.service';
 import { getPlayerCurrentGroupId } from '../utils/playerHelpers';
+import { logger, logBusinessEvent, logError } from '../utils/logger';
 
 const createMatchSchema = z.object({
     groupId: z.string(),
@@ -174,9 +175,28 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 },
             });
 
+            logger.info({ 
+                matchId: match.id, 
+                groupId: body.groupId,
+                player1Id: body.player1Id,
+                player2Id: body.player2Id,
+                matchStatus: body.matchStatus,
+            }, 'Match created successfully');
+
+            logBusinessEvent('match_created', {
+                matchId: match.id,
+                groupId: body.groupId,
+                player1: match.player1.name,
+                player2: match.player2.name,
+                score: `${body.gamesP1}-${body.gamesP2}`,
+                winner: match.winner?.name,
+                matchStatus: body.matchStatus,
+            });
+
             // Recalculate rankings if match was PLAYED
             if (body.matchStatus === 'PLAYED') {
                 await calculateGroupRankings(body.groupId);
+                logger.info({ groupId: body.groupId }, 'Rankings recalculated after match creation');
             }
 
             return match;
@@ -193,8 +213,9 @@ export async function matchRoutes(fastify: FastifyInstance) {
     fastify.put('/:id', {
         onRequest: [fastify.authenticate],
     }, async (request, reply) => {
+        const { id } = request.params as { id: string };
+        
         try {
-            const { id } = request.params as { id: string };
             const body = updateMatchSchema.parse(request.body);
 
             const existingMatch = await prisma.match.findUnique({
@@ -236,7 +257,7 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 winnerId = null;
             }
 
-            console.log(`Updating match ${id}...`);
+            logger.info({ matchId: id, userId: decoded.id }, 'Updating match');
             const match = await prisma.match.update({
                 where: { id },
                 data: {
@@ -252,16 +273,25 @@ export async function matchRoutes(fastify: FastifyInstance) {
                     winner: true,
                 },
             });
-            console.log('Match updated in DB');
+            logger.info({ matchId: id }, 'Match updated in DB');
 
             // Recalculate rankings
-            console.log(`Recalculating rankings for group ${existingMatch.groupId}...`);
+            logger.info({ groupId: existingMatch.groupId }, 'Recalculating rankings for group');
             await calculateGroupRankings(existingMatch.groupId);
-            console.log('Rankings recalculated');
+            logger.info({ groupId: existingMatch.groupId }, 'Rankings recalculated');
+
+            logBusinessEvent('match_updated', {
+                matchId: id,
+                userId: decoded.id,
+                groupId: existingMatch.groupId,
+                gamesP1,
+                gamesP2,
+                matchStatus,
+            });
 
             return match;
         } catch (error) {
-            console.error('Error updating match:', error);
+            logError(error, { matchId: id, operation: 'update_match' });
             if (error instanceof z.ZodError) {
                 return reply.status(400).send({ error: error.errors });
             }
@@ -313,6 +343,15 @@ export async function matchRoutes(fastify: FastifyInstance) {
 
             await prisma.match.delete({
                 where: { id },
+            });
+
+            logger.info({ matchId: id, groupId }, 'Match deleted');
+            logBusinessEvent('match_deleted', {
+                matchId: id,
+                groupId,
+                player1: match.player1.name,
+                player2: match.player2.name,
+                deletedBy: decoded.id,
             });
 
             // Recalculate rankings

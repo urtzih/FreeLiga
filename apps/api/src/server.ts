@@ -14,29 +14,40 @@ import { classificationRoutes } from './routes/classification.routes';
 import { userRoutes } from './routes/user.routes';
 import { adminRoutes } from './routes/admin.routes';
 import { bugRoutes } from './routes/bug.routes';
+import { logger, logBusinessEvent } from './utils/logger';
+import { registerHttpLogging, httpErrorHook } from './utils/httpLogger';
 
 const fastify = Fastify({
-    logger: {
-        level: process.env.NODE_ENV === 'development' ? 'info' : 'error',
+    logger: true,
+    disableRequestLogging: true, // Usamos nuestro middleware personalizado
+    requestIdLogLabel: 'requestId',
+    genReqId: () => {
+        return `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     },
 });
 
 async function start() {
     try {
         // Validate critical environment variables
+        logger.info('Starting application initialization');
         const jwtSecret = process.env.JWT_SECRET;
         if (!jwtSecret) {
+            logger.fatal('JWT_SECRET is not configured');
             throw new Error('CRITICAL: JWT_SECRET is not configured! Set in environment variables.');
         }
         if (jwtSecret === 'your-super-secret-jwt-key-change-in-production') {
+            logger.fatal('JWT_SECRET is using insecure default value');
             throw new Error('CRITICAL: JWT_SECRET is using the insecure default value! Change immediately in production.');
         }
+        logger.info('JWT configuration validated');
 
         // Compute allowed origins (comma-separated list)
         const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:4173')
             .split(',')
             .map((o: string) => o.trim())
             .filter(Boolean);
+
+        logger.info({ allowedOrigins }, 'Configuring CORS');
 
         // Register CORS
         await fastify.register(cors, {
@@ -72,6 +83,12 @@ async function start() {
                 reply.status(401).send({ error: 'Unauthorized' });
             }
         });
+
+        // Registrar logging HTTP
+        await registerHttpLogging(fastify);
+        
+        // Hook de errores
+        fastify.setErrorHandler(httpErrorHook);
 
         // Health check endpoint
         fastify.get('/health', async (request, reply) => {
@@ -145,7 +162,8 @@ async function start() {
         const host = process.env.HOST || '0.0.0.0';
         const address = await fastify.listen({ port, host });
 
-        console.log(`🚀 Server running on ${address}`);
+        logger.info({ address, port, host, env: process.env.NODE_ENV }, '🚀 Server running');
+        logBusinessEvent('server_started', { address, port, host });
     } catch (err) {
         fastify.log.error(err);
         process.exit(1);
@@ -154,12 +172,15 @@ async function start() {
 
 // Handle unhandled rejections
 process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    logger.error({ reason, promise: String(promise) }, 'Unhandled Rejection');
+    logBusinessEvent('unhandled_rejection', { reason: String(reason) });
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error: unknown) => {
-    console.error('Uncaught Exception:', error);
+    logger.fatal({ error }, 'Uncaught Exception - shutting down');
+    logBusinessEvent('uncaught_exception', { error: String(error) });
+    process.exit(1);
 });
 
 start();

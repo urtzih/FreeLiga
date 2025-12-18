@@ -3,6 +3,7 @@ import { prisma } from '@freesquash/database';
 import { z } from 'zod';
 import bcrypt from 'bcrypt';
 import { getPlayerCurrentGroup } from '../utils/playerHelpers';
+import { logger, logBusinessEvent, logOperation } from '../utils/logger';
 
 declare module 'fastify' {
     interface FastifyInstance {
@@ -222,11 +223,20 @@ export async function userRoutes(fastify: FastifyInstance) {
     fastify.put('/:id', {
         onRequest: [fastify.authenticate],
     }, async (request, reply) => {
+        const startTime = Date.now();
+        const { id } = request.params as { id: string };
+        
         try {
             const decoded = request.user as any;
-            const { id } = request.params as { id: string };
 
             if (decoded.role !== 'ADMIN') {
+                logger.warn({
+                    type: 'authorization_denied',
+                    operation: 'update_user',
+                    userId: decoded.userId,
+                    targetUserId: id,
+                    reason: 'not_admin'
+                }, 'Non-admin user attempted to update user');
                 return reply.status(403).send({ error: 'Forbidden' });
             }
 
@@ -239,6 +249,12 @@ export async function userRoutes(fastify: FastifyInstance) {
             });
 
             if (!user) {
+                logger.warn({
+                    type: 'resource_not_found',
+                    operation: 'update_user',
+                    userId: decoded.userId,
+                    targetUserId: id
+                }, 'User not found for update');
                 return reply.status(404).send({ error: 'User not found' });
             }
 
@@ -271,6 +287,24 @@ export async function userRoutes(fastify: FastifyInstance) {
                 }
 
                 return updated;
+            });
+
+            // Log del evento de negocio
+            logBusinessEvent('user_updated', {
+                userId: decoded.userId,
+                adminEmail: decoded.email,
+                targetUserId: id,
+                targetEmail: updatedUser.email,
+                playerName: updatedUser.player?.name,
+                changes: {
+                    email: body.email ? { from: user.email, to: body.email } : undefined,
+                    role: body.role ? { from: user.role, to: body.role } : undefined,
+                    isActive: body.isActive !== undefined ? { from: user.isActive, to: body.isActive } : undefined,
+                    name: body.name ? { from: user.player?.name, to: body.name } : undefined,
+                    nickname: body.nickname !== undefined ? { from: user.player?.nickname, to: body.nickname } : undefined,
+                    phone: body.phone !== undefined ? { from: user.player?.phone, to: body.phone } : undefined,
+                },
+                duration: Date.now() - startTime
             });
 
             const { password, ...userWithoutPassword } = updatedUser;
@@ -418,23 +452,66 @@ export async function userRoutes(fastify: FastifyInstance) {
     fastify.post('/:id/toggle-active', {
         onRequest: [fastify.authenticate],
     }, async (request, reply) => {
+        const startTime = Date.now();
+        const { id } = request.params as { id: string };
+        
         try {
             const decoded = request.user as any;
-            const { id } = request.params as { id: string };
 
             if (decoded.role !== 'ADMIN') {
+                logger.warn({
+                    type: 'authorization_denied',
+                    operation: 'toggle_user_active',
+                    userId: decoded.userId,
+                    targetUserId: id,
+                    reason: 'not_admin'
+                }, 'Non-admin user attempted to toggle user active status');
                 return reply.status(403).send({ error: 'Forbidden' });
             }
 
-            const user = await prisma.user.findUnique({ where: { id } });
+            const user = await prisma.user.findUnique({ 
+                where: { id },
+                include: { player: true }
+            });
+            
             if (!user) {
+                logger.warn({
+                    type: 'resource_not_found',
+                    operation: 'toggle_user_active',
+                    userId: decoded.userId,
+                    targetUserId: id
+                }, 'User not found for toggle active');
                 return reply.status(404).send({ error: 'User not found' });
             }
 
+            const newActiveStatus = !user.isActive;
             const updated = await prisma.user.update({
                 where: { id },
-                data: { isActive: !user.isActive }
+                data: { isActive: newActiveStatus }
             });
+
+            // Log del evento de negocio
+            logBusinessEvent('user_active_toggled', {
+                userId: decoded.userId,
+                adminEmail: decoded.email,
+                targetUserId: id,
+                targetEmail: user.email,
+                playerName: user.player?.name,
+                previousStatus: user.isActive,
+                newStatus: newActiveStatus,
+                action: newActiveStatus ? 'activated' : 'deactivated',
+                duration: Date.now() - startTime
+            });
+
+            logger.info({
+                type: 'user_status_change',
+                operation: 'toggle_user_active',
+                userId: decoded.userId,
+                targetUserId: id,
+                targetEmail: user.email,
+                from: user.isActive,
+                to: newActiveStatus
+            }, `User ${newActiveStatus ? 'activated' : 'deactivated'}: ${user.email}`);
 
             return { success: true, isActive: updated.isActive };
         } catch (error) {

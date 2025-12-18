@@ -1,0 +1,99 @@
+﻿{
+  "title": "FreeSquash API - Monitoreo",
+  "tags": ["freesquash", "api", "logs"],
+  "timezone": "browser",
+  "uid": "freesquash-overview",
+  "version": 2,
+  "schemaVersion": 38,
+  "editable": true,
+  "panels": [
+    {
+      "id": 1,
+      "title": "Total de Logs (Última Hora)",
+      "type": "stat",
+      "datasource": "Loki",
+      "targets": [{"expr": "sum(count_over_time({job=\"freesquash-api\"} [1h]))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"value": null, "color": "green"}]}}},
+      "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0}
+    },
+    {
+      "id": 2,
+      "title": "Errores (Última Hora)",
+      "type": "stat",
+      "datasource": "Loki",
+      "targets": [{"expr": "sum(count_over_time({job=\"freesquash-api\"} | json | level=\"50\" [1h]))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"value": null, "color": "green"}, {"value": 1, "color": "yellow"}, {"value": 10, "color": "red"}]}}},
+      "gridPos": {"h": 4, "w": 6, "x": 6, "y": 0}
+    },
+    {
+      "id": 3,
+      "title": "Warnings (Última Hora)",
+      "type": "stat",
+      "datasource": "Loki",
+      "targets": [{"expr": "sum(count_over_time({job=\"freesquash-api\"} | json | level=\"40\" [1h]))", "refId": "A"}],
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "thresholds": {"mode": "absolute", "steps": [{"value": null, "color": "green"}, {"value": 5, "color": "yellow"}]}}},
+      "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0}
+    },
+    {
+      "id": 4,
+      "title": "Eventos de Negocio",
+      "type": "stat",
+      "datasource": "Loki",
+      "targets": [{"expr": "sum(count_over_time({job=\"freesquash-api\"} | json | type=\"business_event\" [1h]))", "refId": "A"}],
+      "gridPos": {"h": 4, "w": 6, "x": 18, "y": 0}
+    },
+    {
+      "id": 5,
+      "title": "Logs por Minuto",
+      "type": "timeseries",
+      "datasource": "Loki",
+      "targets": [{"expr": "sum(rate({job=\"freesquash-api\"} [1m]))", "refId": "A", "legendFormat": "Logs/min"}],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4}
+    },
+    {
+      "id": 6,
+      "title": "Distribución por Nivel",
+      "type": "piechart",
+      "datasource": "Loki",
+      "targets": [{"expr": "sum by (level) (count_over_time({job=\"freesquash-api\"} | json [1h]))", "refId": "A"}],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4}
+    },
+    {
+      "id": 7,
+      "title": "Últimos Errores",
+      "type": "logs",
+      "datasource": "Loki",
+      "targets": [{"expr": "{job=\"freesquash-api\"} | json | level=\"50\"", "refId": "A"}],
+      "options": {"showTime": true, "wrapLogMessage": true, "sortOrder": "Descending"},
+      "gridPos": {"h": 10, "w": 12, "x": 0, "y": 12}
+    },
+    {
+      "id": 8,
+      "title": "Requests HTTP Recientes",
+      "type": "logs",
+      "datasource": "Loki",
+      "targets": [{"expr": "{job=\"freesquash-api\"} | json | type=\"http_request\"", "refId": "A"}],
+      "options": {"showTime": true, "wrapLogMessage": false, "sortOrder": "Descending"},
+      "gridPos": {"h": 10, "w": 12, "x": 12, "y": 12}
+    },
+    {
+      "id": 9,
+      "title": "Eventos de Negocio (Timeline)",
+      "type": "timeseries",
+      "datasource": "Loki",
+      "targets": [{"expr": "sum by (event) (rate({job=\"freesquash-api\"} | json | type=\"business_event\" [5m]))", "refId": "A"}],
+      "gridPos": {"h": 8, "w": 24, "x": 0, "y": 22}
+    },
+    {
+      "id": 10,
+      "title": "Logs de Todos los Contenedores",
+      "type": "logs",
+      "datasource": "Loki",
+      "targets": [{"expr": "{container_name=~\"freeliga-.*|freesquash-.*\"}", "refId": "A"}],
+      "options": {"showTime": true, "wrapLogMessage": true, "sortOrder": "Descending", "showLabels": true},
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 30}
+    }
+  ],
+  "refresh": "10s",
+  "time": {"from": "now-1h", "to": "now"}
+}
