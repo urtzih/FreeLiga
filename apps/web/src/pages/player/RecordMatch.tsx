@@ -13,6 +13,34 @@ export default function RecordMatch() {
         return `${year}-${month}-${day}`;
     };
 
+    const getErrorMessage = (err: any) => {
+        // Sin conexión a internet
+        if (!navigator.onLine || err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
+            return 'Sin conexión a internet. Verifica tu conexión y vuelve a intentarlo.';
+        }
+        
+        // Error de servidor (5xx)
+        if (err.response?.status >= 500) {
+            return 'Error del servidor. Por favor, inténtalo de nuevo más tarde.';
+        }
+        
+        // Error de base de datos (común en respuestas del backend)
+        if (err.response?.data?.error?.includes('database') || 
+            err.response?.data?.error?.includes('Database') ||
+            err.response?.data?.error?.includes('BD') ||
+            err.response?.data?.error?.includes('conexión')) {
+            return 'Error de conexión con la base de datos. Inténtalo de nuevo en unos momentos.';
+        }
+        
+        // Error específico del backend
+        if (err.response?.data?.error) {
+            return `${err.response.data.error}`;
+        }
+        
+        // Error genérico
+        return 'Error al registrar el partido. Por favor, inténtalo de nuevo.';
+    };
+
     const { user } = useAuth();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
@@ -78,7 +106,7 @@ export default function RecordMatch() {
         },
         onError: (err: any) => {
             console.error('Error al registrar partido:', err);
-            setError(err.response?.data?.error || 'Error al registrar el partido. Inténtalo de nuevo.');
+            setError(getErrorMessage(err));
         },
     });
 
