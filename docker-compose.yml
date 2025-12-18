@@ -123,8 +123,9 @@ services:
       - GF_AUTH_ANONYMOUS_ENABLED=false
     volumes:
       - grafana-data:/var/lib/grafana
-      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
-      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./monitoring/grafana/dashboards/dashboard-provider.yaml:/etc/grafana/provisioning/dashboards/dashboard-provider.yaml
+      - ./monitoring/grafana/dashboards/freesquash-overview.json:/etc/grafana/provisioning/dashboards/freesquash-overview.json
+      - ./monitoring/grafana/datasources/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
     networks:
       - freeliga-network
     restart: unless-stopped

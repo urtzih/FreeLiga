@@ -76,21 +76,25 @@ scrape_configs:
         replacement: '$1'
         action: replace
         regex: '/(.+)'
-      
+
       # ID del contenedor
       - source_labels: ['__meta_docker_container_id']
         target_label: container_id
         action: replace
-      
+
       # Nombre de la imagen
       - source_labels: ['__meta_docker_container_image']
         target_label: image
         action: replace
-      
-      # Labels del contenedor
+
+      # Servicio de docker-compose
       - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
         target_label: service
         action: replace
+
+      # Eliminar etiquetas verbosas para simplificar la vista en Grafana
+      - action: labeldrop
+        regex: 'container_id|image|service'
       
       # Log path
       - source_labels: ['__meta_docker_container_id']
@@ -101,21 +105,3 @@ scrape_configs:
     pipeline_stages:
       # Parsear formato Docker JSON
       - docker: {}
-      
-      # Intentar parsear JSON del contenido si es API
-      - match:
-          selector: '{container_name="freeliga-api"}'
-          stages:
-            - json:
-                expressions:
-                  level: level
-                  msg: msg
-                  type: type
-                  event: event
-                  userId: userId
-                  adminEmail: adminEmail
-                  targetEmail: targetEmail
-            - labels:
-                level:
-                type:
-                event:
