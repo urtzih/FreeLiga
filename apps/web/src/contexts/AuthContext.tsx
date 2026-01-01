@@ -5,6 +5,11 @@ interface CurrentGroup {
     id: string;
     name: string;
     seasonId: string;
+    groupPlayers?: any[];
+    season?: {
+        startDate: string;
+        endDate: string;
+    };
 }
 
 interface User {

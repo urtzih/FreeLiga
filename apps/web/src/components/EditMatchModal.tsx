@@ -71,7 +71,7 @@ export default function EditMatchModal({ match, isOpen, onClose }: EditMatchModa
             } else if (typeof errorData === 'object' && errorData !== null) {
                 setError(JSON.stringify(errorData));
             } else {
-                setError(errorData || 'Error al actualizar el partido');
+                setError(String(errorData) || 'Error al actualizar el partido');
             }
         },
     });
