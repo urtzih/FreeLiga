@@ -8,33 +8,36 @@ const logLevel = process.env.LOG_LEVEL || (isDevelopment ? 'debug' : 'info');
 // Configurar directorio de logs
 const logsDir = path.join(process.cwd(), 'logs');
 
-// Asegurar que el directorio existe
-if (!fs.existsSync(logsDir)) {
-  fs.mkdirSync(logsDir, { recursive: true });
-}
-
 // Configurar streams para multistream
 const streams: any[] = [];
 
-// Stream para archivo app.log (todos los logs)
-streams.push({
-  level: logLevel,
-  stream: pino.destination({
-    dest: path.join(logsDir, 'app.log'),
-    sync: false,
-  }),
-});
+// En desarrollo, escribir a archivos de logs
+if (isDevelopment) {
+  // Asegurar que el directorio existe
+  if (!fs.existsSync(logsDir)) {
+    fs.mkdirSync(logsDir, { recursive: true });
+  }
 
-// Stream para archivo error.log (solo errores)
-streams.push({
-  level: 'error',
-  stream: pino.destination({
-    dest: path.join(logsDir, 'error.log'),
-    sync: false,
-  }),
-});
+  // Stream para archivo app.log (todos los logs)
+  streams.push({
+    level: logLevel,
+    stream: pino.destination({
+      dest: path.join(logsDir, 'app.log'),
+      sync: false,
+    }),
+  });
 
-// Stream para stdout - SIEMPRE JSON (para Promtail/Docker)
+  // Stream para archivo error.log (solo errores)
+  streams.push({
+    level: 'error',
+    stream: pino.destination({
+      dest: path.join(logsDir, 'error.log'),
+      sync: false,
+    }),
+  });
+}
+
+// Stream para stdout - SIEMPRE (para Railway/Docker logs)
 streams.push({
   level: logLevel,
   stream: process.stdout,
