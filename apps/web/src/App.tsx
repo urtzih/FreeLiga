@@ -24,6 +24,7 @@ const Profile = lazy(() => import('./pages/player/Profile'));
 const History = lazy(() => import('./pages/player/History'));
 const Help = lazy(() => import('./pages/player/Help'));
 const AdminHelp = lazy(() => import('./pages/admin/AdminHelp'));
+const GroupsSummary = lazy(() => import('./pages/player/GroupsSummary'));
 import Layout from './components/Layout';
 
 function ProtectedRoute({
@@ -130,6 +131,14 @@ function App() {
                             element={
                                 <ProtectedRoute>
                                     <PlayerProgress />
+                                </ProtectedRoute>
+                            }
+                        />
+                        <Route
+                            path="/groups/summary"
+                            element={
+                                <ProtectedRoute>
+                                    <GroupsSummary />
                                 </ProtectedRoute>
                             }
                         />

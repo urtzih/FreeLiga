@@ -45,6 +45,9 @@ services:
       - ./apps/api/src:/app/apps/api/src
       - ./packages/database/src:/app/packages/database/src
       - ./packages/database/prisma:/app/packages/database/prisma
+      # Prevent Windows node_modules from being mounted
+      - /app/node_modules
+      - /app/apps/api/node_modules
     networks:
       - freeliga-network
     command: npm run dev --workspace=apps/api
@@ -57,7 +60,8 @@ services:
     container_name: freeliga-web
     env_file: .env
     environment:
-      VITE_API_URL: ${VITE_API_URL}
+      # Default to Docker service URL if env is not provided to avoid localhost proxy errors inside the container
+      VITE_API_URL: ${VITE_API_URL:-http://api:3001}
       VITE_API_TIMEOUT: ${VITE_API_TIMEOUT}
     ports:
       - "4173:4173"
