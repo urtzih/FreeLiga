@@ -29,7 +29,7 @@ export default function Dashboard() {
     // Obtener currentGroup desde el contexto (ya viene del backend con la temporada activa)
     const currentGroup = user?.player?.currentGroup;
 
-    const myRanking = currentGroup?.groupPlayers.find(
+    const myRanking = currentGroup?.groupPlayers?.find(
         (gp: any) => gp.playerId === user?.player?.id
     );
 
@@ -115,7 +115,7 @@ export default function Dashboard() {
                             <div>
                                 <div className="flex flex-wrap items-baseline gap-x-4">
                                     <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{currentGroup.name}</h3>
-                                    {(() => {
+                                    {currentGroup.season && (() => {
                                         const start = new Date(currentGroup.season.startDate);
                                         const end = new Date(currentGroup.season.endDate);
                                         const hoy = new Date();
