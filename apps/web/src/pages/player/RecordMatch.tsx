@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
+import Spinner from '../../components/Spinner';
 
 export default function RecordMatch() {
     const getTodayLocalISO = () => {
@@ -18,25 +19,25 @@ export default function RecordMatch() {
         if (!navigator.onLine || err.code === 'ERR_NETWORK' || err.message === 'Network Error') {
             return 'Sin conexión a internet. Verifica tu conexión y vuelve a intentarlo.';
         }
-        
+
         // Error de servidor (5xx)
         if (err.response?.status >= 500) {
             return 'Error del servidor. Por favor, inténtalo de nuevo más tarde.';
         }
-        
+
         // Error de base de datos (común en respuestas del backend)
-        if (err.response?.data?.error?.includes('database') || 
+        if (err.response?.data?.error?.includes('database') ||
             err.response?.data?.error?.includes('Database') ||
             err.response?.data?.error?.includes('BD') ||
             err.response?.data?.error?.includes('conexión')) {
             return 'Error de conexión con la base de datos. Inténtalo de nuevo en unos momentos.';
         }
-        
+
         // Error específico del backend
         if (err.response?.data?.error) {
             return `${err.response.data.error}`;
         }
-        
+
         // Error genérico
         return 'Error al registrar el partido. Por favor, inténtalo de nuevo.';
     };
@@ -151,10 +152,17 @@ export default function RecordMatch() {
             </div>
 
             {/* Formulario */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-8">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-8 relative">
                 {error && (
                     <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400">
                         {error}
+                    </div>
+                )}
+
+                {/* Loading Overlay */}
+                {mutation.isPending && (
+                    <div className="absolute inset-0 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl flex items-center justify-center z-10">
+                        <Spinner size="lg" />
                     </div>
                 )}
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
+import Spinner from '../../components/Spinner';
 
 interface PlayerProfile {
   id: string;
@@ -124,7 +125,14 @@ export default function Profile() {
           )}
         </div>
 
-        <div className="p-6">
+        <div className="p-6 relative">
+          {/* Loading Overlay */}
+          {updateMutation.isPending && (
+            <div className="absolute inset-0 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-b-2xl flex items-center justify-center z-10">
+              <Spinner size="lg" />
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Nombre */}
             <div>
