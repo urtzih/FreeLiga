@@ -5,7 +5,6 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import Loader from './components/Loader';
 import ErrorBoundary from './components/ErrorBoundary';
-import { ToastProvider } from './contexts/ToastContext';
 import ToastContainer from './components/ToastContainer';
 const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/auth/Login'));
@@ -68,12 +67,11 @@ function App() {
     const defaultRoute = isAdmin ? '/admin' : '/dashboard';
 
     return (
-        <ToastProvider>
-            <ErrorBoundary>
-                <BrowserRouter>
-                    <SpeedInsights />
-                    <Analytics />
-                    <ToastContainer />
+        <ErrorBoundary>
+            <BrowserRouter>
+                <SpeedInsights />
+                <Analytics />
+                <ToastContainer />
                     <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader label="Cargando módulo..." /></div>}>
                         <Routes>
                             {/* Public routes */}
@@ -238,7 +236,6 @@ function App() {
                     </Suspense>
                 </BrowserRouter>
             </ErrorBoundary>
-        </ToastProvider>
     );
 }
 
