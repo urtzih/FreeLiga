@@ -223,16 +223,16 @@ export default function RecordMatch() {
 
                     {formData.matchStatus === 'PLAYED' && (
                         <>
-                            <div className="grid grid-cols-2 gap-6">
+                            <div className="grid grid-cols-2 gap-3 sm:gap-6">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                         Tus Juegos
                                     </label>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1 sm:gap-2">
                                         <button
                                             type="button"
                                             onClick={() => setFormData((prev) => ({ ...prev, gamesP1: Math.max(0, prev.gamesP1 - 1) }))}
-                                            className="px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 focus:ring-2 focus:ring-green-500 focus:border-transparent text-xl font-bold"
+                                            className="px-2 sm:px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 focus:ring-2 focus:ring-green-500 focus:border-transparent text-xl font-bold flex-shrink-0"
                                             aria-label="Restar juego"
                                         >
                                             −
@@ -243,12 +243,12 @@ export default function RecordMatch() {
                                             max="3"
                                             value={formData.gamesP1}
                                             onChange={(e) => setFormData({ ...formData, gamesP1: Math.min(3, Math.max(0, parseInt(e.target.value) || 0)) })}
-                                            className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent text-center text-2xl font-bold"
+                                            className="w-full px-2 sm:px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent text-center text-2xl font-bold min-w-0"
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setFormData((prev) => ({ ...prev, gamesP1: Math.min(3, prev.gamesP1 + 1) }))}
-                                            className="px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 focus:ring-2 focus:ring-green-500 focus:border-transparent text-xl font-bold"
+                                            className="px-2 sm:px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 focus:ring-2 focus:ring-green-500 focus:border-transparent text-xl font-bold flex-shrink-0"
                                             aria-label="Sumar juego"
                                         >
                                             +
@@ -259,11 +259,11 @@ export default function RecordMatch() {
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                         Juegos del Oponente
                                     </label>
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1 sm:gap-2">
                                         <button
                                             type="button"
                                             onClick={() => setFormData((prev) => ({ ...prev, gamesP2: Math.max(0, prev.gamesP2 - 1) }))}
-                                            className="px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 focus:ring-2 focus:ring-green-500 focus:border-transparent text-xl font-bold"
+                                            className="px-2 sm:px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 focus:ring-2 focus:ring-green-500 focus:border-transparent text-xl font-bold flex-shrink-0"
                                             aria-label="Restar juego"
                                         >
                                             −
@@ -274,12 +274,12 @@ export default function RecordMatch() {
                                             max="3"
                                             value={formData.gamesP2}
                                             onChange={(e) => setFormData({ ...formData, gamesP2: Math.min(3, Math.max(0, parseInt(e.target.value) || 0)) })}
-                                            className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent text-center text-2xl font-bold"
+                                            className="w-full px-2 sm:px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent text-center text-2xl font-bold min-w-0"
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setFormData((prev) => ({ ...prev, gamesP2: Math.min(3, prev.gamesP2 + 1) }))}
-                                            className="px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 focus:ring-2 focus:ring-green-500 focus:border-transparent text-xl font-bold"
+                                            className="px-2 sm:px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 focus:ring-2 focus:ring-green-500 focus:border-transparent text-xl font-bold flex-shrink-0"
                                             aria-label="Sumar juego"
                                         >
                                             +
