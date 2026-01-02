@@ -1,19 +1,21 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import api from '../lib/api';
+import { useToast } from '../contexts/ToastContext';
 
 export default function BugReport() {
   const [description, setDescription] = useState('');
   const [email, setEmail] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  const { showToast } = useToast();
 
   const mutation = useMutation({
     mutationFn: async () => {
       setUploading(true);
       const appVersion = (import.meta as any).env?.VITE_APP_VERSION || 'dev';
       let attachments = '';
-      
+
       // Convertir archivos a base64 para enviar (alternativa: subir a servidor/cloud)
       if (files.length > 0) {
         const encoded = await Promise.all(files.map(async (file) => {
@@ -34,9 +36,11 @@ export default function BugReport() {
       setDescription('');
       setEmail('');
       setFiles([]);
+      showToast('✓ Bug enviado correctamente. ¡Gracias por tu reporte!', 'success');
     },
-    onError: () => {
+    onError: (error: any) => {
       setUploading(false);
+      showToast(`Error al enviar el reporte: ${error.response?.data?.error || error.message}`, 'error');
     }
   });
 
@@ -102,12 +106,6 @@ export default function BugReport() {
             >
               {uploading ? 'Subiendo archivos...' : mutation.isPending ? 'Enviando...' : 'Enviar Bug'}
             </button>
-            {mutation.isSuccess && (
-              <span className="text-green-600 dark:text-green-400 text-sm font-semibold">✓ Bug enviado correctamente</span>
-            )}
-            {mutation.isError && (
-              <span className="text-red-600 dark:text-red-400 text-sm font-semibold">✕ Error al enviar</span>
-            )}
           </div>
         </form>
       </div>

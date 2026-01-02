@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api';
+import { useToast } from '../contexts/ToastContext';
 
 interface Match {
     id: string;
@@ -27,6 +28,7 @@ interface EditMatchModalProps {
 
 export default function EditMatchModal({ match, isOpen, onClose }: EditMatchModalProps) {
     const queryClient = useQueryClient();
+    const { showToast } = useToast();
     const [formData, setFormData] = useState({
         gamesP1: 0,
         gamesP2: 0,
@@ -61,6 +63,7 @@ export default function EditMatchModal({ match, isOpen, onClose }: EditMatchModa
             queryClient.invalidateQueries({ queryKey: ['playerStats'] });
             queryClient.invalidateQueries({ queryKey: ['classification'] });
             queryClient.invalidateQueries({ queryKey: ['group'] });
+            showToast('✓ Partido actualizado correctamente', 'success');
             onClose();
         },
         onError: (err: unknown) => {

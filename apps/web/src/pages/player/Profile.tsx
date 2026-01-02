@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
 import Spinner from '../../components/Spinner';
+import { useToast } from '../../contexts/ToastContext';
 
 interface PlayerProfile {
   id: string;
@@ -17,6 +18,7 @@ export default function Profile() {
   const queryClient = useQueryClient();
   const playerId = user?.player?.id;
   const [showBanner, setShowBanner] = useState(true);
+  const { showToast } = useToast();
 
   // Auto-dismiss banner after 10s
   useEffect(() => {
@@ -65,17 +67,17 @@ export default function Profile() {
       queryClient.invalidateQueries({ queryKey: ['player', playerId] });
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
       setIsEditing(false);
-      alert('✅ Perfil actualizado correctamente');
+      showToast('✅ Perfil actualizado correctamente', 'success');
     },
     onError: (error: any) => {
-      alert(`❌ Error: ${error.response?.data?.error || error.message}`);
+      showToast(`Error: ${error.response?.data?.error || error.message}`, 'error');
     }
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      alert('El nombre es obligatorio');
+      showToast('El nombre es obligatorio', 'warning');
       return;
     }
     updateMutation.mutate(formData);

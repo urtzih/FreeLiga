@@ -4,6 +4,8 @@ import { lazy, Suspense } from 'react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import Loader from './components/Loader';
 import ErrorBoundary from './components/ErrorBoundary';
+import { ToastProvider } from './contexts/ToastContext';
+import ToastContainer from './components/ToastContainer';
 const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/auth/Login'));
 const Dashboard = lazy(() => import('./pages/player/Dashboard'));
@@ -65,173 +67,176 @@ function App() {
     const defaultRoute = isAdmin ? '/admin' : '/dashboard';
 
     return (
-        <ErrorBoundary>
-            <BrowserRouter>
-                <SpeedInsights />
-                <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader label="Cargando módulo..." /></div>}>
-                    <Routes>
-                    {/* Public routes */}
-                    <Route
-                        path="/"
-                        element={!isAuthenticated ? <Home /> : <Navigate to={defaultRoute} replace />}
-                    />
-                    <Route
-                        path="/login"
-                        element={!isAuthenticated ? <Login /> : <Navigate to={defaultRoute} replace />}
-                    />
+        <ToastProvider>
+            <ErrorBoundary>
+                <BrowserRouter>
+                    <SpeedInsights />
+                    <ToastContainer />
+                    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader label="Cargando módulo..." /></div>}>
+                        <Routes>
+                            {/* Public routes */}
+                            <Route
+                                path="/"
+                                element={!isAuthenticated ? <Home /> : <Navigate to={defaultRoute} replace />}
+                            />
+                            <Route
+                                path="/login"
+                                element={!isAuthenticated ? <Login /> : <Navigate to={defaultRoute} replace />}
+                            />
 
-                    {/* Protected player routes */}
-                    <Route element={<Layout />}>
-                        <Route
-                            path="/dashboard"
-                            element={
-                                <ProtectedRoute>
-                                    {isAdmin ? <Navigate to="/admin" replace /> : <Dashboard />}
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/groups/:id"
-                            element={
-                                <ProtectedRoute>
-                                    <GroupView />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/classification"
-                            element={<Navigate to={user?.player?.currentGroup ? `/groups/${user.player.currentGroup.id}` : '/dashboard'} replace />}
-                        />
-                        <Route
-                            path="/historia"
-                            element={
-                                <ProtectedRoute>
-                                    <History />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/matches/record"
-                            element={
-                                <ProtectedRoute>
-                                    <RecordMatch />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/matches/history"
-                            element={
-                                <ProtectedRoute>
-                                    <MatchHistory />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/progress"
-                            element={
-                                <ProtectedRoute>
-                                    <PlayerProgress />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/groups/summary"
-                            element={
-                                <ProtectedRoute>
-                                    <GroupsSummary />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/profile"
-                            element={
-                                <ProtectedRoute>
-                                    <Profile />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/report-bug"
-                            element={
-                                <ProtectedRoute>
-                                    <BugReport />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/help"
-                            element={
-                                <ProtectedRoute>
-                                    <Help />
-                                </ProtectedRoute>
-                            }
-                        />
+                            {/* Protected player routes */}
+                            <Route element={<Layout />}>
+                                <Route
+                                    path="/dashboard"
+                                    element={
+                                        <ProtectedRoute>
+                                            {isAdmin ? <Navigate to="/admin" replace /> : <Dashboard />}
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/groups/:id"
+                                    element={
+                                        <ProtectedRoute>
+                                            <GroupView />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/classification"
+                                    element={<Navigate to={user?.player?.currentGroup ? `/groups/${user.player.currentGroup.id}` : '/dashboard'} replace />}
+                                />
+                                <Route
+                                    path="/historia"
+                                    element={
+                                        <ProtectedRoute>
+                                            <History />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/matches/record"
+                                    element={
+                                        <ProtectedRoute>
+                                            <RecordMatch />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/matches/history"
+                                    element={
+                                        <ProtectedRoute>
+                                            <MatchHistory />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/progress"
+                                    element={
+                                        <ProtectedRoute>
+                                            <PlayerProgress />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/groups/summary"
+                                    element={
+                                        <ProtectedRoute>
+                                            <GroupsSummary />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/profile"
+                                    element={
+                                        <ProtectedRoute>
+                                            <Profile />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/report-bug"
+                                    element={
+                                        <ProtectedRoute>
+                                            <BugReport />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/help"
+                                    element={
+                                        <ProtectedRoute>
+                                            <Help />
+                                        </ProtectedRoute>
+                                    }
+                                />
 
-                        {/* Admin routes */}
-                        <Route
-                            path="/admin"
-                            element={
-                                <ProtectedRoute adminOnly>
-                                    <AdminDashboard />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/admin/groups"
-                            element={
-                                <ProtectedRoute adminOnly>
-                                    <ManageGroups />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/admin/seasons"
-                            element={
-                                <ProtectedRoute adminOnly>
-                                    <ManageSeasons />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/admin/seasons/:seasonId/proposals"
-                            element={
-                                <ProtectedRoute adminOnly>
-                                    <SeasonProposals />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/admin/users"
-                            element={
-                                <ProtectedRoute adminOnly>
-                                    <ManageUsers />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/admin/bugs"
-                            element={
-                                <ProtectedRoute adminOnly>
-                                    <ManageBugs />
-                                </ProtectedRoute>
-                            }
-                        />
-                        <Route
-                            path="/admin/help"
-                            element={
-                                <ProtectedRoute adminOnly>
-                                    <AdminHelp />
-                                </ProtectedRoute>
-                            }
-                        />
-                    </Route>
+                                {/* Admin routes */}
+                                <Route
+                                    path="/admin"
+                                    element={
+                                        <ProtectedRoute adminOnly>
+                                            <AdminDashboard />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/admin/groups"
+                                    element={
+                                        <ProtectedRoute adminOnly>
+                                            <ManageGroups />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/admin/seasons"
+                                    element={
+                                        <ProtectedRoute adminOnly>
+                                            <ManageSeasons />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/admin/seasons/:seasonId/proposals"
+                                    element={
+                                        <ProtectedRoute adminOnly>
+                                            <SeasonProposals />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/admin/users"
+                                    element={
+                                        <ProtectedRoute adminOnly>
+                                            <ManageUsers />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/admin/bugs"
+                                    element={
+                                        <ProtectedRoute adminOnly>
+                                            <ManageBugs />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/admin/help"
+                                    element={
+                                        <ProtectedRoute adminOnly>
+                                            <AdminHelp />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                            </Route>
 
-                    {/* Default redirect for unknown routes */}
-                    <Route path="*" element={<Navigate to={isAuthenticated ? defaultRoute : "/"} replace />} />
-                </Routes>
-            </Suspense>
-        </BrowserRouter>
-        </ErrorBoundary>
+                            {/* Default redirect for unknown routes */}
+                            <Route path="*" element={<Navigate to={isAuthenticated ? defaultRoute : "/"} replace />} />
+                        </Routes>
+                    </Suspense>
+                </BrowserRouter>
+            </ErrorBoundary>
+        </ToastProvider>
     );
 }
 

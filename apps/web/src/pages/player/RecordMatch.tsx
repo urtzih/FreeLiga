@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
 import Spinner from '../../components/Spinner';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function RecordMatch() {
     const getTodayLocalISO = () => {
@@ -45,6 +46,7 @@ export default function RecordMatch() {
     const { user } = useAuth();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const { showToast } = useToast();
 
     const [formData, setFormData] = useState({
         groupId: user?.player?.currentGroup?.id || '',
@@ -103,7 +105,8 @@ export default function RecordMatch() {
             queryClient.invalidateQueries({ queryKey: ['playerStats'] });
             queryClient.invalidateQueries({ queryKey: ['group'] });
             queryClient.invalidateQueries({ queryKey: ['classification'] });
-            navigate('/dashboard');
+            showToast('¡Partido registrado! La clasificación ha sido actualizada.', 'success');
+            navigate(`/groups/${formData.groupId}`);
         },
         onError: (err: any) => {
             console.error('Error al registrar partido:', err);
