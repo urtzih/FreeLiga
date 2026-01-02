@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { lazy, Suspense } from 'react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import { Analytics } from '@vercel/analytics/react';
 import Loader from './components/Loader';
 import ErrorBoundary from './components/ErrorBoundary';
 import { ToastProvider } from './contexts/ToastContext';
@@ -71,6 +72,7 @@ function App() {
             <ErrorBoundary>
                 <BrowserRouter>
                     <SpeedInsights />
+                    <Analytics />
                     <ToastContainer />
                     <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader label="Cargando módulo..." /></div>}>
                         <Routes>
