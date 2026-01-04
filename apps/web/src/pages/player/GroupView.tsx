@@ -193,6 +193,7 @@ export default function GroupView() {
                                 <table className="w-full text-sm">
                                     <thead className="bg-slate-50 dark:bg-slate-900">
                                         <tr>
+                                            <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Pos</th>
                                             <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-400">Jugador</th>
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Victorias</th>
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Derrotas</th>
@@ -203,7 +204,7 @@ export default function GroupView() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                                        {classification.map((row) => {
+                                        {classification.map((row, idx) => {
                                             // Calculate injuries for this player
                                             const playerInjuries = group.matches.filter((m: any) =>
                                                 (m.player1Id === row.playerId || m.player2Id === row.playerId) &&
@@ -211,25 +212,23 @@ export default function GroupView() {
                                             ).length;
 
                                             // Calculate remaining matches
-                                            // Total matches per player = totalPlayers - 1
-                                            // Played matches (including injuries) = wins + losses + playerInjuries (if losses doesn't include injuries, need to check)
-                                            // Assuming 'losses' from API includes all lost matches. 
-                                            // Let's re-verify how losses are calculated in backend or just use local calculation if possible.
-                                            // Backend: losses = playerMatches.filter(m => m.winnerId && m.winnerId !== player.id).length
-                                            // If matchStatus is INJURY, there is usually a winnerId set to the non-injured player.
-                                            // So injuries are likely already counted in wins/losses.
-                                            // But we want to show them explicitly.
-
-                                            // Wait, if I want to show "Remaining", I need (Total Possible) - (Played).
-                                            // Played = Wins + Losses.
-                                            // So Remaining = (totalPlayers - 1) - (row.wins + row.losses).
-
                                             const totalMatchesForPlayer = totalPlayers - 1;
                                             const played = row.wins + row.losses;
                                             const remaining = totalMatchesForPlayer - played;
+                                            
+                                            // Determinar ascenso/descenso
+                                            const isPromotion = idx < 2; // Top 2: ascenso
+                                            const isRelegation = idx >= totalPlayers - 2; // Últimos 2: descenso
+                                            
+                                            const rowClass = isPromotion 
+                                                ? "bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30" 
+                                                : isRelegation 
+                                                ? "bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30"
+                                                : "hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors";
 
                                             return (
-                                                <tr key={row.playerId} className="hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                                                <tr key={row.playerId} className={rowClass}>
+                                                    <td className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-400">{idx + 1}</td>
                                                     <td className="px-3 py-2">{row.playerName}</td>
                                                     <td className="px-3 py-2 text-center font-semibold text-green-600 dark:text-green-400">{row.wins}</td>
                                                     <td className="px-3 py-2 text-center font-semibold text-red-600 dark:text-red-400">{row.losses}</td>
@@ -243,51 +242,57 @@ export default function GroupView() {
                                     </tbody>
                                 </table>
                             </div>
-                            <div>
-                                <h3 className="text-sm font-semibold mb-2 text-slate-700 dark:text-slate-300">Top 10 (Victorias / Derrotas / Restantes)</h3>
-                                <Bar
-                                    data={{
-                                        labels: classification.slice(0, 10).map(c => c.playerName.split(' ')[0]),
-                                        datasets: [
-                                            {
-                                                label: 'Victorias',
-                                                data: classification.slice(0, 10).map(c => c.wins),
-                                                backgroundColor: 'rgba(34,197,94,0.6)'
+                            <div className="w-full">
+                                <h3 className="text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300">Top 10 (Victorias / Derrotas / Restantes)</h3>
+                                <div className="w-full" style={{ maxHeight: window.innerWidth < 768 ? '400px' : 'auto' }}>
+                                    <Bar
+                                        data={{
+                                            labels: classification.slice(0, 10).map(c => c.playerName.split(' ')[0]),
+                                            datasets: [
+                                                {
+                                                    label: 'Victorias',
+                                                    data: classification.slice(0, 10).map(c => c.wins),
+                                                    backgroundColor: 'rgba(34,197,94,0.6)'
+                                                },
+                                                {
+                                                    label: 'Derrotas',
+                                                    data: classification.slice(0, 10).map(c => c.losses),
+                                                    backgroundColor: 'rgba(239,68,68,0.6)'
+                                                },
+                                                {
+                                                    label: 'Restantes',
+                                                    data: classification.slice(0, 10).map(c => {
+                                                        const played = c.wins + c.losses;
+                                                        return (totalPlayers - 1) - played;
+                                                    }),
+                                                    backgroundColor: 'rgba(148, 163, 184, 0.6)'
+                                                },
+                                                {
+                                                    label: 'Con Lesión',
+                                                    data: classification.slice(0, 10).map(c => {
+                                                        return group.matches.filter((m: any) =>
+                                                            (m.player1Id === c.playerId || m.player2Id === c.playerId) &&
+                                                            m.matchStatus === 'INJURY'
+                                                        ).length;
+                                                    }),
+                                                    backgroundColor: 'rgba(249, 115, 22, 0.6)'
+                                                }
+                                            ]
+                                        }}
+                                        options={{
+                                            indexAxis: window.innerWidth < 768 ? 'y' : 'x',
+                                            responsive: true,
+                                            maintainAspectRatio: true,
+                                            plugins: {
+                                                legend: { position: 'bottom' },
+                                                title: { display: false, text: '' }
                                             },
-                                            {
-                                                label: 'Derrotas',
-                                                data: classification.slice(0, 10).map(c => c.losses),
-                                                backgroundColor: 'rgba(239,68,68,0.6)'
-                                            },
-                                            {
-                                                label: 'Restantes',
-                                                data: classification.slice(0, 10).map(c => {
-                                                    const played = c.wins + c.losses;
-                                                    return (totalPlayers - 1) - played;
-                                                }),
-                                                backgroundColor: 'rgba(148, 163, 184, 0.6)'
-                                            },
-                                            {
-                                                label: 'Con Lesión',
-                                                data: classification.slice(0, 10).map(c => {
-                                                    return group.matches.filter((m: any) =>
-                                                        (m.player1Id === c.playerId || m.player2Id === c.playerId) &&
-                                                        m.matchStatus === 'INJURY'
-                                                    ).length;
-                                                }),
-                                                backgroundColor: 'rgba(249, 115, 22, 0.6)'
+                                            scales: { 
+                                                y: { beginAtZero: true, max: Math.max(...classification.slice(0, 10).map(c => Math.max(c.wins, c.losses))) + 2 }
                                             }
-                                        ]
-                                    }}
-                                    options={{
-                                        responsive: true,
-                                        plugins: {
-                                            legend: { position: 'bottom' },
-                                            title: { display: false, text: '' }
-                                        },
-                                        scales: { y: { beginAtZero: true } }
-                                    }}
-                                />
+                                        }}
+                                    />
+                                </div>
                             </div>
                         </>
                     )}
@@ -307,6 +312,9 @@ export default function GroupView() {
                                     Jugador
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                    Resultado Directo
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                                     Contacto
                                 </th>
                             </tr>
@@ -316,6 +324,35 @@ export default function GroupView() {
                                 .filter((gp: any) => gp.player.user?.role !== 'ADMIN')
                                 .map((gp: any, index: number) => {
                                     const isCurrentUser = gp.playerId === user?.player?.id;
+                                    
+                                    // Buscar enfrentamiento directo
+                                    const directMatch = group.matches.find((m: any) =>
+                                        m.matchStatus === 'PLAYED' && (
+                                            (m.player1Id === user?.player?.id && m.player2Id === gp.playerId) ||
+                                            (m.player2Id === user?.player?.id && m.player1Id === gp.playerId)
+                                        )
+                                    );
+                                    
+                                    let resultText = 'No jugado';
+                                    let resultColor = 'text-slate-400';
+                                    
+                                    if (directMatch) {
+                                        const won = directMatch.winnerId === user?.player?.id;
+                                        const lost = directMatch.winnerId === gp.playerId;
+                                        
+                                        if (won) {
+                                            resultText = directMatch.player1Id === user?.player?.id 
+                                                ? `✓ ${directMatch.gamesP1}-${directMatch.gamesP2}` 
+                                                : `✓ ${directMatch.gamesP2}-${directMatch.gamesP1}`;
+                                            resultColor = 'text-green-600 dark:text-green-400 font-semibold';
+                                        } else if (lost) {
+                                            resultText = directMatch.player1Id === user?.player?.id 
+                                                ? `✗ ${directMatch.gamesP1}-${directMatch.gamesP2}` 
+                                                : `✗ ${directMatch.gamesP2}-${directMatch.gamesP1}`;
+                                            resultColor = 'text-red-600 dark:text-red-400 font-semibold';
+                                        }
+                                    }
+                                    
                                     return (
                                         <tr 
                                             key={gp.id} 
@@ -337,6 +374,15 @@ export default function GroupView() {
                                                         )}
                                                     </div>
                                                 </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {isCurrentUser ? (
+                                                    <span className="text-sm text-slate-400 dark:text-slate-500 italic">—</span>
+                                                ) : (
+                                                    <span className={`text-sm ${resultColor}`}>
+                                                        {resultText}
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4">
                                                 {isCurrentUser ? (

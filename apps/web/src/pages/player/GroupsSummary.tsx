@@ -89,12 +89,16 @@ export default function GroupsSummary() {
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {groups.map((group, index) => {
-                    const classification = classificationQueries[index]?.data ?? [];
+                {groups.map((group, groupIndex) => {
+                    const classification = classificationQueries[groupIndex]?.data ?? [];
                     const players = group.groupPlayers.length;
                     const possibleMatches = (players * (players - 1)) / 2;
                     const played = group._count.matches;
                     const progress = possibleMatches > 0 ? Math.round((played / possibleMatches) * 100) : 0;
+                    
+                    // Determinar si es el primer o último grupo
+                    const isFirstGroup = groupIndex === 0;
+                    const isLastGroup = groupIndex === groups.length - 1;
 
                     return (
                         <div
@@ -136,8 +140,12 @@ export default function GroupsSummary() {
                                                     const totalMatchesPerPlayer = players - 1;
                                                     const playedMatches = row.wins + row.losses + row.draws;
                                                     const remainingMatches = totalMatchesPerPlayer - playedMatches;
-                                                    const isPromotion = idx < 2; // Top 2: ascenso
-                                                    const isRelegation = idx >= 6; // 7º en adelante: descenso
+                                                    
+                                                    // Ascenso: top 2, pero solo si no es el primer grupo
+                                                    const isPromotion = !isFirstGroup && idx < 2;
+                                                    // Descenso: últimos 2, pero solo si no es el último grupo
+                                                    const isRelegation = !isLastGroup && idx >= 6;
+                                                    
                                                     const rowClass = isPromotion 
                                                         ? "bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30" 
                                                         : isRelegation 

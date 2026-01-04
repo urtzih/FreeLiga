@@ -27,7 +27,11 @@ export default function Help() {
                     </div>
                     <div>
                         <h3 className="font-semibold text-slate-900 dark:text-white mb-2">¿He olvidado mi contraseña?</h3>
-                        <p>Contacta con el administrador de la liga por teléfono o email. Él puede restablecer tu contraseña.</p>
+                        <p>Tienes dos opciones:</p>
+                        <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
+                            <li><strong>Si recuerdas tu email:</strong> Contacta con el administrador por teléfono o email, y él puede restablecer tu contraseña.</li>
+                            <li><strong>Si recuerdas tu email:</strong> Puedes intentar acceder a tu cuenta y cambiar la contraseña desde tu perfil una vez dentro.</li>
+                        </ul>
                     </div>
                     <div>
                         <h3 className="font-semibold text-slate-900 dark:text-white mb-2">¿Por qué no me deja entrar?</h3>
@@ -227,13 +231,43 @@ export default function Help() {
             <section className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">👤 Perfil de Usuario</h2>
                 <div className="space-y-4 text-slate-600 dark:text-slate-400">
-                    <p>En tu perfil puedes:</p>
+                    <p>En tu perfil (acceso desde el menú superior, donde está tu nombre) puedes:</p>
                     <ul className="list-disc list-inside space-y-1 ml-4">
                         <li>Ver tu información personal (nombre, apodo, email, teléfono)</li>
                         <li>Ver tu grupo actual y temporada activa</li>
-                        <li>Cambiar tu contraseña</li>
                         <li>Actualizar tu información de contacto</li>
                     </ul>
+                    
+                    <div className="mt-6">
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">🔑 Cambiar tu Email de Acceso</h3>
+                        <p className="mb-2">Si quieres cambiar el email con el que inicias sesión:</p>
+                        <ol className="list-decimal list-inside space-y-2 ml-4">
+                            <li>Ve a tu perfil</li>
+                            <li>Busca la sección "Cambiar Email de Acceso" (botón amarillo con candado 🔑)</li>
+                            <li>Introduce tu nuevo email</li>
+                            <li>Haz clic en "Confirmar Cambio"</li>
+                            <li>⚠️ <strong>Importante:</strong> Tendrás que volver a iniciar sesión con el nuevo email</li>
+                        </ol>
+                        <p className="mt-3 text-sm text-amber-600 dark:text-amber-400">
+                            <strong>Nota:</strong> El email debe ser único. Si intentas usar un email que ya está registrado, verás un error.
+                        </p>
+                    </div>
+
+                    <div className="mt-6">
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">🔐 Cambiar tu Contraseña</h3>
+                        <p className="mb-2">Para cambiar tu contraseña de acceso:</p>
+                        <ol className="list-decimal list-inside space-y-2 ml-4">
+                            <li>Ve a tu perfil</li>
+                            <li>Busca la sección "Cambiar Contraseña" (botón verde con candado 🔐)</li>
+                            <li>Introduce tu contraseña actual</li>
+                            <li>Introduce tu nueva contraseña (mínimo 6 caracteres)</li>
+                            <li>Repite la nueva contraseña para confirmar</li>
+                            <li>Haz clic en "Confirmar Cambio"</li>
+                        </ol>
+                        <p className="mt-3 text-sm text-green-600 dark:text-green-400">
+                            <strong>Consejo:</strong> Elige una contraseña que sea fácil de recordar pero difícil de adivinar (no uses tu nombre o fecha de nacimiento).
+                        </p>
+                    </div>
                 </div>
             </section>
 
