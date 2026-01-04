@@ -68,25 +68,26 @@ export default function RecordMatch() {
         enabled: !!formData.groupId,
     });
 
-    // Filtrar oponentes disponibles
+    // Filtrar oponentes disponibles - optimizado
     const availableOpponents = useMemo(() => {
-        if (!group || !user?.player?.id) return [];
+        if (!group?.groupPlayers || !user?.player?.id) return [];
 
-        const playedOpponentIds = new Set();
-
-        // Buscar TODOS los partidos (no solo PLAYED) para evitar duplicados
-        group.matches?.forEach((match: any) => {
-            if (match.player1Id === user?.player?.id) {
-                playedOpponentIds.add(match.player2Id);
-            } else if (match.player2Id === user?.player?.id) {
-                playedOpponentIds.add(match.player1Id);
-            }
-        });
-
-        return group.groupPlayers.filter((gp: any) =>
-            gp.playerId !== user?.player?.id && !playedOpponentIds.has(gp.playerId)
+        // Crear Set de oponentes jugados (más eficiente que filter múltiple)
+        const playedOpponentIds = new Set(
+            group.matches
+                ?.filter((match: any) => 
+                    match.player1Id === user.player?.id || match.player2Id === user.player?.id
+                )
+                .map((match: any) => 
+                    match.player1Id === user.player?.id ? match.player2Id : match.player1Id
+                ) || []
         );
-    }, [group, user]);
+
+        // Filtrar una sola vez
+        return group.groupPlayers.filter((gp: any) =>
+            gp.playerId !== user.player?.id && !playedOpponentIds.has(gp.playerId)
+        );
+    }, [group?.groupPlayers, group?.matches, user?.player?.id]);
 
     const mutation = useMutation({
         mutationFn: async (data: any) => {
