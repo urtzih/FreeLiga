@@ -257,7 +257,7 @@ export default function RecordMatch() {
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 whitespace-nowrap">
                                         Juegos del Oponente
                                     </label>
                                     <div className="flex items-center gap-1 sm:gap-2">
