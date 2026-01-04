@@ -64,6 +64,13 @@ export default function Profile() {
   const [newEmail, setNewEmail] = useState('');
   const [isEditingEmail, setIsEditingEmail] = useState(false);
 
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [isEditingPassword, setIsEditingPassword] = useState(false);
+
   const [isEditing, setIsEditing] = useState(false);
 
   // Inicializar formulario cuando carguen los datos
@@ -116,6 +123,22 @@ export default function Profile() {
     }
   });
 
+  const updatePasswordMutation = useMutation({
+    mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
+      const { data: response } = await api.patch('/users/me/password', data);
+      return response;
+    },
+    onSuccess: () => {
+      setIsEditingPassword(false);
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      showToast('✅ Contraseña actualizada correctamente', 'success');
+    },
+    onError: (error: any) => {
+      const errorMessage = getErrorMessage(error);
+      showToast(`Error: ${errorMessage}`, 'error');
+    }
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
@@ -154,6 +177,30 @@ export default function Profile() {
       return;
     }
     updateEmailMutation.mutate(newEmail);
+  };
+
+  const handlePasswordCancel = () => {
+    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    setIsEditingPassword(false);
+  };
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (passwordData.newPassword.length < 6) {
+      showToast('La contraseña debe tener al menos 6 caracteres', 'warning');
+      return;
+    }
+    
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      showToast('Las contraseñas no coinciden', 'warning');
+      return;
+    }
+
+    updatePasswordMutation.mutate({
+      currentPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword,
+    });
   };
 
   if (!playerId) {
@@ -363,13 +410,115 @@ export default function Profile() {
         </div>
       </div>
 
+      {/* Sección de cambio de contraseña */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Cambiar Contraseña</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Actualiza tu contraseña de acceso</p>
+          </div>
+          {!isEditingPassword && (
+            <button
+              onClick={() => setIsEditingPassword(true)}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm font-medium"
+            >
+              🔐 Cambiar Contraseña
+            </button>
+          )}
+        </div>
+
+        <div className="p-6 relative">
+          {updatePasswordMutation.isPending && (
+            <div className="absolute inset-0 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-b-2xl flex items-center justify-center z-10">
+              <Spinner size="lg" />
+            </div>
+          )}
+
+          {isEditingPassword ? (
+            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="currentPassword" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Contraseña Actual <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  id="currentPassword"
+                  value={passwordData.currentPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="newPassword" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Nueva Contraseña <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  id="newPassword"
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Mínimo 6 caracteres"
+                  required
+                  minLength={6}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Confirmar Nueva Contraseña <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Repite la nueva contraseña"
+                  required
+                  minLength={6}
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={updatePasswordMutation.isPending}
+                  className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg font-medium transition-colors"
+                >
+                  {updatePasswordMutation.isPending ? 'Actualizando...' : '✓ Confirmar Cambio'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePasswordCancel}
+                  disabled={updatePasswordMutation.isPending}
+                  className="flex-1 px-6 py-3 bg-slate-300 hover:bg-slate-400 dark:bg-slate-600 dark:hover:bg-slate-500 text-slate-900 dark:text-white rounded-lg font-medium transition-colors"
+                >
+                  ❌ Cancelar
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-slate-600 dark:text-slate-400">
+                Haz clic en "Cambiar Contraseña" para actualizar tu contraseña de acceso
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Información adicional */}
       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
         <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">ℹ️ Información</h3>
         <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
           <li>• Tu nombre y teléfono son visibles para otros jugadores de tu grupo</li>
-          <li>• Puedes cambiar tu email de acceso en cualquier momento</li>
+          <li>• Puedes cambiar tu email y contraseña en cualquier momento</li>
           <li>• El email debe ser único en el sistema</li>
+          <li>• La contraseña debe tener al menos 6 caracteres</li>
           <li>• Los cambios se aplicarán inmediatamente tras guardar</li>
         </ul>
       </div>

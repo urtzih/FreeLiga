@@ -32,6 +32,11 @@ const updateEmailSchema = z.object({
     newEmail: z.string().email(),
 });
 
+const changePasswordSchema = z.object({
+    currentPassword: z.string().min(6),
+    newPassword: z.string().min(6),
+});
+
 const createUserSchema = z.object({
     email: z.string().email(),
     password: z.string().min(6),
@@ -583,6 +588,57 @@ export async function userRoutes(fastify: FastifyInstance) {
 
             const { password, ...userWithoutPassword } = updatedUser;
             return userWithoutPassword;
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                return reply.status(400).send({ error: error.errors });
+            }
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // Change own password (authenticated users)
+    fastify.patch('/me/password', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            const userId = decoded.id;
+
+            const body = changePasswordSchema.parse(request.body);
+
+            // Get current user with password
+            const user = await prisma.user.findUnique({
+                where: { id: userId },
+            });
+
+            if (!user) {
+                return reply.status(404).send({ error: 'Usuario no encontrado' });
+            }
+
+            // Verify current password
+            const isValidPassword = await bcrypt.compare(body.currentPassword, user.password);
+            if (!isValidPassword) {
+                return reply.status(401).send({ error: 'Contraseña actual incorrecta' });
+            }
+
+            // Hash new password
+            const hashedPassword = await bcrypt.hash(body.newPassword, 10);
+
+            // Update password
+            await prisma.user.update({
+                where: { id: userId },
+                data: {
+                    password: hashedPassword,
+                },
+            });
+
+            logBusinessEvent('password_changed', {
+                userId,
+                userEmail: user.email,
+            });
+
+            return { success: true, message: 'Contraseña actualizada correctamente' };
         } catch (error) {
             if (error instanceof z.ZodError) {
                 return reply.status(400).send({ error: error.errors });
