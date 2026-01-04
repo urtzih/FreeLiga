@@ -172,7 +172,6 @@ export async function playerRoutes(fastify: FastifyInstance) {
                     name: body.name,
                     nickname: body.nickname,
                     phone: body.phone,
-                    email: body.email,
                 },
             });
 
@@ -208,7 +207,6 @@ export async function playerRoutes(fastify: FastifyInstance) {
                     name: body.name,
                     nickname: body.nickname,
                     phone: body.phone,
-                    email: body.email,
                 },
             });
 

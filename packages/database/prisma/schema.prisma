@@ -59,7 +59,6 @@ model Player {
   name           String
   nickname       String?
   phone          String?
-  email          String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

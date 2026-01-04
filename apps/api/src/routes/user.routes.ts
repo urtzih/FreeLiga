@@ -28,6 +28,10 @@ const updateUserSchema = z.object({
     isActive: z.boolean().optional(),
 });
 
+const updateEmailSchema = z.object({
+    newEmail: z.string().email(),
+});
+
 const createUserSchema = z.object({
     email: z.string().email(),
     password: z.string().min(6),
@@ -278,7 +282,6 @@ export async function userRoutes(fastify: FastifyInstance) {
                     if (body.name) playerUpdate.name = body.name;
                     if (body.nickname !== undefined) playerUpdate.nickname = body.nickname || null;
                     if (body.phone !== undefined) playerUpdate.phone = body.phone || null;
-                    if (body.email) playerUpdate.email = body.email;
 
                     await tx.player.update({
                         where: { id: updated.player.id },
@@ -515,6 +518,75 @@ export async function userRoutes(fastify: FastifyInstance) {
 
             return { success: true, isActive: updated.isActive };
         } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // Update own email (players can update their own email)
+    fastify.patch('/me/email', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        const startTime = Date.now();
+        try {
+            const decoded = request.user as any;
+            const body = updateEmailSchema.parse(request.body);
+
+            // Check if email already exists
+            const existingUser = await prisma.user.findUnique({
+                where: { email: body.newEmail }
+            });
+
+            if (existingUser && existingUser.id !== decoded.id) {
+                logger.warn({
+                    type: 'validation_error',
+                    operation: 'update_email',
+                    userId: decoded.id,
+                    attemptedEmail: body.newEmail
+                }, 'Email already in use');
+                return reply.status(400).send({ error: 'Este email ya está en uso' });
+            }
+
+            // Get current user data
+            const currentUser = await prisma.user.findUnique({
+                where: { id: decoded.id },
+                include: { player: true }
+            });
+
+            if (!currentUser) {
+                return reply.status(404).send({ error: 'User not found' });
+            }
+
+            // Update email
+            const updatedUser = await prisma.user.update({
+                where: { id: decoded.id },
+                data: { email: body.newEmail },
+                include: { player: true }
+            });
+
+            // Log del evento de negocio
+            logBusinessEvent('email_updated', {
+                userId: decoded.id,
+                playerName: currentUser.player?.name,
+                oldEmail: currentUser.email,
+                newEmail: body.newEmail,
+                duration: Date.now() - startTime
+            });
+
+            logger.info({
+                type: 'email_change',
+                operation: 'update_email',
+                userId: decoded.id,
+                from: currentUser.email,
+                to: body.newEmail
+            }, `Email updated from ${currentUser.email} to ${body.newEmail}`);
+
+            const { password, ...userWithoutPassword } = updatedUser;
+            return userWithoutPassword;
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                return reply.status(400).send({ error: error.errors });
+            }
             fastify.log.error(error);
             return reply.status(500).send({ error: 'Internal server error' });
         }

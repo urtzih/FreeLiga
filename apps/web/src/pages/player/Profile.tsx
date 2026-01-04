@@ -10,7 +10,6 @@ interface PlayerProfile {
   name: string;
   nickname?: string;
   phone?: string;
-  email?: string;
 }
 
 export default function Profile() {
@@ -19,6 +18,25 @@ export default function Profile() {
   const playerId = user?.player?.id;
   const [showBanner, setShowBanner] = useState(true);
   const { showToast } = useToast();
+
+  // Función helper para procesar errores
+  const getErrorMessage = (error: any): string => {
+    const errorData = error.response?.data?.error;
+    
+    if (typeof errorData === 'string') {
+      return errorData;
+    }
+    
+    if (Array.isArray(errorData)) {
+      return errorData.map((e: any) => e.message || e.toString()).join(', ');
+    }
+    
+    if (typeof errorData === 'object' && errorData !== null) {
+      return errorData.message || 'Error desconocido';
+    }
+    
+    return error.message || 'Error desconocido';
+  };
 
   // Auto-dismiss banner after 10s
   useEffect(() => {
@@ -41,8 +59,10 @@ export default function Profile() {
     name: '',
     nickname: '',
     phone: '',
-    email: ''
   });
+
+  const [newEmail, setNewEmail] = useState('');
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
 
@@ -53,10 +73,15 @@ export default function Profile() {
         name: player.name || '',
         nickname: player.nickname || '',
         phone: player.phone || '',
-        email: player.email || ''
       });
     }
   }, [player]);
+
+  useEffect(() => {
+    if (user?.email) {
+      setNewEmail(user.email);
+    }
+  }, [user]);
 
   const updateMutation = useMutation({
     mutationFn: async (data: Partial<PlayerProfile>) => {
@@ -70,7 +95,24 @@ export default function Profile() {
       showToast('✅ Perfil actualizado correctamente', 'success');
     },
     onError: (error: any) => {
-      showToast(`Error: ${error.response?.data?.error || error.message}`, 'error');
+      const errorMessage = getErrorMessage(error);
+      showToast(`Error: ${errorMessage}`, 'error');
+    }
+  });
+
+  const updateEmailMutation = useMutation({
+    mutationFn: async (newEmail: string) => {
+      const { data: response } = await api.patch('/users/me/email', { newEmail });
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      setIsEditingEmail(false);
+      showToast('✅ Email actualizado correctamente. Por favor, vuelve a iniciar sesión.', 'success');
+    },
+    onError: (error: any) => {
+      const errorMessage = getErrorMessage(error);
+      showToast(`Error: ${errorMessage}`, 'error');
     }
   });
 
@@ -89,10 +131,29 @@ export default function Profile() {
         name: player.name || '',
         nickname: player.nickname || '',
         phone: player.phone || '',
-        email: player.email || ''
       });
     }
     setIsEditing(false);
+  };
+
+  const handleEmailCancel = () => {
+    if (user?.email) {
+      setNewEmail(user.email);
+    }
+    setIsEditingEmail(false);
+  };
+
+  const handleEmailSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEmail.trim() || !newEmail.includes('@')) {
+      showToast('Introduce un email válido', 'warning');
+      return;
+    }
+    if (newEmail === user?.email) {
+      showToast('El nuevo email es igual al actual', 'warning');
+      return;
+    }
+    updateEmailMutation.mutate(newEmail);
   };
 
   if (!playerId) {
@@ -191,35 +252,17 @@ export default function Profile() {
             {/* Email */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Email Público
+                Email
               </label>
               <input
                 type="email"
                 id="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                disabled={!isEditing}
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
-                placeholder="email@ejemplo.com"
-              />
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Diferente al email de login (opcional)
-              </p>
-            </div>
-
-            {/* Email de Login (solo lectura) */}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Email de Acceso
-              </label>
-              <input
-                type="email"
                 value={user?.email || ''}
                 disabled
                 className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed"
               />
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Para cambiar el email de acceso contacta con un administrador
+                Este es tu email de acceso. Puedes cambiarlo en la sección de abajo.
               </p>
             </div>
 
@@ -247,12 +290,86 @@ export default function Profile() {
         </div>
       </div>
 
+      {/* Sección de cambio de email */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Cambiar Email de Acceso</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Actualiza tu email para iniciar sesión</p>
+          </div>
+          {!isEditingEmail && (
+            <button
+              onClick={() => setIsEditingEmail(true)}
+              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors text-sm font-medium"
+            >
+              🔑 Cambiar Email
+            </button>
+          )}
+        </div>
+
+        <div className="p-6 relative">
+          {/* Loading Overlay */}
+          {updateEmailMutation.isPending && (
+            <div className="absolute inset-0 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-b-2xl flex items-center justify-center z-10">
+              <Spinner size="lg" />
+            </div>
+          )}
+
+          {isEditingEmail ? (
+            <form onSubmit={handleEmailSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="newEmail" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Nuevo Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  id="newEmail"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  placeholder="nuevo@email.com"
+                  required
+                />
+                <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                  ⚠️ Deberás iniciar sesión nuevamente después de cambiar el email
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={updateEmailMutation.isPending}
+                  className="flex-1 px-6 py-3 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white rounded-lg font-medium transition-colors"
+                >
+                  {updateEmailMutation.isPending ? 'Actualizando...' : '✓ Confirmar Cambio'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleEmailCancel}
+                  disabled={updateEmailMutation.isPending}
+                  className="flex-1 px-6 py-3 bg-slate-300 hover:bg-slate-400 dark:bg-slate-600 dark:hover:bg-slate-500 text-slate-900 dark:text-white rounded-lg font-medium transition-colors"
+                >
+                  ❌ Cancelar
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-slate-600 dark:text-slate-400">
+                Email actual: <strong className="text-slate-900 dark:text-white">{user?.email}</strong>
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Información adicional */}
       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
         <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">ℹ️ Información</h3>
         <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
           <li>• Tu nombre y teléfono son visibles para otros jugadores de tu grupo</li>
-          <li>• El email de acceso no puede modificarse desde aquí</li>
+          <li>• Puedes cambiar tu email de acceso en cualquier momento</li>
+          <li>• El email debe ser único en el sistema</li>
           <li>• Los cambios se aplicarán inmediatamente tras guardar</li>
         </ul>
       </div>

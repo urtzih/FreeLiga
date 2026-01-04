@@ -39,7 +39,7 @@ export default function ManagePlayers() {
                                             )}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{player.email || '-'}</td>
+                                    <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{player.user?.email || '-'}</td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{player.phone || '-'}</td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
                                         {player.currentGroup?.name || 'Sin grupo'}

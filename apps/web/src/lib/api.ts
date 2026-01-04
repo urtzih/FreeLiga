@@ -13,7 +13,7 @@ const api = axios.create({
 try {
     (globalThis as any).__API_BASE__ = baseURL;
     (globalThis as any).__VITE_ENV__ = import.meta.env.VITE_API_URL;
-} catch {}
+} catch { }
 
 // Add JWT token to requests
 api.interceptors.request.use((config) => {
@@ -28,7 +28,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
+        // No redirigir si el error vine del login
+        console.log('Interceptor 401 check:', error.config.url);
+        if (error.response?.status === 401 && !error.config.url?.includes('/auth/login')) {
+            console.log('Redirecting to login due to 401');
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             window.location.href = '/login';

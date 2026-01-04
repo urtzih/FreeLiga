@@ -233,7 +233,7 @@ export default function PlayerHistory() {
                             const headers = ['Email', 'Jugador', 'Estado', 'Fecha Registro', 'Temporada', 'Grupo', 'Posición Final', 'Movimiento'];
                             const rows = timelineEvents.map((player: any) => {
                                 const row = [
-                                    escapeCsvField(player.email),
+                                    escapeCsvField(player.user?.email || ''),
                                     escapeCsvField(player.playerName),
                                     player.isActive ? 'Activo' : 'Inactivo',
                                     new Date(player.registeredAt).toLocaleDateString('es-ES'),
@@ -349,7 +349,7 @@ export default function PlayerHistory() {
                                             <h3 className="font-semibold text-slate-900 dark:text-white text-lg">
                                                 {player.playerName}
                                             </h3>
-                                            <p className="text-sm text-slate-500 dark:text-slate-400">{player.email}</p>
+                                            <p className="text-sm text-slate-500 dark:text-slate-400">{player.user?.email || '-'}</p>
                                         </div>
                                     </div>
                                     <div className="text-right">

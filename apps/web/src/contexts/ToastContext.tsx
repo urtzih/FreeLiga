@@ -25,10 +25,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
         setToasts((prev) => [...prev, newToast]);
 
-        // Auto-dismiss after 4 seconds
+        // Auto-dismiss after different times based on type
+        // Errores y warnings duran más tiempo (8 segundos)
+        // Éxitos e info desaparecen más rápido (4 segundos)
+        const duration = (type === 'error' || type === 'warning') ? 8000 : 4000;
+        
         setTimeout(() => {
             removeToast(id);
-        }, 4000);
+        }, duration);
     }, []);
 
     const removeToast = useCallback((id: string) => {
