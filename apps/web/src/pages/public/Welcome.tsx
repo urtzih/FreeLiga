@@ -188,6 +188,15 @@ export default function Welcome() {
                             </p>
                         </div>
 
+                        <div className="bg-purple-50 dark:bg-purple-900/20 border-l-4 border-purple-500 p-6 rounded-r-lg">
+                            <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">
+                                4️⃣ Añade tu teléfono (importante)
+                            </h3>
+                            <p className="text-slate-700 dark:text-slate-300">
+                                En tu perfil, añade tu número de teléfono. Esto permite que tus rivales puedan contactarte fácilmente para coordinar partidos por WhatsApp o llamada.
+                            </p>
+                        </div>
+
                         <div className="text-center mt-8">
                             <Link 
                                 to="/login" 
