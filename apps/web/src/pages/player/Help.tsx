@@ -128,11 +128,13 @@ export default function Help() {
                             </li>
                             <li>
                                 <strong>Introduce el resultado</strong>
-                                <p className="ml-6 mt-1">Aquí indicas quién ganó y por cuánto. El formato es siempre <strong>3-0</strong>, <strong>3-1</strong> o <strong>3-2</strong> (el primero en ganar 3 sets gana el partido).</p>
+                                <p className="ml-6 mt-1">Aquí indicas los juegos (sets) que ganó cada uno. Usa los botones + y - para ajustar el marcador, o escribe directamente los números.</p>
                                 <ul className="list-disc list-inside ml-6 mt-1 space-y-1">
-                                    <li>Si tú ganaste 3-0, escribe "3-0" y selecciona que TÚ ganaste</li>
-                                    <li>Si tu rival ganó 3-1, escribe "3-1" y selecciona que tu RIVAL ganó</li>
-                                    <li>Si alguien se lesionó y no se pudo terminar el partido, marca la casilla "Lesión"</li>
+                                    <li><strong>Tus Juegos:</strong> Cuántos sets ganaste TÚ</li>
+                                    <li><strong>Juegos del Oponente:</strong> Cuántos sets ganó tu RIVAL</li>
+                                    <li>El formato válido es siempre <strong>3-0</strong>, <strong>3-1</strong> o <strong>3-2</strong> (el primero en llegar a 3 sets gana el partido)</li>
+                                    <li>El sistema detecta automáticamente quién ganó según el marcador</li>
+                                    <li>Si alguien se lesionó o el partido se canceló, selecciona "Lesión" o "Cancelado" en el menú "Estado del Partido"</li>
                                 </ul>
                             </li>
                             <li>
