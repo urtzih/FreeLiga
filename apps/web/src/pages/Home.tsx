@@ -6,7 +6,7 @@ export default function Home() {
             {/* Hero Section */}
             <div className="relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-5"></div>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+                <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
                     <div className="text-center">
                         {/* Logo FreeSquash */}
                         <div className="mb-8 flex justify-center">
@@ -36,9 +36,17 @@ export default function Home() {
                             </Link>
                         </div>
 
-                        <p className="mt-6 text-sm text-gray-500">
-                            🔒 Acceso solo para miembros registrados. Contacta con el administrador para unirte.
-                        </p>
+                        <div className="mt-6 flex flex-col items-center gap-3">
+                            <Link
+                                to="/inicio"
+                                className="text-blue-600 hover:text-blue-700 font-medium underline decoration-2 underline-offset-4 transition-colors"
+                            >
+                                📋 ¿Eres nuevo? Ver instrucciones de acceso
+                            </Link>
+                            <p className="text-sm text-gray-500">
+                                🔒 Acceso solo para miembros registrados. Contacta con el administrador para unirte.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
