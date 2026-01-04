@@ -27,6 +27,7 @@ const History = lazy(() => import('./pages/player/History'));
 const Help = lazy(() => import('./pages/player/Help'));
 const AdminHelp = lazy(() => import('./pages/admin/AdminHelp'));
 const GroupsSummary = lazy(() => import('./pages/player/GroupsSummary'));
+const Welcome = lazy(() => import('./pages/public/Welcome'));
 import Layout from './components/Layout';
 
 function ProtectedRoute({
@@ -82,6 +83,10 @@ function App() {
                             <Route
                                 path="/login"
                                 element={!isAuthenticated ? <Login /> : <Navigate to={defaultRoute} replace />}
+                            />
+                            <Route
+                                path="/inicio"
+                                element={<Welcome />}
                             />
 
                             {/* Protected player routes */}
