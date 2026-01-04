@@ -19,7 +19,9 @@ export async function seasonRoutes(fastify: FastifyInstance) {
             reply.header('Pragma', 'no-cache');
             reply.header('Expires', '0');
             
+            // Solo devolver la temporada activa para usuarios normales
             const seasons = await prisma.season.findMany({
+                where: { isActive: true },
                 include: { groups: { include: { _count: { select: { groupPlayers: true, matches: true } } } }, closure: true },
                 orderBy: { startDate: 'desc' },
             });
