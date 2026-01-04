@@ -204,6 +204,37 @@ export default function Welcome() {
                             </p>
                         </div>
 
+                        <div className="bg-indigo-50 dark:bg-indigo-900/20 border-l-4 border-indigo-500 p-6 rounded-r-lg">
+                            <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">
+                                📱 Instala la app en tu móvil (recomendado)
+                            </h3>
+                            <div className="text-slate-700 dark:text-slate-300 space-y-3">
+                                <p>
+                                    Para una mejor experiencia, te recomendamos instalar FreeSquash como aplicación en tu móvil:
+                                </p>
+                                <div className="bg-white dark:bg-slate-900 p-4 rounded-lg">
+                                    <p className="font-semibold mb-2">📲 En Android:</p>
+                                    <ol className="list-decimal list-inside space-y-1 text-sm ml-2">
+                                        <li>Abre esta página en Chrome</li>
+                                        <li>Toca el menú (⋮) y selecciona "Añadir a pantalla de inicio"</li>
+                                        <li>Confirma y la app aparecerá en tu pantalla de inicio</li>
+                                    </ol>
+                                </div>
+                                <div className="bg-white dark:bg-slate-900 p-4 rounded-lg">
+                                    <p className="font-semibold mb-2">🍎 En iPhone:</p>
+                                    <ol className="list-decimal list-inside space-y-1 text-sm ml-2">
+                                        <li>Abre esta página en Safari</li>
+                                        <li>Toca el botón de compartir (□↑)</li>
+                                        <li>Selecciona "Añadir a pantalla de inicio"</li>
+                                        <li>Confirma y busca el icono de FreeSquash en tu pantalla</li>
+                                    </ol>
+                                </div>
+                                <p className="text-sm italic">
+                                    💡 Una vez instalada, podrás acceder a FreeSquash como cualquier otra app de tu móvil, sin necesidad de abrir el navegador.
+                                </p>
+                            </div>
+                        </div>
+
                         <div className="text-center mt-8">
                             <Link 
                                 to="/login" 

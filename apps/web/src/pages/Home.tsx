@@ -226,6 +226,81 @@ export default function Home() {
                 </div>
             </div>
 
+            {/* Instalación Móvil */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl shadow-xl p-8 border-2 border-indigo-200 dark:border-indigo-700">
+                    <div className="text-center mb-8">
+                        <div className="text-5xl mb-4">📱</div>
+                        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+                            Instala FreeSquash en tu móvil
+                        </h2>
+                        <p className="text-lg text-gray-600 dark:text-gray-300">
+                            Accede más rápido y cómodamente instalando nuestra app en tu dispositivo
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                        {/* Android */}
+                        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="text-4xl">🤖</div>
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Android</h3>
+                            </div>
+                            <ol className="space-y-3 text-gray-700 dark:text-gray-300">
+                                <li className="flex gap-3">
+                                    <span className="font-bold text-indigo-600 dark:text-indigo-400">1.</span>
+                                    <span>Abre esta página en <strong>Chrome</strong></span>
+                                </li>
+                                <li className="flex gap-3">
+                                    <span className="font-bold text-indigo-600 dark:text-indigo-400">2.</span>
+                                    <span>Toca el menú <strong>(⋮)</strong> arriba a la derecha</span>
+                                </li>
+                                <li className="flex gap-3">
+                                    <span className="font-bold text-indigo-600 dark:text-indigo-400">3.</span>
+                                    <span>Selecciona <strong>"Añadir a pantalla de inicio"</strong></span>
+                                </li>
+                                <li className="flex gap-3">
+                                    <span className="font-bold text-indigo-600 dark:text-indigo-400">4.</span>
+                                    <span>Confirma y busca el icono de FreeSquash</span>
+                                </li>
+                            </ol>
+                        </div>
+
+                        {/* iOS */}
+                        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="text-4xl">🍎</div>
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">iPhone/iPad</h3>
+                            </div>
+                            <ol className="space-y-3 text-gray-700 dark:text-gray-300">
+                                <li className="flex gap-3">
+                                    <span className="font-bold text-indigo-600 dark:text-indigo-400">1.</span>
+                                    <span>Abre esta página en <strong>Safari</strong></span>
+                                </li>
+                                <li className="flex gap-3">
+                                    <span className="font-bold text-indigo-600 dark:text-indigo-400">2.</span>
+                                    <span>Toca el botón de compartir <strong>(□↑)</strong></span>
+                                </li>
+                                <li className="flex gap-3">
+                                    <span className="font-bold text-indigo-600 dark:text-indigo-400">3.</span>
+                                    <span>Desplázate y selecciona <strong>"Añadir a pantalla de inicio"</strong></span>
+                                </li>
+                                <li className="flex gap-3">
+                                    <span className="font-bold text-indigo-600 dark:text-indigo-400">4.</span>
+                                    <span>Confirma y busca el icono de FreeSquash</span>
+                                </li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <div className="mt-6 text-center">
+                        <p className="text-gray-600 dark:text-gray-400 italic">
+                            💡 Después de instalar, podrás abrir FreeSquash como cualquier otra app sin necesidad del navegador
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             {/* CTA Section */}
             <div className="bg-gradient-to-r from-indigo-600 to-blue-600 py-16">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
