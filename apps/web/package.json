@@ -1,6 +1,7 @@
 {
     "name": "@freesquash/web",
     "version": "1.0.0",
+    "author": "Urtzi Diaz Arberas",
     "type": "module",
     "scripts": {
         "dev": "vite",

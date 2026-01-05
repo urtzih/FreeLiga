@@ -363,7 +363,13 @@ See [AUDIT_REPORT.md](AUDIT_REPORT.md) for comprehensive security analysis, perf
 
 ## �📝 License
 
-MIT
+All rights reserved. This software and its source code are the intellectual property of Urtzi Diaz Arberas.
+
+## 👨‍💻 Author
+
+**Urtzi Diaz Arberas**
+- Copyright © 2024-2026 Urtzi Diaz Arberas
+- All intellectual property rights reserved
 
 ## 👥 Contributing
 
@@ -371,4 +377,4 @@ This is an MVP. Future contributions should follow the feature roadmap in the im
 
 ---
 
-Built with ❤️ for the FreeSquash League
+Built with ❤️ for the FreeSquash League by Urtzi Diaz Arberas

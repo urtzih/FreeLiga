@@ -1,6 +1,7 @@
 {
   "name": "freesquash-league",
   "version": "1.0.0",
+  "author": "Urtzi Diaz Arberas",
   "private": true,
   "workspaces": [
     "apps/*",

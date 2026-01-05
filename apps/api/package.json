@@ -1,6 +1,7 @@
 {
     "name": "@freesquash/api",
     "version": "1.0.0",
+    "author": "Urtzi Diaz Arberas",
     "main": "./src/server.ts",
     "scripts": {
         "dev": "tsx watch src/server.ts",

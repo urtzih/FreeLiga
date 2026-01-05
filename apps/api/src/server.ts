@@ -1,3 +1,11 @@
+/**
+ * FreeSQuash League - API Server
+ * 
+ * @author Urtzi Diaz Arberas
+ * @copyright © 2024-2026 Urtzi Diaz Arberas. All rights reserved.
+ * @license Proprietary - All intellectual property rights belong to Urtzi Diaz Arberas
+ */
+
 /// <reference types="node" />
 import Fastify from 'fastify';
 import cors from '@fastify/cors';

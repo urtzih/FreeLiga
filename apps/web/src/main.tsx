@@ -1,3 +1,11 @@
+/**
+ * FreeSQuash League - Web Application
+ * 
+ * @author Urtzi Diaz Arberas
+ * @copyright © 2024-2026 Urtzi Diaz Arberas. All rights reserved.
+ * @license Proprietary - All intellectual property rights belong to Urtzi Diaz Arberas
+ */
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';

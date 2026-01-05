@@ -1,3 +1,11 @@
+/**
+ * FreeSQuash League - Vite Configuration
+ * 
+ * @author Urtzi Diaz Arberas
+ * @copyright © 2024-2026 Urtzi Diaz Arberas. All rights reserved.
+ * @license Proprietary - All intellectual property rights belong to Urtzi Diaz Arberas
+ */
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
