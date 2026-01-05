@@ -2,6 +2,10 @@
     "name": "@freesquash/api",
     "version": "1.0.0",
     "author": "Urtzi Diaz Arberas",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/urtzih/FreeLiga.git"
+    },
     "main": "./src/server.ts",
     "scripts": {
         "dev": "tsx watch src/server.ts",

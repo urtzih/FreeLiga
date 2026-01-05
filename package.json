@@ -2,6 +2,10 @@
   "name": "freesquash-league",
   "version": "1.0.0",
   "author": "Urtzi Diaz Arberas",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/urtzih/FreeLiga.git"
+  },
   "private": true,
   "workspaces": [
     "apps/*",

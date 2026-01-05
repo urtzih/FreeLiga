@@ -368,6 +368,8 @@ All rights reserved. This software and its source code are the intellectual prop
 ## 👨‍💻 Author
 
 **Urtzi Diaz Arberas**
+- GitHub: [@urtzih](https://github.com/urtzih)
+- Repository: [FreeLiga](https://github.com/urtzih/FreeLiga)
 - Copyright © 2024-2026 Urtzi Diaz Arberas
 - All intellectual property rights reserved
 
