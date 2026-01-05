@@ -146,32 +146,32 @@ export default function GroupView() {
             </div>
 
             {/* Indicadores de Progreso */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-3 md:p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium opacity-90">Días Restantes</span>
-                        <span className="text-2xl">⏰</span>
+                        <span className="text-xs md:text-sm font-medium opacity-90">Días Restantes</span>
+                        <span className="text-xl md:text-2xl">⏰</span>
                     </div>
-                    <p className="text-4xl font-bold">{daysRemaining > 0 ? daysRemaining : 0}</p>
-                    <p className="text-sm opacity-75 mt-1">Hasta el {endDate.toLocaleDateString('es-ES')}</p>
+                    <p className="text-3xl md:text-4xl font-bold">{daysRemaining > 0 ? daysRemaining : 0}</p>
+                    <p className="text-xs md:text-sm opacity-75 mt-1">Hasta el {endDate.toLocaleDateString('es-ES')}</p>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg">
+                <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-3 md:p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium opacity-90">Progreso</span>
-                        <span className="text-2xl">📊</span>
+                        <span className="text-xs md:text-sm font-medium opacity-90">Progreso</span>
+                        <span className="text-xl md:text-2xl">📊</span>
                     </div>
-                    <p className="text-4xl font-bold">{completionPercentage}%</p>
-                    <p className="text-sm opacity-75 mt-1">{matchesPlayed} / {totalPossibleMatches} partidos</p>
+                    <p className="text-3xl md:text-4xl font-bold">{completionPercentage}%</p>
+                    <p className="text-xs md:text-sm opacity-75 mt-1">{matchesPlayed} / {totalPossibleMatches} partidos</p>
                 </div>
 
-                <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
+                <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-3 md:p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium opacity-90">Total Jugadores</span>
-                        <span className="text-2xl">👥</span>
+                        <span className="text-xs md:text-sm font-medium opacity-90">Total Jugadores</span>
+                        <span className="text-xl md:text-2xl">👥</span>
                     </div>
-                    <p className="text-4xl font-bold">{totalPlayers}</p>
-                    <p className="text-sm opacity-75 mt-1">Activos en el grupo</p>
+                    <p className="text-3xl md:text-4xl font-bold">{totalPlayers}</p>
+                    <p className="text-xs md:text-sm opacity-75 mt-1">Activos en el grupo</p>
                 </div>
             </div>
 
@@ -243,25 +243,25 @@ export default function GroupView() {
                                 </table>
                             </div>
                             <div className="w-full">
-                                <h3 className="text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300">Top 10 (Victorias / Derrotas / Restantes)</h3>
-                                <div className="w-full" style={{ maxHeight: window.innerWidth < 768 ? '400px' : 'auto' }}>
+                                <h3 className="text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300">Todos los Jugadores (Victorias / Derrotas / Restantes)</h3>
+                                <div className="w-full" style={{ maxHeight: window.innerWidth < 768 ? `${Math.max(400, classification.length * 25)}px` : '600px' }}>
                                     <Bar
                                         data={{
-                                            labels: classification.slice(0, 10).map(c => c.playerName.split(' ')[0]),
+                                            labels: classification.map(c => c.playerName.split(' ')[0]),
                                             datasets: [
                                                 {
                                                     label: 'Victorias',
-                                                    data: classification.slice(0, 10).map(c => c.wins),
+                                                    data: classification.map(c => c.wins),
                                                     backgroundColor: 'rgba(34,197,94,0.6)'
                                                 },
                                                 {
                                                     label: 'Derrotas',
-                                                    data: classification.slice(0, 10).map(c => c.losses),
+                                                    data: classification.map(c => c.losses),
                                                     backgroundColor: 'rgba(239,68,68,0.6)'
                                                 },
                                                 {
                                                     label: 'Restantes',
-                                                    data: classification.slice(0, 10).map(c => {
+                                                    data: classification.map(c => {
                                                         const played = c.wins + c.losses;
                                                         return (totalPlayers - 1) - played;
                                                     }),
@@ -269,7 +269,7 @@ export default function GroupView() {
                                                 },
                                                 {
                                                     label: 'Con Lesión',
-                                                    data: classification.slice(0, 10).map(c => {
+                                                    data: classification.map(c => {
                                                         return group.matches.filter((m: any) =>
                                                             (m.player1Id === c.playerId || m.player2Id === c.playerId) &&
                                                             m.matchStatus === 'INJURY'
@@ -304,7 +304,7 @@ export default function GroupView() {
                 <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white">Clasificación Actual</h2>
                 </div>
-                <div className="overflow-x-auto">
+                <div className="hidden md:block overflow-x-auto">
                     <table className="w-full">
                         <thead className="bg-slate-50 dark:bg-slate-900">
                             <tr>
@@ -396,6 +396,75 @@ export default function GroupView() {
                                 })}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Vista Móvil - Cards */}
+                <div className="md:hidden space-y-3 p-4">
+                    {group.groupPlayers
+                        .filter((gp: any) => gp.player.user?.role !== 'ADMIN')
+                        .map((gp: any, index: number) => {
+                            const isCurrentUser = gp.playerId === user?.player?.id;
+                            
+                            const directMatch = group.matches.find((m: any) =>
+                                m.matchStatus === 'PLAYED' && (
+                                    (m.player1Id === user?.player?.id && m.player2Id === gp.playerId) ||
+                                    (m.player2Id === user?.player?.id && m.player1Id === gp.playerId)
+                                )
+                            );
+                            
+                            let resultText = 'No jugado';
+                            let resultColor = 'text-slate-400';
+                            
+                            if (directMatch) {
+                                const won = directMatch.winnerId === user?.player?.id;
+                                const lost = directMatch.winnerId === gp.playerId;
+                                
+                                if (won) {
+                                    resultText = directMatch.player1Id === user?.player?.id 
+                                        ? `✓ ${directMatch.gamesP1}-${directMatch.gamesP2}` 
+                                        : `✓ ${directMatch.gamesP2}-${directMatch.gamesP1}`;
+                                    resultColor = 'text-green-600 dark:text-green-400 font-semibold';
+                                } else if (lost) {
+                                    resultText = directMatch.player1Id === user?.player?.id 
+                                        ? `✗ ${directMatch.gamesP1}-${directMatch.gamesP2}` 
+                                        : `✗ ${directMatch.gamesP2}-${directMatch.gamesP1}`;
+                                    resultColor = 'text-red-600 dark:text-red-400 font-semibold';
+                                }
+                            }
+
+                            return (
+                                <div 
+                                    key={gp.id} 
+                                    className={`p-4 rounded-lg border ${isCurrentUser ? 'border-blue-300 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-700' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'}`}
+                                >
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex items-start gap-3 flex-1">
+                                            <div>
+                                                {index < 2 && <span className="text-lg">🏆</span>}
+                                                {index >= totalPlayers - 2 && <span className="text-lg">⚠️</span>}
+                                                {index >= 2 && index < totalPlayers - 2 && <span className="text-sm font-bold text-slate-500">#{gp.rankingPosition}</span>}
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className={`font-semibold text-sm ${isCurrentUser ? 'text-blue-600 dark:text-blue-400' : 'text-slate-900 dark:text-white'}`}>
+                                                    #{gp.rankingPosition} {gp.player.name} {isCurrentUser && '(Tú)'}
+                                                </p>
+                                                {gp.player.nickname && (
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">"{gp.player.nickname}"</p>
+                                                )}
+                                                {!isCurrentUser && (
+                                                    <p className={`text-xs mt-2 ${resultColor}`}>{resultText}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {!isCurrentUser && (
+                                        <div className="mt-3 flex gap-2">
+                                            <ContactButtons phone={gp.player.phone} />
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                 </div>
             </div>
 
@@ -543,14 +612,14 @@ function ContactButtons({ phone }: { phone?: string }) {
                 className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors text-sm font-medium"
                 title="Llamar"
             >
-                📞 Llamar
+                📞
             </a>
             <button
                 onClick={handleCopy}
                 className="px-3 py-1 bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-sm font-medium"
                 title="Copiar teléfono"
             >
-                📋 Copiar
+                📋 Copy
             </button>
         </div>
     );

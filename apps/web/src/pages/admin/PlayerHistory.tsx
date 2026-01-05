@@ -169,31 +169,31 @@ export default function PlayerHistory() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-3 md:p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium opacity-90">Total Registrados</span>
-                        <span className="text-2xl">👥</span>
+                        <span className="text-xs md:text-sm font-medium opacity-90">Total Registrados</span>
+                        <span className="text-xl md:text-2xl">👥</span>
                     </div>
-                    <p className="text-4xl font-bold">{totalRegistered}</p>
+                    <p className="text-3xl md:text-4xl font-bold">{totalRegistered}</p>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg">
+                <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-3 md:p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium opacity-90">Activos</span>
-                        <span className="text-2xl">✅</span>
+                        <span className="text-xs md:text-sm font-medium opacity-90">Activos</span>
+                        <span className="text-xl md:text-2xl">✅</span>
                     </div>
-                    <p className="text-4xl font-bold">{activeCount}</p>
-                    <p className="text-sm opacity-75 mt-1">{totalRegistered > 0 ? Math.round((activeCount / totalRegistered) * 100) : 0}%</p>
+                    <p className="text-3xl md:text-4xl font-bold">{activeCount}</p>
+                    <p className="text-xs md:text-sm opacity-75 mt-1">{totalRegistered > 0 ? Math.round((activeCount / totalRegistered) * 100) : 0}%</p>
                 </div>
 
-                <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-6 text-white shadow-lg">
+                <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-3 md:p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium opacity-90">Inactivos</span>
-                        <span className="text-2xl">❌</span>
+                        <span className="text-xs md:text-sm font-medium opacity-90">Inactivos</span>
+                        <span className="text-xl md:text-2xl">❌</span>
                     </div>
-                    <p className="text-4xl font-bold">{inactiveCount}</p>
-                    <p className="text-sm opacity-75 mt-1">{totalRegistered > 0 ? Math.round((inactiveCount / totalRegistered) * 100) : 0}%</p>
+                    <p className="text-3xl md:text-4xl font-bold">{inactiveCount}</p>
+                    <p className="text-xs md:text-sm opacity-75 mt-1">{totalRegistered > 0 ? Math.round((inactiveCount / totalRegistered) * 100) : 0}%</p>
                 </div>
             </div>
 
