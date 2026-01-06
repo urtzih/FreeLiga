@@ -7,7 +7,13 @@ Complete navigation guide for FreeSquash League documentation.
 | Document | Purpose | Read Time | For Whom |
 |----------|---------|-----------|----------|
 | [QUICK_START.md](#quick-start) | 5-minute setup guide | 5 min | Everyone (first read) |
+| [QUICK_BACKUP_GUIDE.md](../QUICK_BACKUP_GUIDE.md) | Daily backup reference | 3 min | Developers (daily use) |
+| [PROXIMOS_PASOS.md](../PROXIMOS_PASOS.md) | Setup actions (security first) | 10 min | First-time users |
 | [SETUP_AND_DEPLOYMENT.md](#setup--deployment) | Local dev + production | 15 min | Developers, DevOps |
+| [BACKUP_RECOVERY_SYSTEM.md](#backup--recovery-system) | Database backup & restore | 10 min | DevOps, Admins |
+| [DESCARGAR_BACKUP_RAILWAY.md](#descargar-backup-railway) | Download backups from Railway | 5 min | When sync fails |
+| [BACKUP_SYSTEM_STATUS.md](../BACKUP_SYSTEM_STATUS.md) | Complete system overview | 15 min | System status & troubleshooting |
+| [SECURITY_FIX_REQUIRED.md](../SECURITY_FIX_REQUIRED.md) | Exposed credentials fix | 10 min | URGENT if repo is public |
 | [LEAGUE_RULES_AND_PROMOTIONS.md](#league-rules--promotions) | Game rules & mechanics | 10 min | Admins, Experienced Players |
 | [MANUAL_USUARIO.md](#user-manual) | Complete user guide | 20 min | All users |
 | [AUDIT_CHECKLIST.md](#audit-checklist) | Security verification | 10 min | Security-conscious users |
@@ -41,8 +47,9 @@ Complete navigation guide for FreeSquash League documentation.
 **Read in order:**
 1. [QUICK_START.md](#quick-start) - Understand project structure
 2. [SETUP_AND_DEPLOYMENT.md](#setup--deployment) - Complete local + production setup
-3. [AUDIT_CHECKLIST.md](#audit-checklist) - Pre-deployment verification
-4. [AUDIT_REPORT.md](#audit-report) - Technical deep dive (optional)
+3. [BACKUP_RECOVERY_SYSTEM.md](#backup--recovery-system) - Configure backups BEFORE deploying
+4. [AUDIT_CHECKLIST.md](#audit-checklist) - Pre-deployment verification
+5. [AUDIT_REPORT.md](#audit-report) - Technical deep dive (optional)
 
 ### 🔐 "I'm Auditing Security"
 **Read:**
@@ -296,6 +303,94 @@ Coverage:           Setup, Deployment, Rules, User Guide, Security
 
 ---
 
+## BACKUP_RECOVERY_SYSTEM.md
+
+**Document:** [BACKUP_RECOVERY_SYSTEM.md](BACKUP_RECOVERY_SYSTEM.md)  
+**Purpose:** Complete database backup and disaster recovery system  
+**When to read:** Before deploying to production, when setting up development environment
+
+### Who Should Read This
+- **DevOps Engineers:** Setting up automated backups
+- **Developers:** Understanding backup/restore procedures
+- **System Administrators:** Managing backup schedules and retention
+- **Anyone managing production data:** Critical for data safety
+
+### What You'll Learn
+- How to perform manual backups (local and production)
+- Setting up automated daily backups
+- Complete restoration procedures with safety checks
+- Disaster recovery plans
+- Backup monitoring and verification
+
+### Key Information
+
+**Features:**
+- ✅ Automated daily backups with 30-day retention
+- ✅ Windows (PowerShell) and Linux (Bash) scripts
+- ✅ Safe restoration with pre-restore backup
+- ✅ GitHub Actions integration for production
+- ✅ Compressed backups (saves 70-80% space)
+- ✅ Production data sync (PROD→LOCAL for development)
+
+**Quick Commands:**
+
+```powershell
+# Backup LOCAL database
+npm run backup:quick
+
+# Restore from backup
+npm run restore
+
+# Sync PROD data to LOCAL (for development)
+npm run sync
+
+# Full backup with details
+npm run backup
+```
+
+---
+
+## Additional Guides for Backup/Recovery
+
+**Quick start:**
+- [QUICK_BACKUP_GUIDE.md](../QUICK_BACKUP_GUIDE.md) - Simple 1-page reference for daily use
+- [PROXIMOS_PASOS.md](../PROXIMOS_PASOS.md) - Immediate setup actions (30 minutes)
+
+**Workflows:**
+- [BACKUP_SYSTEM_STATUS.md](../BACKUP_SYSTEM_STATUS.md) - Complete system overview with status
+- [DESCARGAR_BACKUP_RAILWAY.md](DESCARGAR_BACKUP_RAILWAY.md) - How to download backups manually from Railway
+
+**Security:**
+- [SECURITY_FIX_REQUIRED.md](../SECURITY_FIX_REQUIRED.md) - Urgent: Exposed credentials remediation
+- [SECURITY_CREDENTIALS_ALERT.md](../SECURITY_CREDENTIALS_ALERT.md) - Credential security best practices
+
+**Scripts reference:**
+- [scripts/BACKUP_QUICKSTART.md](../scripts/BACKUP_QUICKSTART.md) - Script quick reference
+- [scripts/BACKUP_OPERACION.md](../scripts/BACKUP_OPERACION.md) - Daily operation procedures
+- [scripts/SYNC_WORKFLOW.md](../scripts/SYNC_WORKFLOW.md) - Production sync workflow
+
+---
+
+## Related Documentation
+
+See also: [SETUP_AND_DEPLOYMENT.md](SETUP_AND_DEPLOYMENT.md#database-management) for database initialization and management
+
+### Navigation Within Document
+1. **Configuration** - Initial setup steps
+2. **Local Usage** - Docker backup/restore
+3. **Production Usage** - Railway backup strategies
+4. **Automation** - Scheduled backups (cron, Windows Task)
+5. **Restoration** - Complete recovery procedures
+6. **Best Practices** - Security and verification tips
+7. **Troubleshooting** - Common issues and solutions
+8. **Disaster Recovery** - Emergency procedures
+
+### Related Documents
+- [SETUP_AND_DEPLOYMENT.md](SETUP_AND_DEPLOYMENT.md) - Infrastructure setup
+- [FUTURE_OPTIMIZATIONS.md](FUTURE_OPTIMIZATIONS.md) - Database scaling
+
+---
+
 ## FUTURE_OPTIMIZATIONS.md
 
 **Document:** [FUTURE_OPTIMIZATIONS.md](FUTURE_OPTIMIZATIONS.md)  
@@ -365,7 +460,7 @@ Coverage:           Setup, Deployment, Rules, User Guide, Security
 - Maintain this index as the source of truth for navigation
 
 ---
-
-**Version:** 1.0  
+1  
+**Last Updated:** 2026-01-06
 **Last Updated:** 2025-12-15  
 **Maintained By:** Development Team

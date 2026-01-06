@@ -44,6 +44,11 @@ lerna-debug.log*
 *.db
 *.db-journal
 
+# Backups (no subir backups de BD a Git)
+backups/
+*.sql
+*.sql.gz
+
 # Prisma
 packages/database/prisma/migrations/
 .env.production.example

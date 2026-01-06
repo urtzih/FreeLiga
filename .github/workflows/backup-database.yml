@@ -1,0 +1,58 @@
+name: 🔐 Backup Automático Base de Datos
+
+on:
+  schedule:
+    # Ejecutar todos los días a las 3:00 AM UTC (4:00 AM en España)
+    - cron: '0 3 * * *'
+  workflow_dispatch: # Permitir ejecución manual
+
+jobs:
+  backup-railway:
+    name: 📦 Backup Railway (Producción)
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+      
+      - name: Instalar dependencias
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mysql-client gzip
+      
+      - name: Configurar Railway CLI
+        run: |
+          npm install -g @railway/cli
+      
+      - name: Crear backup
+        env:
+          DATABASE_URL: ${{ secrets.RAILWAY_DATABASE_URL }}
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          chmod +x ./scripts/backup-database.sh
+          RAILWAY_ENVIRONMENT=production ./scripts/backup-database.sh
+      
+      - name: Subir backup a GitHub Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-backup-${{ github.run_number }}-${{ github.run_attempt }}
+          path: backups/*.sql.gz
+          retention-days: 30
+      
+      - name: Subir backup a S3/Azure (opcional)
+        if: false  # Cambiar a true si quieres usar cloud storage
+        run: |
+          # Aquí puedes agregar comandos para subir a S3, Azure Blob, etc.
+          # aws s3 cp backups/ s3://tu-bucket/backups/ --recursive
+          echo "Cloud backup no configurado aún"
+      
+      - name: Notificar resultado
+        if: always()
+        run: |
+          if [ -f "backups/latest.sql.gz" ]; then
+            echo "✅ Backup completado exitosamente"
+            ls -lh backups/latest.sql.gz
+          else
+            echo "❌ Error en el backup"
+            exit 1
+          fi

@@ -306,7 +306,10 @@ For more detailed information, see:
 
 - **[Quick Start Guide](docs/QUICK_START.md)** - Get up and running in 5 minutes
 - **[Deployment Guide](docs/RAILWAY_VERCEL_DEPLOY.md)** - Deploy to Railway + Vercel
-- **[Docker Setup](docs/DOCKER_SETUP.md)** - Local development with Docker- **[Logging System](docs/LOGGING_SYSTEM.md)** - Structured logging, analysis & dashboards- **[User Manual](docs/MANUAL_USUARIO.md)** - End-user guide (Spanish)
+- **[Backup & Recovery System](docs/BACKUP_RECOVERY_SYSTEM.md)** - Database backup & disaster recovery 🔐
+- **[Docker Setup](docs/DOCKER_SETUP.md)** - Local development with Docker
+- **[Logging System](docs/LOGGING_SYSTEM.md)** - Structured logging, analysis & dashboards
+- **[User Manual](docs/MANUAL_USUARIO.md)** - End-user guide (Spanish)
 - **[Audit Checklist](AUDIT_CHECKLIST.md)** - Security & performance verification
 - **[Full Audit Report](AUDIT_REPORT.md)** - Comprehensive security analysis
 - **[Business Rules](docs/REGLAS_CIERRE_TEMPORADA.md)** - Season closure rules
@@ -360,7 +363,89 @@ For more detailed information, see:
 
 ### Full Audit Report
 See [AUDIT_REPORT.md](AUDIT_REPORT.md) for comprehensive security analysis, performance review, and recommendations for future improvements.
+## 💾 Database Backup & Recovery
 
+### Quick Commands
+
+```bash
+# Download PROD database and restore locally (PRIMARY WORKFLOW)
+npm run sync
+
+# Backup current LOCAL database (before making changes)
+npm run backup:quick
+
+# Download only from PROD (no restore, read-only)
+npm run backup:prod
+
+# Restore from previous backup (if something breaks)
+npm run restore
+
+# Full backup with detailed output
+npm run backup
+```
+
+### Daily Development Workflow
+
+**MONDAY MORNING**: Get fresh production data
+```bash
+npm run sync
+# BD LOCAL = BD PROD (all real data)
+```
+
+**TUESDAY-FRIDAY**: Work safely in development
+```bash
+npm run backup:quick     # Before making changes
+# ... develop ...
+npm run backup:quick     # After completing changes
+# If something breaks: npm run restore
+```
+
+### Manual Download from Railway
+
+If `npm run sync` encounters connection issues:
+1. Go to https://railway.app/
+2. Select FreeLiga project → MySQL → Backups tab
+3. Download the latest backup
+4. Save to `backups/` folder
+5. Run: `npm run restore`
+
+Full guide: [DESCARGAR_BACKUP_RAILWAY.md](docs/DESCARGAR_BACKUP_RAILWAY.md)
+
+### Backup Files Location
+
+```
+backups/
+├── prod_sync_20260106_121500.sql.gz       (Downloaded from PROD and restored)
+├── backup_prod_20260106_230003.sql.gz     (Only downloaded from PROD)
+├── local_backup_20260106_145230.sql.gz    (Local development backup)
+├── latest_prod.sql.gz                     (Latest PROD backup marker)
+├── latest_local.sql.gz                    (Latest LOCAL backup marker)
+└── latest.sql.gz                          (Generic latest marker, if present)
+```
+
+**Note**: `backups/` is git-ignored and auto-cleans backups older than 30 days
+
+---
+
+## 🔒 Security
+
+### Production Credentials
+
+⚠️ **CRITICAL**: `.env` file contains sensitive production credentials - NEVER commit!
+
+**If you exposed credentials in git history:**
+
+```bash
+# Remove from tracking
+git rm --cached .env
+echo ".env" >> .gitignore
+git commit -m "Remove .env with exposed credentials"
+
+# Clean git history (prevent access to old commits)
+# See: SECURITY_FIX_REQUIRED.md for detailed steps
+```
+
+See complete security guide: [SECURITY_FIX_REQUIRED.md](SECURITY_FIX_REQUIRED.md)
 ## �📝 License
 
 All rights reserved. This software and its source code are the intellectual property of Urtzi Diaz Arberas.

@@ -18,7 +18,12 @@
     "build": "npm run build --workspaces",
     "db:generate": "npm run db:generate --workspace=packages/database",
     "db:push": "npm run db:push --workspace=packages/database",
-    "db:studio": "npm run db:studio --workspace=packages/database"
+    "db:studio": "npm run db:studio --workspace=packages/database",
+    "backup": "powershell -File scripts/backup-database.ps1",
+    "backup:quick": "powershell -File scripts/quick-backup.ps1",
+    "backup:prod": "powershell -File scripts/backup-prod.ps1",
+    "sync": "powershell -File scripts/sync-prod-to-local.ps1",
+    "restore": "powershell -File scripts/restore-database.ps1"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
