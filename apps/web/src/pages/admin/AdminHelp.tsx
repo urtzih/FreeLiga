@@ -167,28 +167,238 @@ export default function AdminHelp() {
             {/* Propuestas de Temporada */}
             <section className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">🔄 Propuestas y Cierre de Temporada</h2>
-                <div className="space-y-4 text-slate-600 dark:text-slate-400">
-                    <div>
-                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Proceso de Cierre</h3>
-                        <ol className="list-decimal list-inside space-y-2 ml-4">
-                            <li>Ve a "Propuestas de Temporada" y selecciona la temporada a cerrar</li>
-                            <li>El sistema genera automáticamente una propuesta:
-                                <ul className="list-disc list-inside ml-6 mt-1">
-                                    <li>Los 2 primeros de cada grupo → ASCENSO</li>
-                                    <li>Los 2 últimos de cada grupo → DESCENSO</li>
-                                    <li>El resto → SE MANTIENE</li>
-                                </ul>
-                            </li>
-                            <li>Revisa y modifica movimientos si es necesario (arrastra jugadores entre grupos)</li>
-                            <li>Puedes añadir jugadores nuevos a grupos específicos</li>
-                            <li>Puedes desactivar jugadores que no continuarán</li>
-                            <li>Guarda los cambios si los hiciste</li>
-                            <li><strong>Aprobar Propuesta:</strong> Marca el cierre como aprobado y crea el historial de movimientos</li>
-                            <li><strong>Generar Siguiente Temporada:</strong> Crea automáticamente la nueva temporada con los mismos grupos y asigna jugadores según la propuesta aprobada</li>
-                        </ol>
+                <div className="space-y-6 text-slate-600 dark:text-slate-400">
+                    
+                    {/* Introducción al proceso */}
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4">
+                        <p className="text-sm">
+                            <strong>📌 Visión General:</strong> El cierre de temporada es el proceso más importante de la administración de la liga. 
+                            Aquí decides quién sube, quién baja y quién se mantiene, y luego generas automáticamente la nueva temporada con los grupos ya configurados.
+                            Este proceso consta de <strong>3 fases distintas</strong> que debes completar en orden.
+                        </p>
                     </div>
+
+                    {/* FASE 1: Generación de la Propuesta */}
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-3 text-lg">📋 FASE 1: Generación de la Propuesta Automática</h3>
+                        <div className="space-y-3 ml-4">
+                            <div>
+                                <p className="font-medium text-slate-900 dark:text-white mb-2">¿Cómo se crea la propuesta inicial?</p>
+                                <ol className="list-decimal list-inside space-y-2 ml-4">
+                                    <li>Ve a <strong>"Propuestas de Temporada"</strong> en el menú de administrador</li>
+                                    <li>Selecciona la temporada que quieres cerrar de la lista</li>
+                                    <li>Haz clic en <strong>"Generar Propuesta"</strong></li>
+                                    <li>El sistema analiza automáticamente todos los grupos y crea una propuesta basándose en las clasificaciones finales</li>
+                                </ol>
+                            </div>
+
+                            <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 mt-3">
+                                <p className="font-medium text-slate-900 dark:text-white mb-2">🤖 ¿Cómo decide el sistema los ascensos y descensos?</p>
+                                <p className="mb-2">El sistema aplica estas reglas automáticamente:</p>
+                                <ul className="list-disc list-inside ml-4 space-y-2">
+                                    <li><strong>Top 2 de cada grupo → ASCENSO:</strong> Los 2 primeros clasificados suben al grupo superior (excepto si ya están en el Grupo 1)</li>
+                                    <li><strong>Últimos 2 de cada grupo → DESCENSO:</strong> Los 2 últimos clasificados bajan al grupo inferior (excepto si ya están en el grupo más bajo)</li>
+                                    <li><strong>Posiciones 3 a N-2 → SE MANTIENEN:</strong> Los jugadores del medio permanecen en el mismo grupo</li>
+                                    <li><strong>Grupo 1 (el mejor):</strong> Los primeros se mantienen porque ya están en lo más alto</li>
+                                    <li><strong>Último grupo:</strong> Los últimos se mantienen porque ya están en el grupo más bajo</li>
+                                </ul>
+                            </div>
+
+                            <div className="mt-3">
+                                <p className="font-medium text-slate-900 dark:text-white mb-2">📊 Ejemplo práctico:</p>
+                                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                                    <p className="mb-2">Imagina que tienes 3 grupos (Grupo 1, Grupo 2, Grupo 3) con 8 jugadores cada uno:</p>
+                                    <div className="space-y-3 text-sm">
+                                        <div>
+                                            <p className="font-semibold text-green-700 dark:text-green-400">Grupo 1 (el mejor):</p>
+                                            <ul className="ml-6 mt-1">
+                                                <li>• Posiciones 1-2: SE MANTIENEN (ya están arriba del todo)</li>
+                                                <li>• Posiciones 3-6: SE MANTIENEN (centro del grupo)</li>
+                                                <li>• Posiciones 7-8: DESCIENDEN a Grupo 2</li>
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-blue-700 dark:text-blue-400">Grupo 2 (intermedio):</p>
+                                            <ul className="ml-6 mt-1">
+                                                <li>• Posiciones 1-2: ASCIENDEN a Grupo 1</li>
+                                                <li>• Posiciones 3-6: SE MANTIENEN en Grupo 2</li>
+                                                <li>• Posiciones 7-8: DESCIENDEN a Grupo 3</li>
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-orange-700 dark:text-orange-400">Grupo 3 (principiantes):</p>
+                                            <ul className="ml-6 mt-1">
+                                                <li>• Posiciones 1-2: ASCIENDEN a Grupo 2</li>
+                                                <li>• Posiciones 3-6: SE MANTIENEN en Grupo 3</li>
+                                                <li>• Posiciones 7-8: SE MANTIENEN (ya están abajo del todo)</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* FASE 2: Revisión y Ajustes */}
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-3 text-lg">✏️ FASE 2: Revisión y Ajustes Manuales (Opcional)</h3>
+                        <div className="space-y-3 ml-4">
+                            <p>Una vez generada la propuesta automática, tienes la oportunidad de hacer ajustes antes de aprobarla:</p>
+                            
+                            <div>
+                                <p className="font-medium text-slate-900 dark:text-white mb-2">🔄 Mover jugadores entre grupos</p>
+                                <ul className="list-disc list-inside ml-4 space-y-1">
+                                    <li>Puedes arrastrar y soltar jugadores a diferentes grupos si crees que la propuesta automática no es justa</li>
+                                    <li>Por ejemplo: si un jugador ha tenido lesiones y no pudo jugar todos sus partidos</li>
+                                    <li>O si quieres equilibrar mejor los niveles entre grupos</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <p className="font-medium text-slate-900 dark:text-white mb-2">➕ Añadir jugadores nuevos</p>
+                                <ul className="list-disc list-inside ml-4 space-y-1">
+                                    <li>Puedes incorporar jugadores que no participaron en la temporada actual</li>
+                                    <li>Asígnalos directamente al grupo que consideres apropiado según su nivel</li>
+                                    <li>Estos aparecerán como "NUEVO" en el historial de movimientos</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <p className="font-medium text-slate-900 dark:text-white mb-2">🚫 Desactivar jugadores</p>
+                                <ul className="list-disc list-inside ml-4 space-y-1">
+                                    <li>Si alguien no va a continuar, márcalo como inactivo</li>
+                                    <li>Los jugadores desactivados no aparecerán en la siguiente temporada</li>
+                                    <li>Su historial se conserva pero quedan fuera de los grupos activos</li>
+                                </ul>
+                            </div>
+
+                            <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4 mt-3">
+                                <p className="text-sm">
+                                    <strong>💡 Consejo:</strong> Si haces cambios manuales, haz clic en <strong>"Guardar Cambios"</strong> antes de aprobar la propuesta.
+                                    Esto actualiza la propuesta con tus ajustes. Puedes guardar varias veces hasta estar satisfecho.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* FASE 3: Aprobación y Generación */}
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-3 text-lg">✅ FASE 3: Aprobación y Generación de la Nueva Temporada</h3>
+                        <div className="space-y-3 ml-4">
+                            <p>Una vez que la propuesta está perfecta, hay DOS PASOS FINALES que debes hacer EN ORDEN:</p>
+                            
+                            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+                                <p className="font-bold text-purple-900 dark:text-purple-300 mb-3">PASO 1: Aprobar la Propuesta</p>
+                                <ul className="list-disc list-inside ml-4 space-y-2">
+                                    <li>Haz clic en el botón <strong>"Aprobar Propuesta"</strong></li>
+                                    <li>Esto crea el <strong>historial permanente</strong> de movimientos (ascensos, descensos, etc.)</li>
+                                    <li>Se guarda en la base de datos como registro histórico de la temporada</li>
+                                    <li>Una vez aprobado, <strong>NO SE PUEDE DESHACER</strong> (protección de datos históricos)</li>
+                                    <li>El sistema marca la propuesta como "Aprobada"</li>
+                                </ul>
+                                <div className="mt-3 p-3 bg-purple-100 dark:bg-purple-900/40 rounded border border-purple-300 dark:border-purple-700">
+                                    <p className="text-sm font-medium">⚠️ Después de este paso, la propuesta queda congelada. Asegúrate de que todo esté correcto antes de aprobar.</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 mt-4">
+                                <p className="font-bold text-green-900 dark:text-green-300 mb-3">PASO 2: Generar la Siguiente Temporada</p>
+                                <p className="mb-3">Después de aprobar, aparece un nuevo botón verde: <strong>"Generar Siguiente Temporada"</strong></p>
+                                
+                                <div className="mb-3">
+                                    <p className="font-medium text-slate-900 dark:text-white mb-2">¿Qué hace este botón exactamente?</p>
+                                    <ol className="list-decimal list-inside ml-4 space-y-2">
+                                        <li><strong>Crea una nueva temporada:</strong>
+                                            <ul className="list-disc list-inside ml-6 mt-1">
+                                                <li>Le asigna un nombre automático (ej: "Temporada 2026-Ene-Feb" si estamos en enero)</li>
+                                                <li>Calcula fechas de inicio y fin (2 meses por defecto desde hoy)</li>
+                                                <li>La deja en estado INACTIVA (aún no se puede jugar)</li>
+                                            </ul>
+                                        </li>
+                                        <li><strong>Replica los grupos existentes:</strong>
+                                            <ul className="list-disc list-inside ml-6 mt-1">
+                                                <li>Crea exactamente los mismos grupos que tenía la temporada anterior</li>
+                                                <li>Mantiene los mismos nombres (Grupo 1, Grupo 2, Grupo 3...)</li>
+                                                <li>Los grupos empiezan vacíos (sin jugadores aún)</li>
+                                            </ul>
+                                        </li>
+                                        <li><strong>Asigna jugadores según la propuesta aprobada:</strong>
+                                            <ul className="list-disc list-inside ml-6 mt-1">
+                                                <li>Lee la propuesta que acabas de aprobar</li>
+                                                <li>Coloca a cada jugador en el grupo correspondiente según sus ascensos/descensos</li>
+                                                <li>Los jugadores desactivados NO se añaden</li>
+                                                <li>Los jugadores nuevos se colocan en los grupos que especificaste</li>
+                                            </ul>
+                                        </li>
+                                        <li><strong>Inicializa rankings:</strong>
+                                            <ul className="list-disc list-inside ml-6 mt-1">
+                                                <li>Todos los jugadores empiezan con ranking 0-0 (sin partidos)</li>
+                                                <li>Las posiciones iniciales se asignan en el orden en que fueron añadidos al grupo</li>
+                                            </ul>
+                                        </li>
+                                    </ol>
+                                </div>
+
+                                <div className="bg-green-100 dark:bg-green-900/40 rounded border border-green-300 dark:border-green-700 p-3">
+                                    <p className="text-sm font-medium mb-2">✅ Resultado final:</p>
+                                    <p className="text-sm">Tendrás una nueva temporada lista con todos los grupos formados y todos los jugadores ya asignados a sus grupos correspondientes. 
+                                    Solo falta que la <strong>actives</strong> cuando quieras que empiece a contar para la clasificación.</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mt-4">
+                                <p className="font-medium text-slate-900 dark:text-white mb-2">🎯 Última acción: Activar la nueva temporada</p>
+                                <ol className="list-decimal list-inside ml-4 space-y-1">
+                                    <li>Ve a "Gestionar Temporadas"</li>
+                                    <li>Busca la temporada recién creada</li>
+                                    <li>Haz clic en "Marcar como Activa"</li>
+                                    <li>Esto desactiva automáticamente la temporada anterior</li>
+                                    <li>Los jugadores ya pueden empezar a registrar partidos</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Resumen visual del flujo completo */}
+                    <div className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 rounded-lg p-4 border-2 border-slate-300 dark:border-slate-600">
+                        <p className="font-bold text-slate-900 dark:text-white mb-3 text-center">📍 RESUMEN: Flujo Completo del Cierre de Temporada</p>
+                        <div className="space-y-2 text-sm">
+                            <div className="flex items-start gap-2">
+                                <span className="font-bold text-blue-600 dark:text-blue-400 min-w-[20px]">1.</span>
+                                <span>Generar Propuesta automática (sistema calcula ascensos/descensos)</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <span className="font-bold text-blue-600 dark:text-blue-400 min-w-[20px]">2.</span>
+                                <span>Revisar y ajustar manualmente si es necesario</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <span className="font-bold text-blue-600 dark:text-blue-400 min-w-[20px]">3.</span>
+                                <span>Guardar Cambios (si hiciste ajustes)</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <span className="font-bold text-purple-600 dark:text-purple-400 min-w-[20px]">4.</span>
+                                <span><strong>Aprobar Propuesta</strong> (se guarda el historial permanente)</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <span className="font-bold text-green-600 dark:text-green-400 min-w-[20px]">5.</span>
+                                <span><strong>Generar Siguiente Temporada</strong> (crea temporada + grupos + asigna jugadores)</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <span className="font-bold text-green-600 dark:text-green-400 min-w-[20px]">6.</span>
+                                <span>Marcar la nueva temporada como Activa (desde Gestionar Temporadas)</span>
+                            </div>
+                            <div className="flex items-start gap-2">
+                                <span className="font-bold text-green-600 dark:text-green-400 min-w-[20px]">7.</span>
+                                <span>¡Listo! Los jugadores pueden empezar a jugar partidos</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Advertencia importante */}
                     <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 p-4">
-                        <p className="text-sm"><strong>⚠️ Importante:</strong> Una vez aprobada una propuesta, se crea el historial permanente. Revisa cuidadosamente antes de aprobar.</p>
+                        <p className="text-sm"><strong>⚠️ MUY IMPORTANTE:</strong> No confundas "Aprobar Propuesta" con "Generar Siguiente Temporada". 
+                        Son DOS PASOS SEPARADOS. Primero apruebas (guarda historial), luego generas (crea temporada nueva). 
+                        Si solo apruebas sin generar, no tendrás nueva temporada. Si intentas generar sin aprobar, el sistema te dará error.</p>
                     </div>
                 </div>
             </section>
