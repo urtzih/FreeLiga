@@ -122,13 +122,15 @@ export default function GroupView() {
                     <p className="text-slate-600 dark:text-slate-400">{group.season.name}</p>
                 </div>
                 <div className="flex gap-2">
-                    <button
-                        onClick={handleExportGroupCSV}
-                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2 shadow-sm"
-                        title="Descargar clasificación como CSV"
-                    >
-                        📥 CSV
-                    </button>
+                    {user?.role === 'ADMIN' && (
+                        <button
+                            onClick={handleExportGroupCSV}
+                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2 shadow-sm"
+                            title="Descargar clasificación como CSV"
+                        >
+                            📥 CSV
+                        </button>
+                    )}
                     {group.whatsappUrl && (
                         <a
                             href={group.whatsappUrl}

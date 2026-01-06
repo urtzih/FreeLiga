@@ -280,7 +280,14 @@ export default function ManageGroups() {
                         )}
                         <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{group.name}</h3>
                         <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{group.season?.name}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-500 mb-4">
+                        <p 
+                            onClick={() => group.whatsappUrl && handleEditWhatsapp(group)}
+                            className={`text-xs mb-4 ${
+                                group.whatsappUrl 
+                                    ? 'text-green-600 dark:text-green-400 cursor-pointer hover:underline font-medium' 
+                                    : 'text-slate-500 dark:text-slate-500'
+                            }`}
+                        >
                             {group.whatsappUrl ? '✅ WhatsApp configurado' : '⚠️ Sin link de WhatsApp'}
                         </p>
                         <div className="space-y-2">
@@ -316,12 +323,14 @@ export default function ManageGroups() {
                                     + Añadir
                                 </button>
                             </div>
-                            <button
-                                onClick={() => handleEditWhatsapp(group)}
-                                className="w-full px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
-                            >
-                                {group.whatsappUrl ? 'Editar WhatsApp' : 'Añadir WhatsApp'}
-                            </button>
+                            {!group.whatsappUrl && (
+                                <button
+                                    onClick={() => handleEditWhatsapp(group)}
+                                    className="w-full px-3 py-2 text-sm rounded-lg transition-colors bg-green-600 text-white hover:bg-green-700"
+                                >
+                                    Añadir WhatsApp
+                                </button>
+                            )}
                         </div>
                         
                         {/* Clasificación expandible */}
