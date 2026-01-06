@@ -154,7 +154,6 @@ export async function userRoutes(fastify: FastifyInstance) {
                         name: body.name,
                         nickname: body.nickname,
                         phone: body.phone,
-                        email: body.email,
                     },
                 };
             }
