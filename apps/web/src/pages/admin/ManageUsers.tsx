@@ -47,7 +47,7 @@ export default function ManageUsers() {
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [filterGroup, setFilterGroup] = useState('');
     const [filterActive, setFilterActive] = useState<'all' | 'active' | 'inactive'>('all');
-    const [sortField, setSortField] = useState<'email' | 'name' | 'group' | 'role' | 'isActive' | 'createdAt'>('createdAt');
+    const [sortField, setSortField] = useState<'email' | 'name' | 'phone' | 'group' | 'role' | 'isActive' | 'createdAt'>('createdAt');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
     // Handle search with Enter key or button
@@ -179,6 +179,8 @@ export default function ManageUsers() {
                     aVal = a.email; bVal = b.email; break;
                 case 'name':
                     aVal = a.player?.name || ''; bVal = b.player?.name || ''; break;
+                case 'phone':
+                    aVal = a.player?.phone || ''; bVal = b.player?.phone || ''; break;
                 case 'group':
                     aVal = a.player?.currentGroup?.name || ''; bVal = b.player?.currentGroup?.name || ''; break;
                 case 'role':
@@ -268,7 +270,21 @@ export default function ManageUsers() {
             alert('Usuario actualizado correctamente');
         },
         onError: (error: any) => {
-            alert(`Error al actualizar usuario: ${error.response?.data?.error || error.message}`);
+            const errorData = error.response?.data?.error;
+            let errorMessage = 'Error desconocido';
+            
+            if (Array.isArray(errorData)) {
+                // Errores de validación de Zod
+                errorMessage = errorData.map((e: any) => `${e.path?.join('.')}: ${e.message}`).join(', ');
+            } else if (typeof errorData === 'string') {
+                errorMessage = errorData;
+            } else if (typeof errorData === 'object') {
+                errorMessage = JSON.stringify(errorData);
+            } else {
+                errorMessage = error.message;
+            }
+            
+            alert(`Error al actualizar usuario: ${errorMessage}`);
         }
     });
 
@@ -354,6 +370,7 @@ export default function ManageUsers() {
                     switch (sortField) {
                         case 'email': aVal = a.email; bVal = b.email; break;
                         case 'name': aVal = a.player?.name || ''; bVal = b.player?.name || ''; break;
+                        case 'phone': aVal = a.player?.phone || ''; bVal = b.player?.phone || ''; break;
                         case 'group': aVal = a.player?.currentGroup?.name || ''; bVal = b.player?.currentGroup?.name || ''; break;
                         case 'role': aVal = a.role; bVal = b.role; break;
                         case 'isActive': aVal = a.isActive ? 1 : 0; bVal = b.isActive ? 1 : 0; break;
@@ -536,6 +553,9 @@ export default function ManageUsers() {
                                         <th onClick={() => handleSort('name')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
                                             <div className="flex items-center gap-1">Jugador {sortField === 'name' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}</div>
                                         </th>
+                                        <th onClick={() => handleSort('phone')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+                                            <div className="flex items-center gap-1">Teléfono {sortField === 'phone' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}</div>
+                                        </th>
                                         <th onClick={() => handleSort('group')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
                                             <div className="flex items-center gap-1">Grupo {sortField === 'group' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}</div>
                                         </th>
@@ -547,14 +567,23 @@ export default function ManageUsers() {
                                 </thead>
                                 <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                                     {filteredUsers.map(user => (
-                                        <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-900">
+                                        <tr key={user.id} className={`hover:bg-slate-50 dark:hover:bg-slate-900 ${user.role === 'ADMIN' ? 'bg-amber-50 dark:bg-amber-950/20' : ''}`}>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm font-medium text-slate-900 dark:text-white">{user.email}</div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm font-medium text-slate-900 dark:text-white">{user.email}</span>
+                                                    {user.role === 'ADMIN' && (
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300">
+                                                            ⭐ Admin
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="text-sm text-slate-600 dark:text-slate-400">{user.player?.name || '-'}</div>
                                                 {user.player?.nickname && <div className="text-xs text-slate-400">{user.player.nickname}</div>}
-                                                {user.player?.phone && <div className="text-xs text-slate-400">{user.player.phone}</div>}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm text-slate-600 dark:text-slate-400">{user.player?.phone || '-'}</div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="text-sm text-slate-600 dark:text-slate-400">{user.player?.currentGroup?.name || 'Sin grupo'}</div>
@@ -660,9 +689,11 @@ export default function ManageUsers() {
                                             type="tel" 
                                             value={createForm.phone} 
                                             onChange={e => {
-                                                setCreateForm({ ...createForm, phone: e.target.value });
+                                                // Solo permitir números, espacios, +, (, ), -
+                                                const filtered = e.target.value.replace(/[^0-9+\s()-]/g, '');
+                                                setCreateForm({ ...createForm, phone: filtered });
                                                 if (validationErrors.createPhone) {
-                                                    setValidationErrors({ ...validationErrors, createPhone: validatePhone(e.target.value) });
+                                                    setValidationErrors({ ...validationErrors, createPhone: validatePhone(filtered) });
                                                 }
                                             }}
                                             onBlur={e => setValidationErrors({ ...validationErrors, createPhone: validatePhone(e.target.value) })}
@@ -675,13 +706,36 @@ export default function ManageUsers() {
                                         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Mínimo 9 dígitos</p>
                                     </div>
                                     <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Rol</label>
+                                        <select 
+                                            value={createForm.role} 
+                                            onChange={e => {
+                                                const newRole = e.target.value as 'PLAYER' | 'ADMIN';
+                                                setCreateForm({ ...createForm, role: newRole, groupId: newRole === 'ADMIN' ? '' : createForm.groupId });
+                                            }} 
+                                            className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                                        >
+                                            <option value="PLAYER">👤 Jugador</option>
+                                            <option value="ADMIN">⭐ Administrador</option>
+                                        </select>
+                                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Por defecto: Jugador</p>
+                                    </div>
+                                    <div>
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Grupo (temporada activa)</label>
-                                        <select value={createForm.groupId} onChange={e => setCreateForm({ ...createForm, groupId: e.target.value })} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white">
+                                        <select 
+                                            value={createForm.groupId} 
+                                            onChange={e => setCreateForm({ ...createForm, groupId: e.target.value })} 
+                                            disabled={createForm.role === 'ADMIN'}
+                                            className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
                                             <option value="">Sin grupo</option>
                                             {availableGroups.map((g: any) => (
                                                 <option key={g.id} value={g.id}>{g.name}</option>
                                             ))}
                                         </select>
+                                        {createForm.role === 'ADMIN' && (
+                                            <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">⚠️ Los administradores no pueden estar en grupos</p>
+                                        )}
                                     </div>
                                     <div className="flex space-x-3 mt-6">
                                         <button onClick={() => createUserMutation.mutate(createForm)} disabled={createUserMutation.isPending} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
@@ -749,9 +803,11 @@ export default function ManageUsers() {
                                             type="tel" 
                                             value={editForm.phone} 
                                             onChange={e => {
-                                                setEditForm({ ...editForm, phone: e.target.value });
+                                                // Solo permitir números, espacios, +, (, ), -
+                                                const filtered = e.target.value.replace(/[^0-9+\s()-]/g, '');
+                                                setEditForm({ ...editForm, phone: filtered });
                                                 if (validationErrors.editPhone) {
-                                                    setValidationErrors({ ...validationErrors, editPhone: validatePhone(e.target.value) });
+                                                    setValidationErrors({ ...validationErrors, editPhone: validatePhone(filtered) });
                                                 }
                                             }}
                                             onBlur={e => setValidationErrors({ ...validationErrors, editPhone: validatePhone(e.target.value) })}
@@ -763,13 +819,41 @@ export default function ManageUsers() {
                                         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Mínimo 9 dígitos</p>
                                     </div>
                                     <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Rol</label>
+                                        <select 
+                                            value={editForm.role} 
+                                            onChange={e => {
+                                                const newRole = e.target.value as 'PLAYER' | 'ADMIN';
+                                                setEditForm({ ...editForm, role: newRole, groupId: newRole === 'ADMIN' ? '' : editForm.groupId });
+                                            }} 
+                                            disabled={!!selectedUser?.player?.currentGroup?.id}
+                                            className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <option value="PLAYER">👤 Jugador</option>
+                                            <option value="ADMIN">⭐ Administrador</option>
+                                        </select>
+                                        {selectedUser?.player?.currentGroup?.id ? (
+                                            <p className="mt-1 text-xs text-red-600 dark:text-red-400">⚠️ No se puede cambiar el rol mientras esté en un grupo activo</p>
+                                        ) : (
+                                            <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">⚠️ Cambiar a Admin otorga permisos completos</p>
+                                        )}
+                                    </div>
+                                    <div>
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Grupo (temporada activa)</label>
-                                        <select value={editForm.groupId} onChange={e => setEditForm({ ...editForm, groupId: e.target.value })} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                        <select 
+                                            value={editForm.groupId} 
+                                            onChange={e => setEditForm({ ...editForm, groupId: e.target.value })} 
+                                            disabled={editForm.role === 'ADMIN'}
+                                            className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
                                             <option value="">Sin grupo</option>
                                             {availableGroups.map((g: any) => (
                                                 <option key={g.id} value={g.id}>{g.name}</option>
                                             ))}
                                         </select>
+                                        {editForm.role === 'ADMIN' && (
+                                            <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">⚠️ Los administradores no pueden estar en grupos</p>
+                                        )}
                                     </div>
                                     <div className="flex space-x-3 mt-6">
                                         <button onClick={handleUpdateUser} disabled={updateUserMutation.isPending} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">

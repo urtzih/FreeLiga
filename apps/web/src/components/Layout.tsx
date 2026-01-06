@@ -259,7 +259,7 @@ export default function Layout() {
                 <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div className="flex items-center justify-center md:justify-start gap-3">
                         <img src="/logo.jpg" alt="FreeSquash Liga" className="h-12 w-12 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
-                        <span className="text-lg font-semibold text-slate-800 dark:text-white">Free Squash</span>
+                        <span className="text-lg font-semibold text-slate-800 dark:text-white">Free Squash Gasteiz</span>
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-300 flex flex-row items-center justify-center md:justify-end gap-4">
                         <Link to="/report-bug" className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors whitespace-nowrap">
