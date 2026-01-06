@@ -45,18 +45,22 @@ export default function ManageUsers() {
     const [newPassword, setNewPassword] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
-
-    // Debounce search term
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearchTerm(searchTerm);
-            setPage(1); // Reset to page 1 on new search
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [searchTerm]);
     const [filterGroup, setFilterGroup] = useState('');
+    const [filterActive, setFilterActive] = useState<'all' | 'active' | 'inactive'>('all');
     const [sortField, setSortField] = useState<'email' | 'name' | 'group' | 'role' | 'isActive' | 'createdAt'>('createdAt');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+    // Handle search with Enter key or button
+    const handleSearch = () => {
+        setDebouncedSearchTerm(searchTerm);
+        setPage(1);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
+    };
     const [editForm, setEditForm] = useState({
         email: '',
         name: '',
@@ -94,13 +98,27 @@ export default function ManageUsers() {
         }
     });
 
-    // Client‑side sort (filter is now server-side)
+    // Client‑side sort and filtering
     const filteredUsers = (data?.users || [])
         .filter(user => {
-            // Only filter by group client-side for now as API doesn't support it yet
-            // Search is handled by API
-            const matchesGroup = !filterGroup || user.player?.currentGroup?.id === filterGroup;
-            return matchesGroup;
+            // Filter by group (client-side)
+            // "" means all groups, "sin-grupo" means users without group
+            let matchesGroup = true;
+            if (filterGroup === 'sin-grupo') {
+                matchesGroup = !user.player?.currentGroup?.id;
+            } else if (filterGroup) {
+                matchesGroup = user.player?.currentGroup?.id === filterGroup;
+            }
+
+            // Filter by active status
+            let matchesActive = true;
+            if (filterActive === 'active') {
+                matchesActive = user.isActive === true;
+            } else if (filterActive === 'inactive') {
+                matchesActive = user.isActive === false;
+            }
+
+            return matchesGroup && matchesActive;
         })
         .sort((a, b) => {
             let aVal: any, bVal: any;
@@ -370,18 +388,27 @@ export default function ManageUsers() {
                 <>
                     {/* Filters */}
                     <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 mb-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                     🔍 Buscar por nombre o email
                                 </label>
-                                <input
-                                    type="text"
-                                    placeholder="Buscar usuario por nombre o email..."
-                                    value={searchTerm}
-                                    onChange={e => setSearchTerm(e.target.value)}
-                                    className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                                />
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar usuario..."
+                                        value={searchTerm}
+                                        onChange={e => setSearchTerm(e.target.value)}
+                                        onKeyDown={handleKeyDown}
+                                        className="flex-1 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                                    />
+                                    <button
+                                        onClick={handleSearch}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium whitespace-nowrap"
+                                    >
+                                        Buscar
+                                    </button>
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -393,9 +420,24 @@ export default function ManageUsers() {
                                     className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                                 >
                                     <option value="">Todos los grupos</option>
+                                    <option value="sin-grupo">Sin grupo</option>
                                     {availableGroups.map((g: any) => (
                                         <option key={g.id} value={g.id}>{g.name}</option>
                                     ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    🔐 Filtrar por estado
+                                </label>
+                                <select
+                                    value={filterActive}
+                                    onChange={e => setFilterActive(e.target.value as 'all' | 'active' | 'inactive')}
+                                    className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="all">Todos los estados</option>
+                                    <option value="active">✓ Activos</option>
+                                    <option value="inactive">✗ Inactivos</option>
                                 </select>
                             </div>
                         </div>
