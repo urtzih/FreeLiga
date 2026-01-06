@@ -36,6 +36,27 @@ export default class ErrorBoundary extends Component<Props, State> {
             errorInfo,
         });
 
+        // Si el error es por autenticación o datos inválidos de usuario
+        // limpiar localStorage y redirigir al login
+        const errorMessage = error.message?.toLowerCase() || '';
+        const isAuthError = 
+            errorMessage.includes('unauthorized') || 
+            errorMessage.includes('401') ||
+            errorMessage.includes('token') ||
+            errorMessage.includes('authentication') ||
+            errorMessage.includes('user') && errorMessage.includes('not found');
+
+        if (isAuthError) {
+            console.warn('Error de autenticación detectado, limpiando sesión...');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            
+            // Redirigir al login después de un momento
+            setTimeout(() => {
+                window.location.href = '/login';
+            }, 1500);
+        }
+
         // Aquí puedes enviar el error a un servicio de logging (Sentry, etc.)
         if (process.env.NODE_ENV === 'production') {
             // TODO: Integrar con servicio de error tracking
@@ -49,6 +70,12 @@ export default class ErrorBoundary extends Component<Props, State> {
             error: null,
             errorInfo: null,
         });
+    };
+
+    handleClearSessionAndReload = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
     };
 
     render() {
@@ -115,8 +142,14 @@ export default class ErrorBoundary extends Component<Props, State> {
                             {/* Acciones */}
                             <div className="flex flex-col gap-3">
                                 <button
-                                    onClick={this.handleReset}
+                                    onClick={this.handleClearSessionAndReload}
                                     className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200"
+                                >
+                                    Limpiar sesión y volver al login
+                                </button>
+                                <button
+                                    onClick={this.handleReset}
+                                    className="w-full px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-medium rounded-lg transition-colors duration-200"
                                 >
                                     Intentar de nuevo
                                 </button>

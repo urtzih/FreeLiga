@@ -28,14 +28,27 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        // No redirigir si el error vine del login
-        console.log('Interceptor 401 check:', error.config.url);
-        if (error.response?.status === 401 && !error.config.url?.includes('/auth/login')) {
-            console.log('Redirecting to login due to 401');
+        const isAuthEndpoint = error.config?.url?.includes('/auth/login') || 
+                               error.config?.url?.includes('/auth/register');
+        
+        // Limpiar sesión y redirigir al login en estos casos:
+        // 1. Error 401 (no autorizado)
+        // 2. Usuario no encontrado (después de recrear la BD)
+        const shouldLogout = 
+            (error.response?.status === 401 && !isAuthEndpoint) ||
+            (error.response?.status === 404 && error.response?.data?.message?.includes('User not found'));
+
+        if (shouldLogout) {
+            console.warn('Sesión inválida detectada, limpiando y redirigiendo al login');
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            window.location.href = '/login';
+            
+            // Evitar redirección infinita si ya estamos en login
+            if (!window.location.pathname.includes('/login')) {
+                window.location.href = '/login';
+            }
         }
+        
         return Promise.reject(error);
     }
 );

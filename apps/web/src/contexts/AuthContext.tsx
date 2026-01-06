@@ -54,14 +54,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const savedUser = localStorage.getItem('user');
 
         if (token && savedUser) {
-            setUser(JSON.parse(savedUser));
+            try {
+                setUser(JSON.parse(savedUser));
+            } catch {
+                // Si hay error parseando el usuario guardado, limpiar todo
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                setUser(null);
+                setLoading(false);
+                return;
+            }
+            
             // Verify token is still valid
             api.get('/auth/me')
                 .then(({ data }) => {
                     setUser(data);
                     localStorage.setItem('user', JSON.stringify(data));
                 })
-                .catch(() => {
+                .catch((error) => {
+                    // Token inválido o usuario no existe - limpiar sesión
+                    console.warn('Sesión inválida, limpiando localStorage:', error.message);
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
                     setUser(null);
