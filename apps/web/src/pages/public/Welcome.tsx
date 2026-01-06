@@ -71,6 +71,7 @@ export default function Welcome() {
     'mikel.herran@ejemplo.com',
     'mikel.riano@ejemplo.com',
     'oier.quesada@ejemplo.com',
+    'oskar.bustinza@gmail.com',
     'patxi.minguez@ejemplo.com',
     'pedro.garcia@ejemplo.com',
     'rakel.abad@ejemplo.com',

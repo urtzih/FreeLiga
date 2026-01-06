@@ -49,6 +49,7 @@ model User {
 
   player Player?
   bugReports BugReport[]
+  bugComments BugComment[]
 
   @@map("users")
 }
@@ -270,8 +271,25 @@ model BugReport {
   attachments String?   @db.Text
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  comments    BugComment[]
 
   @@index([status])
   @@index([createdAt])
   @@map("bug_reports")
+}
+
+model BugComment {
+  id          String    @id @default(cuid())
+  bugId       String
+  bug         BugReport @relation(fields: [bugId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  comment     String    @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([bugId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("bug_comments")
 }
