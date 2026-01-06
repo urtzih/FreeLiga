@@ -161,7 +161,7 @@ export default function ManageBugs() {
                         )}
                         {hasComments && (
                           <span className="text-xs px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-medium">
-                            💬 {bug.comments.length}
+                            💬 {bug.comments?.length || 0}
                           </span>
                         )}
                       </div>
@@ -194,7 +194,7 @@ export default function ManageBugs() {
                           {/* Existing comments */}
                           {hasComments && (
                             <div className="space-y-2 mb-4">
-                              {bug.comments.map(comment => (
+                              {bug.comments?.map(comment => (
                                 <div key={comment.id} className="bg-slate-100 dark:bg-slate-800 rounded-lg p-3">
                                   <div className="flex items-center justify-between mb-1">
                                     <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
