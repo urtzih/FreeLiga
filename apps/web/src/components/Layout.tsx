@@ -254,11 +254,12 @@ export default function Layout() {
                 <Outlet />
             </main>
 
-            {/* Footer con logo Euskadi */}
+            {/* Footer con logo */}
             <footer className="bg-gray-100 dark:bg-gray-800 py-6 mt-8 border-t border-slate-200 dark:border-slate-700">
                 <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div className="flex items-center justify-center md:justify-start">
-                        <img src="/euskadiLogo.png" alt="Federación de Squash de Euskadi" className="h-12" />
+                    <div className="flex items-center justify-center md:justify-start gap-3">
+                        <img src="/logo.jpg" alt="FreeSquash Liga" className="h-12 w-12 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
+                        <span className="text-lg font-semibold text-slate-800 dark:text-white">Free Squash</span>
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-300 flex flex-row items-center justify-center md:justify-end gap-4">
                         <Link to="/report-bug" className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors whitespace-nowrap">
