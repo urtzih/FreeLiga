@@ -78,6 +78,58 @@ export default function ManageUsers() {
         role: 'PLAYER' as 'PLAYER' | 'ADMIN',
         groupId: ''
     });
+    const [validationErrors, setValidationErrors] = useState({
+        createName: '',
+        createPhone: '',
+        createEmail: '',
+        editName: '',
+        editPhone: '',
+        editEmail: '',
+    });
+
+    // Funciones de validación
+    const validateName = (name: string): string => {
+        if (!name.trim()) {
+            return 'El nombre es obligatorio';
+        }
+        const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]+$/;
+        if (!nameRegex.test(name)) {
+            return 'El nombre solo puede contener letras';
+        }
+        if (name.length < 2) {
+            return 'El nombre debe tener al menos 2 caracteres';
+        }
+        return '';
+    };
+
+    const validatePhone = (phone: string): string => {
+        if (!phone.trim()) {
+            return '';
+        }
+        const phoneRegex = /^[+]?[0-9\s()-]+$/;
+        if (!phoneRegex.test(phone)) {
+            return 'El teléfono solo puede contener números, espacios, paréntesis y guiones';
+        }
+        const digitsOnly = phone.replace(/[^0-9]/g, '');
+        if (digitsOnly.length < 9) {
+            return 'El teléfono debe tener al menos 9 dígitos';
+        }
+        if (digitsOnly.length > 15) {
+            return 'El teléfono no puede tener más de 15 dígitos';
+        }
+        return '';
+    };
+
+    const validateEmail = (email: string): string => {
+        if (!email.trim()) {
+            return 'El email es obligatorio';
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return 'Introduce un email válido';
+        }
+        return '';
+    };
 
     // Fetch admin stats for available groups (active season)
     const { data: adminStats } = useAdminQuery({
@@ -155,6 +207,15 @@ export default function ManageUsers() {
     // Mutations
     const createUserMutation = useMutation({
         mutationFn: async (newUser: typeof createForm) => {
+            // Validar antes de enviar
+            const nameError = validateName(newUser.name);
+            const phoneError = validatePhone(newUser.phone);
+            const emailError = validateEmail(newUser.email);
+
+            if (nameError || phoneError || emailError) {
+                throw new Error('Hay errores de validación en el formulario');
+            }
+
             const { data } = await api.post('/users', newUser);
             return data;
         },
@@ -162,6 +223,7 @@ export default function ManageUsers() {
             queryClient.invalidateQueries({ queryKey: ['users'] });
             setShowCreateModal(false);
             setCreateForm({ email: '', password: '', name: '', nickname: '', phone: '', role: 'PLAYER', groupId: '' });
+            setValidationErrors({ createName: '', createPhone: '', createEmail: '', editName: '', editPhone: '', editEmail: '' });
         },
         onError: (error: any) => {
             alert(`Error al crear usuario: ${error.response?.data?.error || error.message}`);
@@ -240,10 +302,24 @@ export default function ManageUsers() {
 
     const handleUpdateUser = () => {
         if (!selectedUser) return;
-        if (!editForm.email || !editForm.name) {
-            alert('El email y el nombre son obligatorios');
+        
+        // Validar campos
+        const nameError = validateName(editForm.name);
+        const phoneError = validatePhone(editForm.phone);
+        const emailError = validateEmail(editForm.email);
+        
+        setValidationErrors({
+            ...validationErrors,
+            editName: nameError,
+            editPhone: phoneError,
+            editEmail: emailError,
+        });
+        
+        if (nameError || phoneError || emailError) {
+            alert('Por favor, corrige los errores en el formulario');
             return;
         }
+        
         updateUserMutation.mutate({
             userId: selectedUser.id,
             userData: editForm,
@@ -533,23 +609,70 @@ export default function ManageUsers() {
                                 <div className="space-y-4">
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email *</label>
-                                        <input type="email" value={createForm.email} onChange={e => setCreateForm({ ...createForm, email: e.target.value })} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
+                                        <input 
+                                            type="email" 
+                                            value={createForm.email} 
+                                            onChange={e => {
+                                                setCreateForm({ ...createForm, email: e.target.value });
+                                                if (validationErrors.createEmail) {
+                                                    setValidationErrors({ ...validationErrors, createEmail: validateEmail(e.target.value) });
+                                                }
+                                            }}
+                                            onBlur={e => setValidationErrors({ ...validationErrors, createEmail: validateEmail(e.target.value) })}
+                                            className={`w-full px-4 py-2 border ${validationErrors.createEmail ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'} rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white`} 
+                                            placeholder="usuario@email.com"
+                                        />
+                                        {validationErrors.createEmail && (
+                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">❌ {validationErrors.createEmail}</p>
+                                        )}
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Contraseña *</label>
-                                        <input type="password" value={createForm.password} onChange={e => setCreateForm({ ...createForm, password: e.target.value })} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
+                                        <input type="password" value={createForm.password} onChange={e => setCreateForm({ ...createForm, password: e.target.value })} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white" minLength={6} placeholder="Mínimo 6 caracteres" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nombre Completo *</label>
-                                        <input type="text" value={createForm.name} onChange={e => setCreateForm({ ...createForm, name: e.target.value })} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
+                                        <input 
+                                            type="text" 
+                                            value={createForm.name} 
+                                            onChange={e => {
+                                                setCreateForm({ ...createForm, name: e.target.value });
+                                                if (validationErrors.createName) {
+                                                    setValidationErrors({ ...validationErrors, createName: validateName(e.target.value) });
+                                                }
+                                            }}
+                                            onBlur={e => setValidationErrors({ ...validationErrors, createName: validateName(e.target.value) })}
+                                            className={`w-full px-4 py-2 border ${validationErrors.createName ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'} rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white`} 
+                                            placeholder="Nombre y apellidos"
+                                        />
+                                        {validationErrors.createName && (
+                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">❌ {validationErrors.createName}</p>
+                                        )}
+                                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Solo letras y espacios</p>
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Apodo</label>
-                                        <input type="text" value={createForm.nickname} onChange={e => setCreateForm({ ...createForm, nickname: e.target.value })} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
+                                        <input type="text" value={createForm.nickname} onChange={e => setCreateForm({ ...createForm, nickname: e.target.value })} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white" placeholder="Opcional" />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Teléfono</label>
-                                        <input type="tel" value={createForm.phone} onChange={e => setCreateForm({ ...createForm, phone: e.target.value })} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
+                                        <input 
+                                            type="tel" 
+                                            value={createForm.phone} 
+                                            onChange={e => {
+                                                setCreateForm({ ...createForm, phone: e.target.value });
+                                                if (validationErrors.createPhone) {
+                                                    setValidationErrors({ ...validationErrors, createPhone: validatePhone(e.target.value) });
+                                                }
+                                            }}
+                                            onBlur={e => setValidationErrors({ ...validationErrors, createPhone: validatePhone(e.target.value) })}
+                                            className={`w-full px-4 py-2 border ${validationErrors.createPhone ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'} rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white`} 
+                                            placeholder="+34 600 123 456"
+                                        />
+                                        {validationErrors.createPhone && (
+                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">❌ {validationErrors.createPhone}</p>
+                                        )}
+                                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Mínimo 9 dígitos</p>
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Grupo (temporada activa)</label>
@@ -581,11 +704,40 @@ export default function ManageUsers() {
                                 <div className="space-y-4">
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email *</label>
-                                        <input type="email" value={editForm.email} onChange={e => setEditForm({ ...editForm, email: e.target.value })} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
+                                        <input 
+                                            type="email" 
+                                            value={editForm.email} 
+                                            onChange={e => {
+                                                setEditForm({ ...editForm, email: e.target.value });
+                                                if (validationErrors.editEmail) {
+                                                    setValidationErrors({ ...validationErrors, editEmail: validateEmail(e.target.value) });
+                                                }
+                                            }}
+                                            onBlur={e => setValidationErrors({ ...validationErrors, editEmail: validateEmail(e.target.value) })}
+                                            className={`w-full px-4 py-2 border ${validationErrors.editEmail ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'} rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white`} 
+                                        />
+                                        {validationErrors.editEmail && (
+                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">❌ {validationErrors.editEmail}</p>
+                                        )}
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nombre Completo *</label>
-                                        <input type="text" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
+                                        <input 
+                                            type="text" 
+                                            value={editForm.name} 
+                                            onChange={e => {
+                                                setEditForm({ ...editForm, name: e.target.value });
+                                                if (validationErrors.editName) {
+                                                    setValidationErrors({ ...validationErrors, editName: validateName(e.target.value) });
+                                                }
+                                            }}
+                                            onBlur={e => setValidationErrors({ ...validationErrors, editName: validateName(e.target.value) })}
+                                            className={`w-full px-4 py-2 border ${validationErrors.editName ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'} rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white`} 
+                                        />
+                                        {validationErrors.editName && (
+                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">❌ {validationErrors.editName}</p>
+                                        )}
+                                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Solo letras y espacios</p>
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Apodo</label>
@@ -593,7 +745,22 @@ export default function ManageUsers() {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Teléfono</label>
-                                        <input type="tel" value={editForm.phone} onChange={e => setEditForm({ ...editForm, phone: e.target.value })} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
+                                        <input 
+                                            type="tel" 
+                                            value={editForm.phone} 
+                                            onChange={e => {
+                                                setEditForm({ ...editForm, phone: e.target.value });
+                                                if (validationErrors.editPhone) {
+                                                    setValidationErrors({ ...validationErrors, editPhone: validatePhone(e.target.value) });
+                                                }
+                                            }}
+                                            onBlur={e => setValidationErrors({ ...validationErrors, editPhone: validatePhone(e.target.value) })}
+                                            className={`w-full px-4 py-2 border ${validationErrors.editPhone ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'} rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white`} 
+                                        />
+                                        {validationErrors.editPhone && (
+                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">❌ {validationErrors.editPhone}</p>
+                                        )}
+                                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Mínimo 9 dígitos</p>
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Grupo (temporada activa)</label>
