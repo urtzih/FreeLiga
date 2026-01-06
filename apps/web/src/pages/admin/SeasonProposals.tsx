@@ -285,7 +285,7 @@ export default function SeasonProposals() {
                                     className="text-xs px-3 py-1 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
                                     title={candidatePlayers.length ? 'Añadir jugador inactivo o sin grupo' : 'No hay jugadores disponibles'}
                                 >
-                                    + Añadir
+                                    + Player
                                 </button>
                             </div>
                             <div className="divide-y divide-slate-100 dark:divide-slate-700/50">

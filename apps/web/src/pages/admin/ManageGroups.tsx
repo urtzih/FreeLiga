@@ -280,16 +280,19 @@ export default function ManageGroups() {
                         )}
                         <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{group.name}</h3>
                         <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">{group.season?.name}</p>
-                        <p 
+                        <div 
                             onClick={() => group.whatsappUrl && handleEditWhatsapp(group)}
-                            className={`text-xs mb-4 ${
+                            className={`text-xs mb-4 flex items-center gap-1 ${
                                 group.whatsappUrl 
-                                    ? 'text-green-600 dark:text-green-400 cursor-pointer hover:underline font-medium' 
+                                    ? 'text-green-600 dark:text-green-400 cursor-pointer font-medium group/whatsapp' 
                                     : 'text-slate-500 dark:text-slate-500'
                             }`}
                         >
-                            {group.whatsappUrl ? '✅ WhatsApp configurado' : '⚠️ Sin link de WhatsApp'}
-                        </p>
+                            <span>{group.whatsappUrl ? '✅ WhatsApp configurado' : '⚠️ Sin link de WhatsApp'}</span>
+                            {group.whatsappUrl && (
+                                <span className="opacity-0 group-hover/whatsapp:opacity-100 transition-opacity">✎</span>
+                            )}
+                        </div>
                         <div className="space-y-2">
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-slate-600 dark:text-slate-400">{group._count?.groupPlayers || 0} jugadores</span>
@@ -320,7 +323,7 @@ export default function ManageGroups() {
                                     disabled={!candidatePlayers.length}
                                     title={candidatePlayers.length ? 'Añadir jugador inactivo o sin grupo' : 'No hay jugadores disponibles'}
                                 >
-                                    + Añadir
+                                    + Player
                                 </button>
                             </div>
                             {!group.whatsappUrl && (
