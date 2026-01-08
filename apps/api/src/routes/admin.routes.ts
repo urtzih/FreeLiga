@@ -58,6 +58,11 @@ export async function adminRoutes(fastify: FastifyInstance) {
             // Get recent matches across all groups
             const recentMatches = await prisma.match.findMany({
                 take: 10,
+                where: {
+                    matchStatus: 'PLAYED',
+                    gamesP1: { not: null },
+                    gamesP2: { not: null },
+                },
                 orderBy: {
                     date: 'desc',
                 },

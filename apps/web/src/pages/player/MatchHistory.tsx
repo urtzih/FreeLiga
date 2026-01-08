@@ -95,6 +95,11 @@ export default function MatchHistory() {
     // Filtered and paginated matches
     const filteredMatches = useMemo(() => {
         return matches.filter((match: any) => {
+            // Exclude scheduled matches without results
+            if (match.gamesP1 === null || match.gamesP2 === null) {
+                return false;
+            }
+
             const isPlayer1 = match.player1Id === user?.player?.id;
             const opponent = isPlayer1 ? match.player2 : match.player1;
 

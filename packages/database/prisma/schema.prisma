@@ -50,6 +50,7 @@ model User {
   player Player?
   bugReports BugReport[]
   bugComments BugComment[]
+  googleCalendarToken GoogleCalendarToken?
 
   @@map("users")
 }
@@ -141,10 +142,18 @@ model Match {
   player1Id   String
   player2Id   String
   date        DateTime    @default(now())
-  gamesP1     Int         // 0-3
-  gamesP2     Int         // 0-3
+  gamesP1     Int?        // 0-3 (nullable for scheduled matches)
+  gamesP2     Int?        // 0-3 (nullable for scheduled matches)
   winnerId    String?
   matchStatus MatchStatus @default(PLAYED)
+  
+  // Calendar integration fields
+  scheduledDate              DateTime?
+  location                   String?
+  googleEventId              String?   @unique
+  isScheduled                Boolean   @default(false)
+  googleCalendarSyncStatus   String?
+  
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -162,6 +171,8 @@ model Match {
   @@index([groupId, date])
   @@index([player1Id, date])
   @@index([player2Id, date])
+  @@index([isScheduled])
+  @@index([scheduledDate])
   @@map("matches")
 }
 
@@ -292,4 +303,19 @@ model BugComment {
   @@index([userId])
   @@index([createdAt])
   @@map("bug_comments")
+}
+
+model GoogleCalendarToken {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  user         User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken  String    @db.Text
+  refreshToken String?   @db.Text
+  calendarId   String    @default("primary")
+  expiresAt    DateTime
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("google_calendar_tokens")
 }

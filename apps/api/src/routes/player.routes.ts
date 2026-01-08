@@ -83,6 +83,8 @@ export async function playerRoutes(fastify: FastifyInstance) {
                         { player2Id: id },
                     ],
                     matchStatus: 'PLAYED', // Only count played matches
+                    gamesP1: { not: null }, // Only matches with results
+                    gamesP2: { not: null }, // Only matches with results
                 },
                 include: {
                     player1: true,
@@ -283,7 +285,9 @@ export async function playerRoutes(fastify: FastifyInstance) {
             const matches = await prisma.match.findMany({
                 where: {
                     OR: [ { player1Id: id }, { player2Id: id } ],
-                    matchStatus: 'PLAYED'
+                    matchStatus: 'PLAYED',
+                    gamesP1: { not: null },
+                    gamesP2: { not: null }
                 },
                 include: { player1: true, player2: true },
                 orderBy: { date: 'asc' }

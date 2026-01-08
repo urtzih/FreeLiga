@@ -4,18 +4,26 @@ import { z } from 'zod';
 import { calculateGroupRankings } from '../services/ranking.service';
 import { getPlayerCurrentGroupId } from '../utils/playerHelpers';
 import { logger, logBusinessEvent, logError } from '../utils/logger';
+import { GoogleCalendarService } from '../services/googleCalendar.service';
+import { MatchSyncService } from '../services/matchSync.service';
 
 const createMatchSchema = z.object({
     groupId: z.string(),
     player1Id: z.string(),
     player2Id: z.string(),
+    // Campos de programación
+    scheduledDate: z.string().datetime().optional(),
+    location: z.string().optional(),
+    // Campos de resultado
     date: z.string().datetime().optional(),
-    gamesP1: z.number().int().min(0).max(3),
-    gamesP2: z.number().int().min(0).max(3),
+    gamesP1: z.number().int().min(0).max(3).optional(),
+    gamesP2: z.number().int().min(0).max(3).optional(),
     matchStatus: z.enum(['PLAYED', 'INJURY', 'CANCELLED']).default('PLAYED'),
 });
 
 const updateMatchSchema = z.object({
+    scheduledDate: z.string().datetime().optional(),
+    location: z.string().optional(),
     date: z.string().datetime().optional(),
     gamesP1: z.number().int().min(0).max(3).optional(),
     gamesP2: z.number().int().min(0).max(3).optional(),
@@ -28,9 +36,12 @@ export async function matchRoutes(fastify: FastifyInstance) {
         onRequest: [fastify.authenticate],
     }, async (request, reply) => {
         try {
-            const { groupId, playerId } = request.query as {
+            const { groupId, playerId, scheduled, matchStatus, withResults } = request.query as {
                 groupId?: string;
                 playerId?: string;
+                scheduled?: string;
+                matchStatus?: string;
+                withResults?: string;
             };
 
             const where: any = {};
@@ -46,6 +57,24 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 ];
             }
 
+            // Filtrar por partidos programados (sin resultado)
+            if (scheduled === 'true') {
+                where.isScheduled = true;
+                where.gamesP1 = null; // Sin resultado aún
+                where.gamesP2 = null;
+            }
+
+            // Filtrar solo los que tienen resultado
+            if (withResults === 'true') {
+                where.gamesP1 = { not: null };
+                where.gamesP2 = { not: null };
+            }
+
+            // Filtrar por estado del partido
+            if (matchStatus) {
+                where.matchStatus = matchStatus;
+            }
+
             const matches = await prisma.match.findMany({
                 where,
                 include: {
@@ -58,10 +87,24 @@ export async function matchRoutes(fastify: FastifyInstance) {
                         },
                     },
                 },
-                orderBy: {
-                    date: 'desc',
-                },
+                orderBy: [
+                    { scheduledDate: 'asc' },
+                    { date: 'desc' },
+                ],
             });
+
+            console.log('📊 GET /matches query:', { groupId, playerId, scheduled, matchStatus });
+            console.log('📊 Matches found:', matches.length);
+            console.log('📊 First 3 matches:', matches.slice(0, 3).map(m => ({
+                id: m.id,
+                player1: m.player1.name,
+                player2: m.player2.name,
+                scheduledDate: m.scheduledDate,
+                isScheduled: m.isScheduled,
+                gamesP1: m.gamesP1,
+                gamesP2: m.gamesP2,
+                matchStatus: m.matchStatus
+            })));
 
             return matches;
         } catch (error) {
@@ -104,6 +147,7 @@ export async function matchRoutes(fastify: FastifyInstance) {
     }, async (request, reply) => {
         try {
             const body = createMatchSchema.parse(request.body);
+            const decoded = request.user as any;
 
             // Validate that players are different
             if (body.player1Id === body.player2Id) {
@@ -124,14 +168,21 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 return reply.status(400).send({ error: 'Both players must be in the group' });
             }
 
-            // Check if match already exists between these two players in this group
+            // Check if match already exists between these two players in this group (ignore scheduled without result so they can be reused)
             const existingMatch = await prisma.match.findFirst({
                 where: {
                     groupId: body.groupId,
                     OR: [
                         { player1Id: body.player1Id, player2Id: body.player2Id },
                         { player1Id: body.player2Id, player2Id: body.player1Id }
-                    ]
+                    ],
+                    NOT: {
+                        AND: [
+                            { isScheduled: true },
+                            { gamesP1: null },
+                            { gamesP2: null }
+                        ]
+                    }
                 }
             });
 
@@ -139,11 +190,10 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 return reply.status(400).send({ error: 'Ya existe un partido registrado entre estos jugadores en este grupo' });
             }
 
-            // Determine winner (only for PLAYED matches)
+            // Determine winner (only for PLAYED matches with scores)
             let winnerId: string | null = null;
 
-            if (body.matchStatus === 'PLAYED') {
-                // Enforce best-of-5: one player must reach 3, other 0-2
+            if (body.matchStatus === 'PLAYED' && body.gamesP1 !== undefined && body.gamesP2 !== undefined) {
                 const validScore = (body.gamesP1 === 3 && body.gamesP2 >= 0 && body.gamesP2 <= 2) || (body.gamesP2 === 3 && body.gamesP1 >= 0 && body.gamesP1 <= 2);
                 if (!validScore) {
                     return reply.status(400).send({ error: 'Resultado inválido: formato permitido 3-0, 3-1, 3-2 (o inverso). Un jugador debe llegar a 3.' });
@@ -153,50 +203,119 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 } else if (body.gamesP2 > body.gamesP1) {
                     winnerId = body.player2Id;
                 }
-                // If equal, it's a draw (winnerId remains null)
             }
 
-            // Create match
-            const match = await prisma.match.create({
-                data: {
-                    groupId: body.groupId,
-                    player1Id: body.player1Id,
-                    player2Id: body.player2Id,
-                    date: body.date ? new Date(body.date) : new Date(),
-                    gamesP1: body.gamesP1,
-                    gamesP2: body.gamesP2,
-                    winnerId,
-                    matchStatus: body.matchStatus,
+            // If result is being recorded, try to reuse an existing scheduled match (same players in the group without result)
+            let reusedScheduledMatch = null;
+            if (body.matchStatus === 'PLAYED' && body.gamesP1 !== undefined && body.gamesP2 !== undefined) {
+                reusedScheduledMatch = await prisma.match.findFirst({
+                    where: {
+                        groupId: body.groupId,
+                        isScheduled: true,
+                        gamesP1: null,
+                        gamesP2: null,
+                        OR: [
+                            { player1Id: body.player1Id, player2Id: body.player2Id },
+                            { player1Id: body.player2Id, player2Id: body.player1Id },
+                        ],
+                    },
+                    orderBy: [{ scheduledDate: 'asc' }],
+                });
+            }
+
+            // Determinar datos según si es programado o jugado
+            const isScheduled = !!(body.scheduledDate && body.location);
+            const matchData: any = {
+                group: {
+                    connect: { id: body.groupId }
                 },
-                include: {
-                    player1: true,
-                    player2: true,
-                    winner: true,
+                player1: {
+                    connect: { id: body.player1Id }
                 },
-            });
+                player2: {
+                    connect: { id: body.player2Id }
+                },
+                date: body.date ? new Date(body.date) : new Date(),
+                isScheduled,
+            };
+
+            // Solo agregar campos de programación si es un partido programado
+            if (isScheduled) {
+                matchData.scheduledDate = new Date(body.scheduledDate!);
+                matchData.location = body.location;
+                matchData.matchStatus = 'PLAYED'; // Default status
+                matchData.googleCalendarSyncStatus = 'NOT_SYNCED';
+            }
+
+            // Solo agregar campos de resultado si es un partido jugado
+            if (body.matchStatus === 'PLAYED' && body.gamesP1 !== undefined && body.gamesP2 !== undefined) {
+                matchData.gamesP1 = body.gamesP1;
+                matchData.gamesP2 = body.gamesP2;
+                matchData.matchStatus = body.matchStatus;
+                if (winnerId) {
+                    matchData.winner = {
+                        connect: { id: winnerId }
+                    };
+                }
+            }
+
+            // If there is a scheduled match, update it with the result instead of creating a new one
+            const match = reusedScheduledMatch
+                ? await prisma.match.update({
+                    where: { id: reusedScheduledMatch.id },
+                    data: {
+                        gamesP1: body.gamesP1,
+                        gamesP2: body.gamesP2,
+                        winner: winnerId ? { connect: { id: winnerId } } : undefined,
+                        matchStatus: body.matchStatus,
+                        date: body.date ? new Date(body.date) : reusedScheduledMatch.date,
+                        isScheduled: false,
+                    },
+                    include: {
+                        player1: true,
+                        player2: true,
+                        winner: true,
+                    },
+                })
+                : await prisma.match.create({
+                    data: matchData,
+                    include: {
+                        player1: true,
+                        player2: true,
+                        winner: true,
+                    },
+                });
 
             logger.info({ 
                 matchId: match.id, 
                 groupId: body.groupId,
                 player1Id: body.player1Id,
                 player2Id: body.player2Id,
-                matchStatus: body.matchStatus,
+                isScheduled: match.isScheduled,
             }, 'Match created successfully');
 
             logBusinessEvent('match_created', {
                 matchId: match.id,
                 groupId: body.groupId,
-                player1: match.player1.name,
-                player2: match.player2.name,
-                score: `${body.gamesP1}-${body.gamesP2}`,
-                winner: match.winner?.name,
-                matchStatus: body.matchStatus,
+                isScheduled: match.isScheduled,
+                scheduledDate: body.scheduledDate,
             });
 
-            // Recalculate rankings if match was PLAYED
-            if (body.matchStatus === 'PLAYED') {
+            // Sincronizar con Google Calendar si está programado
+            if (match.isScheduled) {
+                try {
+                    const integration = await GoogleCalendarService.getIntegration(decoded.id);
+                    if (integration) {
+                        await MatchSyncService.syncMatchToGoogleCalendar(match.id, decoded.id);
+                    }
+                } catch (error) {
+                    logger.error({ error, matchId: match.id }, 'Failed to sync with Google Calendar');
+                }
+            }
+
+            // Recalculate rankings if match was PLAYED with scores
+            if (body.matchStatus === 'PLAYED' && body.gamesP1 !== undefined && body.gamesP2 !== undefined) {
                 await calculateGroupRankings(body.groupId);
-                logger.info({ groupId: body.groupId }, 'Rankings recalculated after match creation');
             }
 
             return match;
@@ -217,19 +336,22 @@ export async function matchRoutes(fastify: FastifyInstance) {
         
         try {
             const body = updateMatchSchema.parse(request.body);
+            const decoded = request.user as any;
 
             const existingMatch = await prisma.match.findUnique({
                 where: { id },
+                include: {
+                    player1: true,
+                    player2: true,
+                },
             });
 
             if (!existingMatch) {
                 return reply.status(404).send({ error: 'Match not found' });
             }
 
-            // Check permissions: Admin or one of the players involved
-            const decoded = request.user as any;
+            // Check permissions: Solo los jugadores del partido pueden editar o admin
             if (decoded.role !== 'ADMIN') {
-                // For non-admin users, they must be one of the players in the match
                 if (!decoded.playerId || (decoded.playerId !== existingMatch.player1Id && decoded.playerId !== existingMatch.player2Id)) {
                     return reply.status(403).send({ error: 'No tienes permiso para editar este partido' });
                 }
@@ -240,8 +362,10 @@ export async function matchRoutes(fastify: FastifyInstance) {
             const gamesP1 = body.gamesP1 ?? existingMatch.gamesP1;
             const gamesP2 = body.gamesP2 ?? existingMatch.gamesP2;
             const matchStatus = body.matchStatus ?? existingMatch.matchStatus;
+            const scheduledDateChanged = body.scheduledDate && new Date(body.scheduledDate).getTime() !== (existingMatch.scheduledDate?.getTime() ?? 0);
+            const locationChanged = body.location !== undefined && body.location !== existingMatch.location;
 
-            if (matchStatus === 'PLAYED') {
+            if (matchStatus === 'PLAYED' && gamesP1 !== null && gamesP2 !== null) {
                 const validScore = (gamesP1 === 3 && gamesP2 >= 0 && gamesP2 <= 2) || (gamesP2 === 3 && gamesP1 >= 0 && gamesP1 <= 2);
                 if (!validScore) {
                     return reply.status(400).send({ error: 'Resultado inválido: formato permitido 3-0, 3-1, 3-2 (o inverso). Un jugador debe llegar a 3.' });
@@ -258,14 +382,20 @@ export async function matchRoutes(fastify: FastifyInstance) {
             }
 
             logger.info({ matchId: id, userId: decoded.id }, 'Updating match');
+            
+            const isScheduled = !!(body.scheduledDate || existingMatch.scheduledDate) && !!(body.location || existingMatch.location);
+            
             const match = await prisma.match.update({
                 where: { id },
                 data: {
-                    gamesP1,
-                    gamesP2,
+                    gamesP1: body.gamesP1 !== undefined ? body.gamesP1 : existingMatch.gamesP1,
+                    gamesP2: body.gamesP2 !== undefined ? body.gamesP2 : existingMatch.gamesP2,
                     winnerId,
                     matchStatus,
                     date: body.date ? new Date(body.date) : existingMatch.date,
+                    scheduledDate: body.scheduledDate ? new Date(body.scheduledDate) : existingMatch.scheduledDate,
+                    location: body.location !== undefined ? body.location : existingMatch.location,
+                    isScheduled,
                 },
                 include: {
                     player1: true,
@@ -273,20 +403,26 @@ export async function matchRoutes(fastify: FastifyInstance) {
                     winner: true,
                 },
             });
-            logger.info({ matchId: id }, 'Match updated in DB');
 
-            // Recalculate rankings
-            logger.info({ groupId: existingMatch.groupId }, 'Recalculating rankings for group');
-            await calculateGroupRankings(existingMatch.groupId);
-            logger.info({ groupId: existingMatch.groupId }, 'Rankings recalculated');
+            // Sincronizar cambios con Google Calendar
+            if ((scheduledDateChanged || locationChanged) && match.googleEventId) {
+                try {
+                    await MatchSyncService.updateMatchInGoogleCalendar(id, decoded.id);
+                } catch (error) {
+                    logger.error({ error, matchId: id }, 'Failed to sync update to Google Calendar');
+                }
+            }
+
+            // Recalculate rankings if score changed
+            if ((body.gamesP1 !== undefined || body.gamesP2 !== undefined) && matchStatus === 'PLAYED') {
+                await calculateGroupRankings(existingMatch.groupId);
+            }
 
             logBusinessEvent('match_updated', {
                 matchId: id,
                 userId: decoded.id,
-                groupId: existingMatch.groupId,
-                gamesP1,
-                gamesP2,
-                matchStatus,
+                scheduledDateChanged,
+                locationChanged,
             });
 
             return match;
@@ -320,9 +456,6 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 return reply.status(404).send({ error: 'Match not found' });
             }
 
-            // Allow deletion if:
-            // 1. User is admin, OR
-            // 2. User is one of the players AND the match is in their current/active group
             const isAdmin = decoded.role === 'ADMIN';
             const isPlayerInMatch = match.player1Id === decoded.playerId || match.player2Id === decoded.playerId;
 
@@ -330,16 +463,23 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 return reply.status(403).send({ error: 'No tienes permiso para eliminar este partido' });
             }
 
-            // If not admin, verify it's from their active group
             if (!isAdmin) {
                 const currentGroupId = await getPlayerCurrentGroupId(decoded.playerId);
-
                 if (!currentGroupId || match.groupId !== currentGroupId) {
                     return reply.status(403).send({ error: 'Solo puedes eliminar partidos de tu grupo activo' });
                 }
             }
 
             const groupId = match.groupId;
+
+            // Eliminar de Google Calendar si existe
+            if (match.googleEventId) {
+                try {
+                    await MatchSyncService.deleteMatchFromGoogleCalendar(id, decoded.id);
+                } catch (error) {
+                    logger.error({ error, matchId: id }, 'Failed to delete from Google Calendar');
+                }
+            }
 
             await prisma.match.delete({
                 where: { id },
@@ -349,12 +489,9 @@ export async function matchRoutes(fastify: FastifyInstance) {
             logBusinessEvent('match_deleted', {
                 matchId: id,
                 groupId,
-                player1: match.player1.name,
-                player2: match.player2.name,
-                deletedBy: decoded.id,
+                hasGoogleEvent: !!match.googleEventId,
             });
 
-            // Recalculate rankings
             await calculateGroupRankings(groupId);
 
             return { success: true };

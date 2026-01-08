@@ -28,6 +28,8 @@ const Help = lazy(() => import('./pages/player/Help'));
 const AdminHelp = lazy(() => import('./pages/admin/AdminHelp'));
 const GroupsSummary = lazy(() => import('./pages/player/GroupsSummary'));
 const Welcome = lazy(() => import('./pages/public/Welcome'));
+const Calendar = lazy(() => import('./pages/Calendar'));
+const ScheduledMatches = lazy(() => import('./pages/ScheduledMatches'));
 import Layout from './components/Layout';
 
 function ProtectedRoute({
@@ -132,6 +134,22 @@ function App() {
                                     element={
                                         <ProtectedRoute>
                                             <MatchHistory />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/calendar"
+                                    element={
+                                        <ProtectedRoute>
+                                            <Calendar />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/scheduled-matches"
+                                    element={
+                                        <ProtectedRoute>
+                                            <ScheduledMatches />
                                         </ProtectedRoute>
                                     }
                                 />

@@ -3,6 +3,7 @@ import { prisma } from '@freesquash/database';
 import bcrypt from 'bcrypt';
 import { z } from 'zod';
 import { getPlayerCurrentGroup } from '../utils/playerHelpers';
+import { GoogleCalendarService } from '../services/googleCalendar.service';
 
 const registerSchema = z.object({
     email: z.string().email(),
@@ -189,6 +190,106 @@ export async function authRoutes(fastify: FastifyInstance) {
         } catch (error) {
             fastify.log.error(error);
             return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // Google Calendar OAuth - Get auth URL
+    fastify.get('/google-calendar/auth-url', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            const authUrl = GoogleCalendarService.getAuthUrl(decoded.id);
+            return { authUrl };
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Failed to generate auth URL' });
+        }
+    });
+
+    // Google Calendar OAuth - Callback (GET - from Google)
+    fastify.get('/google-calendar/callback', async (request, reply) => {
+        try {
+            const { code, state } = request.query as { code: string; state: string };
+            
+            if (!code || !state) {
+                return reply.status(400).send({ error: 'Authorization code or state is missing' });
+            }
+
+            // Extract userId from state (it should be encoded in the state parameter)
+            const userId = state;
+
+            const tokens = await GoogleCalendarService.exchangeCodeForTokens(code);
+            await GoogleCalendarService.saveIntegration(userId, tokens);
+
+            // Redirect back to the calendar page with success message
+            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4175';
+            return reply.redirect(`${frontendUrl}/calendar?google_connected=true`);
+        } catch (error) {
+            fastify.log.error(error);
+            const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4175';
+            return reply.redirect(`${frontendUrl}/calendar?google_error=true`);
+        }
+    });
+
+    // Google Calendar OAuth - Callback (POST - legacy/alternative)
+    fastify.post('/google-calendar/callback', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            const { code } = request.body as { code: string };
+            
+            if (!code) {
+                return reply.status(400).send({ error: 'Authorization code is required' });
+            }
+
+            const tokens = await GoogleCalendarService.exchangeCodeForTokens(code);
+            await GoogleCalendarService.saveIntegration(decoded.id, tokens);
+
+            return { success: true, message: 'Google Calendar connected successfully' };
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Failed to connect Google Calendar' });
+        }
+    });
+
+    // Google Calendar - Get status
+    fastify.get('/google-calendar/status', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            const integration = await GoogleCalendarService.getIntegration(decoded.id);
+            
+            return {
+                connected: !!integration,
+                integration: integration ? {
+                    calendarId: integration.calendarId,
+                    connectedAt: integration.createdAt,
+                } : null,
+            };
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Failed to get Google Calendar status' });
+        }
+    });
+
+    // Google Calendar - Disconnect
+    fastify.post('/google-calendar/disconnect', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            
+            await prisma.googleCalendarToken.delete({
+                where: { userId: decoded.id },
+            }).catch(() => null);
+
+            return { success: true, message: 'Google Calendar disconnected' };
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Failed to disconnect Google Calendar' });
         }
     });
 }
