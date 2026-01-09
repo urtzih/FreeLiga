@@ -594,13 +594,6 @@ function ContactButtons({ phone, email }: { phone?: string; email?: string }) {
         return <span className="text-sm text-slate-400">Sin información de contacto</span>;
     }
 
-    const handleCopy = () => {
-        if (phone) {
-            navigator.clipboard.writeText(phone);
-            alert('¡Teléfono copiado!');
-        }
-    };
-
     return (
         <div className="flex items-center space-x-2 flex-wrap">
             {phone && (
