@@ -122,7 +122,13 @@ export async function authRoutes(fastify: FastifyInstance) {
             // Obtener grupo actual basado en temporada activa
             let currentGroup = null;
             if (user.player) {
-                currentGroup = await getPlayerCurrentGroup(user.player.id);
+                try {
+                    currentGroup = await getPlayerCurrentGroup(user.player.id);
+                } catch (err) {
+                    console.error('Error fetching current group:', err);
+                    // No fallar el login si hay error al obtener grupo
+                    currentGroup = null;
+                }
             }
 
             // Generate JWT
