@@ -15,8 +15,8 @@ interface Match {
   date?: string;
   location: string;
   googleEventId?: string;
-  gamesP1?: number;
-  gamesP2?: number;
+  gamesP1?: number | null;
+  gamesP2?: number | null;
   matchStatus?: string;
   isScheduled?: boolean;
 }
@@ -242,73 +242,78 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Calendario de Partidos</h1>
-        <p className="text-gray-600">{currentGroup.name}</p>
+      <div className="bg-white dark:bg-slate-800 shadow-md border-b border-slate-200 dark:border-slate-700 sticky top-16 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-1">Calendario</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400">{currentGroup.name}</p>
+        </div>
       </div>
 
-      {/* Google Calendar Integration */}
-      <div className="bg-white rounded-lg shadow-md p-4 mb-6 flex items-center justify-between">
-        <div>
-          <h3 className="font-semibold text-gray-800">Google Calendar</h3>
-          <p className="text-sm text-gray-600">
-            {isGoogleConnected
-              ? '✓ Conectado - Los partidos se sincronizan automáticamente'
-              : 'Conecta con Google Calendar para sincronizar partidos'}
-          </p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        {/* Upcoming Matches List */}
+        <div id="upcoming" className="bg-white dark:bg-slate-800 rounded-lg shadow-md border border-slate-200 dark:border-slate-700 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Próximos Partidos</h2>
+          </div>
+          <div className="divide-y divide-slate-200 dark:divide-slate-700">
+            {upcomingMatches.length > 0 ? (
+              upcomingMatches.map(match => (
+                <div
+                  key={match.id}
+                  onClick={() => {
+                    setSelectedMatch(match);
+                    setShowDetail(true);
+                  }}
+                  className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-slate-900 dark:text-white truncate">
+                        vs {getOpponentName(match)}
+                      </p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        📍 {match.location}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {new Date(match.scheduledDate).toLocaleString('es-ES', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                    {match.googleEventId && (
+                      <div className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded whitespace-nowrap">
+                        📅 Google
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="text-slate-500 dark:text-slate-400 text-center py-8">No hay próximos partidos programados</p>
+            )}
+          </div>
         </div>
+
+        {/* Action Button - Programar */}
         <button
-          onClick={isGoogleConnected ? handleDisconnectGoogle : handleConnectGoogle}
-          disabled={isConnectingGoogle}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            isGoogleConnected
-              ? 'bg-gray-400 text-white hover:bg-gray-500'
-              : 'bg-blue-600 text-white hover:bg-blue-700'
-          } disabled:bg-gray-300`}
+          onClick={() => setShowForm(!showForm)}
+          className={`w-full py-3 px-4 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${
+            showForm
+              ? 'bg-red-600 text-white hover:bg-red-700'
+              : 'bg-green-600 text-white hover:bg-green-700'
+          }`}
         >
-          {isConnectingGoogle ? 'Conectando...' : isGoogleConnected ? 'Desconectar' : 'Conectar'}
+          {showForm ? '✕ Cancelar' : '+ Programar'}
         </button>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Calendar */}
-        <div className="lg:col-span-2">
-          <CalendarView
-            matches={uniqueMatches}
-            currentUserId={user?.player?.id}
-            onMatchClick={(match) => {
-              setSelectedMatch(match);
-              setShowDetail(true);
-            }}
-          />
-        </div>
-
-        {/* Sidebar - Schedule Form or Match Detail */}
-        <div className="space-y-4">
-          {showDetail && selectedMatch ? (
-            <MatchDetail
-              match={selectedMatch}
-              isPlayer={isPlayerInMatch(selectedMatch)}
-              currentUserId={user?.player?.id}
-              onCancel={() => setShowDetail(false)}
-              onEdit={() => {
-                // TODO: Implementar edición
-                setShowDetail(false);
-              }}
-              onDelete={async () => {
-                try {
-                  await api.delete(`/matches/${selectedMatch.id}`);
-                  setMatches(prev => prev.filter(m => m.id !== selectedMatch.id));
-                  setShowDetail(false);
-                  toast.success('Partido cancelado');
-                } catch (error: any) {
-                  toast.error(error.message || 'Error al cancelar el partido');
-                }
-              }}
-            />
-          ) : showForm ? (
+        {/* Schedule Form Modal */}
+        {showForm && (
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md p-4 sm:p-6 border border-slate-200 dark:border-slate-700">
             <ScheduleMatchForm
               groupId={currentGroup.id}
               players={players}
@@ -317,91 +322,120 @@ export default function CalendarPage() {
               onSubmit={handleScheduleMatch}
               onCancel={() => setShowForm(false)}
             />
-          ) : (
-            <button
-              onClick={() => setShowForm(true)}
-              className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold text-lg"
-            >
-              + Programar Partido
-            </button>
-          )}
-        </div>
-      </div>
+          </div>
+        )}
 
-      {/* Upcoming Matches List */}
-      <div className="mt-8 bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Próximos Partidos</h2>
-        <div className="space-y-3">
-          {upcomingMatches.map(match => (
-            <div
-              key={match.id}
-              onClick={() => {
+        {/* Calendar - Full Width */}
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md p-4 border border-slate-200 dark:border-slate-700">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Calendario Mensual</h2>
+          <div className="overflow-x-auto">
+            <CalendarView
+              matches={uniqueMatches}
+              currentUserId={user?.player?.id}
+              onMatchClick={(match) => {
                 setSelectedMatch(match);
                 setShowDetail(true);
               }}
-              className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+            />
+          </div>
+        </div>
+
+        {/* Match Detail Modal */}
+        {showDetail && selectedMatch && (
+          <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowDetail(false)}
+          >
+            <div 
+              className="max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex-1">
-                <p className="font-semibold text-gray-800">
-                  {getOpponentName(match)}
-                </p>
-                <p className="text-sm text-gray-600">
-                  📍 {match.location}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {new Date(match.scheduledDate).toLocaleString('es-ES')}
-                </p>
-              </div>
-              {match.googleEventId && (
-                <div className="ml-4 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                  📅 Google
-                </div>
-              )}
+              <MatchDetail
+                match={selectedMatch}
+                isPlayer={isPlayerInMatch(selectedMatch)}
+                currentUserId={user?.player?.id}
+                onCancel={() => setShowDetail(false)}
+                onEdit={() => {
+                  setShowDetail(false);
+                }}
+                onDelete={async () => {
+                  try {
+                    await api.delete(`/matches/${selectedMatch.id}`);
+                    setMatches(prev => prev.filter(m => m.id !== selectedMatch.id));
+                    setShowDetail(false);
+                    toast.success('Partido cancelado');
+                  } catch (error: any) {
+                    toast.error(error.message || 'Error al cancelar el partido');
+                  }
+                }}
+              />
             </div>
-          ))}
-        </div>
-        {upcomingMatches.length === 0 && (
-          <p className="text-gray-500 text-center py-4">No hay próximos partidos programados</p>
+          </div>
         )}
-      </div>
 
-      {/* Recent Matches */}
-      {playedMatches.length > 0 && (
-        <div className="mt-8 bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
-            <h2 className="text-xl font-bold text-slate-900">Jugados</h2>
-          </div>
-          <div className="divide-y divide-slate-200">
-            {playedMatches.slice(0, 5).map(match => {
-              const currentId = user?.player?.id;
-              const userIsP1 = match.player1.id === currentId;
-              const userIsP2 = match.player2.id === currentId;
-              const userGames = userIsP1 ? match.gamesP1 : userIsP2 ? match.gamesP2 : match.gamesP1;
-              const oppGames = userIsP1 ? match.gamesP2 : userIsP2 ? match.gamesP1 : match.gamesP2;
-              const icon = userIsP1 || userIsP2
-                ? (userGames ?? 0) > (oppGames ?? 0) ? '✅' : (userGames ?? 0) === (oppGames ?? 0) ? '➖' : '❌'
-                : '🏅';
-              const resultText = `${match.gamesP1 ?? '-'}-${match.gamesP2 ?? '-'}`;
-              const displayDate = new Date(match.date || match.scheduledDate).toLocaleDateString('es-ES');
+        {/* Played Matches */}
+        {playedMatches.length > 0 && (
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Partidos Jugados</h2>
+            </div>
+            <div className="divide-y divide-slate-200 dark:divide-slate-700">
+              {playedMatches.slice(0, 5).map(match => {
+                const currentId = user?.player?.id;
+                const userIsP1 = match.player1.id === currentId;
+                const userIsP2 = match.player2.id === currentId;
+                const userGames = userIsP1 ? match.gamesP1 : userIsP2 ? match.gamesP2 : match.gamesP1;
+                const oppGames = userIsP1 ? match.gamesP2 : userIsP2 ? match.gamesP1 : match.gamesP2;
+                const icon = userIsP1 || userIsP2
+                  ? (userGames ?? 0) > (oppGames ?? 0) ? '✅' : (userGames ?? 0) === (oppGames ?? 0) ? '➖' : '❌'
+                  : '🏅';
+                const resultText = `${match.gamesP1 ?? '-'}-${match.gamesP2 ?? '-'}`;
+                const displayDate = new Date(match.date || match.scheduledDate).toLocaleDateString('es-ES');
 
-              return (
-                <div key={match.id} className="p-4 hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <span className="text-2xl">{icon}</span>
-                      <div>
-                        <p className="font-medium text-slate-900">vs {getOpponentName(match)}</p>
-                        <p className="text-sm text-slate-600">{displayDate}</p>
+                return (
+                  <div key={match.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <span className="text-2xl flex-shrink-0">{icon}</span>
+                        <div className="min-w-0">
+                          <p className="font-medium text-slate-900 dark:text-white truncate">vs {getOpponentName(match)}</p>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">{displayDate}</p>
+                        </div>
                       </div>
+                      <div className="text-lg font-bold text-slate-900 dark:text-white flex-shrink-0">{resultText}</div>
                     </div>
-                    <div className="text-lg font-bold text-slate-900">{resultText}</div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Google Calendar Integration */}
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-md p-4 border border-slate-200 dark:border-slate-700">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <h3 className="font-semibold text-slate-900 dark:text-white">Google Calendar</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                {isGoogleConnected
+                  ? '✓ Conectado - Sincronización automática'
+                  : 'Conecta para sincronizar partidos con tu calendario'}
+              </p>
+            </div>
+            <button
+              onClick={isGoogleConnected ? handleDisconnectGoogle : handleConnectGoogle}
+              disabled={isConnectingGoogle}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap text-sm ${
+                isGoogleConnected
+                  ? 'bg-gray-400 text-white hover:bg-gray-500'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              } disabled:bg-gray-300`}
+            >
+              {isConnectingGoogle ? 'Conectando...' : isGoogleConnected ? 'Desconectar' : 'Conectar'}
+            </button>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

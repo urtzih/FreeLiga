@@ -9,6 +9,7 @@ export default function Layout() {
 
     // Obtener grupo actual desde el contexto de autenticación
     const currentGroup = user?.player?.currentGroup;
+    const calendarEnabled = user?.player?.calendarEnabled ?? false;
 
     const grupoLabel = currentGroup?.name
         ? (currentGroup.name.toLowerCase().startsWith('grupo') ? currentGroup.name : `Grupo ${currentGroup.name}`)
@@ -105,12 +106,14 @@ export default function Layout() {
                                     >
                                         {grupoLabel}
                                     </Link>
-                                    <Link
-                                        to="/calendar"
-                                        className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                                    >
-                                        Calendario
-                                    </Link>
+                                    {calendarEnabled && (
+                                        <Link
+                                            to="/calendar"
+                                            className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                                        >
+                                            Calendario
+                                        </Link>
+                                    )}
                                     <Link
                                         to="/matches/record"
                                         className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
@@ -219,9 +222,11 @@ export default function Layout() {
                                     <Link to="/matches/record" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                                         🎾 Registrar Partido
                                     </Link>
-                                    <Link to="/calendar" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                                        📅 Calendario
-                                    </Link>
+                                    {calendarEnabled && (
+                                        <Link to="/calendar" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                                            📅 Calendario
+                                        </Link>
+                                    )}
                                     <details className="px-1" open>
                                         <summary className="list-none cursor-pointer block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-700/40">
                                             ➕ Más

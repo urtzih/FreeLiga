@@ -28,6 +28,7 @@ interface ClassificationRow {
 export default function GroupView() {
     const { id } = useParams<{ id: string }>();
     const { user } = useAuth();
+    const calendarEnabled = user?.player?.calendarEnabled ?? false;
 
     const { data: group, isLoading } = useQuery({
         queryKey: ['group', id],
@@ -47,9 +48,18 @@ export default function GroupView() {
     });
 
     // Filter matches for current player
-    const myMatches = group?.matches.filter((match: any) =>
-        match.player1Id === user?.player?.id || match.player2Id === user?.player?.id
-    ) || [];
+    const myMatches = group?.matches.filter((match: any) => {
+        const isMyMatch = match.player1Id === user?.player?.id || match.player2Id === user?.player?.id;
+        if (!isMyMatch) return false;
+        
+        // Si calendario deshabilitado, filtrar partidos programados sin resultado
+        if (!calendarEnabled) {
+            const isScheduled = match.scheduledDate && (!match.gamesP1 || !match.gamesP2);
+            if (isScheduled) return false;
+        }
+        
+        return true;
+    }) || [];
 
     if (isLoading || loadingClassification) {
         return <div className="py-12"><Loader /></div>;

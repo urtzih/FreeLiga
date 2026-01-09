@@ -10,10 +10,11 @@ interface PlayerProfile {
   name: string;
   nickname?: string;
   phone?: string;
+  calendarEnabled?: boolean;
 }
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const queryClient = useQueryClient();
   const playerId = user?.player?.id;
   const [showBanner, setShowBanner] = useState(true);
@@ -59,6 +60,7 @@ export default function Profile() {
     name: '',
     nickname: '',
     phone: '',
+    calendarEnabled: false,
   });
 
   const [newEmail, setNewEmail] = useState('');
@@ -80,6 +82,7 @@ export default function Profile() {
         name: player.name || '',
         nickname: player.nickname || '',
         phone: player.phone || '',
+        calendarEnabled: player.calendarEnabled ?? false,
       });
     }
   }, [player]);
@@ -95,9 +98,10 @@ export default function Profile() {
       const { data: response } = await api.patch(`/players/${playerId}/profile`, data);
       return response;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['player', playerId] });
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      await refreshUser();
       setIsEditing(false);
       showToast('✅ Perfil actualizado correctamente', 'success');
     },
@@ -154,6 +158,7 @@ export default function Profile() {
         name: player.name || '',
         nickname: player.nickname || '',
         phone: player.phone || '',
+        calendarEnabled: player.calendarEnabled ?? false,
       });
     }
     setIsEditing(false);
@@ -294,6 +299,35 @@ export default function Profile() {
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                 Visible para otros jugadores del grupo
               </p>
+            </div>
+
+            {/* Calendario */}
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+              <label className="flex items-center justify-between">
+                <div>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    Funcionalidad de Calendario
+                  </span>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Habilita la programación de partidos y sincronización con Google Calendar
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formData.calendarEnabled}
+                  onChange={(e) => setFormData({ ...formData, calendarEnabled: e.target.checked })}
+                  disabled={!isEditing}
+                  className={`w-12 h-6 rounded-full appearance-none relative cursor-pointer transition-colors ${
+                    isEditing ? 'cursor-pointer' : 'cursor-not-allowed'
+                  } ${
+                    formData.calendarEnabled
+                      ? 'bg-green-500'
+                      : 'bg-slate-300 dark:bg-slate-600'
+                  } ${!isEditing ? 'disabled:opacity-60' : ''}
+                    before:content-[''] before:absolute before:w-5 before:h-5 before:rounded-full before:bg-white before:top-0.5 before:left-0.5 before:transition-transform before:shadow-md
+                    ${formData.calendarEnabled ? 'before:translate-x-6' : ''}`}
+                />
+              </label>
             </div>
 
             {/* Email */}

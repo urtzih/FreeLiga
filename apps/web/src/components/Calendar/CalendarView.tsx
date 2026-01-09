@@ -6,8 +6,6 @@ import {
   eachDayOfInterval,
   isSameMonth,
   isToday,
-  isBefore,
-  startOfDay,
   startOfWeek,
   endOfWeek,
 } from 'date-fns';
@@ -18,10 +16,11 @@ interface Match {
   player1: { id: string; name: string };
   player2: { id: string; name: string };
   scheduledDate: string;
+  date?: string;
   location: string;
   googleEventId?: string;
-  gamesP1?: number;
-  gamesP2?: number;
+  gamesP1?: number | null;
+  gamesP2?: number | null;
   matchStatus?: string;
 }
 
@@ -56,7 +55,9 @@ export default function CalendarView({ matches, currentUserId, onDayClick, onMat
   const getMatchesForDate = (date: Date) => {
     return matches.filter(m => {
       // Usar scheduledDate para partidos programados y date para partidos jugados
-      const matchDate = new Date(m.scheduledDate || m.date);
+      const matchDateString = m.scheduledDate || m.date;
+      if (!matchDateString) return false;
+      const matchDate = new Date(matchDateString);
       return (
         matchDate.getFullYear() === date.getFullYear() &&
         matchDate.getMonth() === date.getMonth() &&
@@ -76,100 +77,87 @@ export default function CalendarView({ matches, currentUserId, onDayClick, onMat
   const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+    <div className="w-full">
+      {/* Header con Navegación */}
+      <div className="flex items-center justify-between mb-6 gap-2">
         <button
           onClick={previousMonth}
-          className="px-4 py-2 hover:bg-gray-200 rounded-lg transition-colors"
+          className="px-3 py-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium text-slate-700 dark:text-slate-300 text-sm sm:text-base"
         >
           ← Anterior
         </button>
-        <h2 className="text-2xl font-bold text-gray-800">
+        <h2 className="text-lg sm:text-2xl font-bold text-slate-900 dark:text-white text-center flex-1">
           {format(currentDate, 'MMMM yyyy', { locale: es })}
         </h2>
         <button
           onClick={nextMonth}
-          className="px-4 py-2 hover:bg-gray-200 rounded-lg transition-colors"
+          className="px-3 py-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors font-medium text-slate-700 dark:text-slate-300 text-sm sm:text-base"
         >
           Siguiente →
         </button>
       </div>
 
-      {/* Days of week header */}
-      <div className="grid grid-cols-7 gap-2 mb-2">
+      {/* Días de la semana */}
+      <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2">
         {days.map(day => (
-          <div
-            key={day}
-            className="text-center font-semibold text-gray-600 py-3 text-sm uppercase"
-          >
+          <div key={day} className="text-center font-semibold text-slate-600 dark:text-slate-400 text-xs sm:text-sm py-2">
             {day}
           </div>
         ))}
       </div>
 
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-2">
+      {/* Días del calendario */}
+      <div className="grid grid-cols-7 gap-1 sm:gap-2 bg-slate-50 dark:bg-slate-900 p-2 sm:p-3 rounded-lg">
         {calendarDays.map(date => {
           const dayMatches = getMatchesForDate(date);
           const isCurrentMonth = isSameMonth(date, currentDate);
-          const isTodayDate = isToday(date);
-          const isPastDate = isBefore(startOfDay(date), startOfDay(new Date()));
+          const isCurrentDay = isToday(date);
 
           return (
             <div
-              key={date.toString()}
+              key={date.toISOString()}
               onClick={() => onDayClick?.(date)}
-              className={`min-h-32 p-2 rounded-lg border-2 cursor-pointer transition-all ${
-                !isCurrentMonth ? 'bg-gray-50 text-gray-300 border-gray-200' : ''
+              className={`aspect-square p-1 sm:p-2 rounded-lg border-2 transition-all cursor-pointer flex flex-col ${
+                isCurrentDay
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900 shadow-md'
+                  : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'
               } ${
-                isTodayDate
-                  ? 'border-blue-500 bg-blue-50'
-                  : isCurrentMonth
-                  ? 'border-gray-200 hover:border-blue-300 hover:shadow-md'
-                  : ''
-              } ${isPastDate && !isTodayDate ? 'opacity-50' : ''}`}
+                !isCurrentMonth ? 'opacity-30' : ''
+              } hover:shadow-lg hover:border-blue-400 dark:hover:border-blue-400`}
             >
-              <div
-                className={`font-semibold text-sm mb-1 ${
-                  isTodayDate ? 'text-blue-600' : 'text-gray-700'
-                }`}
-              >
+              {/* Día */}
+              <div className={`text-xs sm:text-sm font-bold mb-1 ${
+                isCurrentDay
+                  ? 'text-blue-600 dark:text-blue-300'
+                  : 'text-slate-700 dark:text-slate-300'
+              }`}>
                 {format(date, 'd')}
               </div>
-              <div className="space-y-1 max-h-24 overflow-y-auto">
-                {dayMatches.map(match => {
-                  const isPlayed = match.matchStatus === 'PLAYED' && match.gamesP1 !== null && match.gamesP2 !== null;
+
+              {/* Indicadores de partidos */}
+              <div className="flex-1 flex flex-col gap-0.5 overflow-hidden justify-end">
+                {dayMatches.slice(0, 3).map((match) => {
+                  const isPlayed = match.matchStatus === 'PLAYED' && match.gamesP1 != null && match.gamesP2 != null;
                   const isUserInMatch = currentUserId && (match.player1.id === currentUserId || match.player2.id === currentUserId);
                   
-                  // Determinar color según estado y resultado
-                  let bgColor = 'bg-gray-100 text-gray-700 hover:bg-gray-200'; // Default: gris (no involucrado)
+                  let bgColor = 'bg-gray-400 dark:bg-gray-500';
                   
                   if (isUserInMatch) {
                     if (!isPlayed) {
-                      // Partido programado → azul
-                      bgColor = 'bg-blue-100 text-blue-800 hover:bg-blue-200';
+                      bgColor = 'bg-blue-500 dark:bg-blue-600';
                     } else {
-                      // Partido jugado → verde si ganó, rojo si perdió
-                      const userIsP1 = match.player1.id === currentUserId;
-                      const userScore = userIsP1 ? match.gamesP1 : match.gamesP2;
-                      const opponentScore = userIsP1 ? match.gamesP2 : match.gamesP1;
-                      
-                      if (userScore !== null && opponentScore !== null) {
-                        if (userScore > opponentScore) {
-                          bgColor = 'bg-green-100 text-green-800 hover:bg-green-200'; // Ganó
-                        } else if (userScore < opponentScore) {
-                          bgColor = 'bg-red-100 text-red-800 hover:bg-red-200'; // Perdió
-                        } else {
-                          bgColor = 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'; // Empate (raro pero posible)
+                      const userScore = match.player1.id === currentUserId ? match.gamesP1 : match.gamesP2;
+                      const oppScore = match.player1.id === currentUserId ? match.gamesP2 : match.gamesP1;
+                      if (userScore != null && oppScore != null) {
+                        if (userScore > oppScore) {
+                          bgColor = 'bg-green-500 dark:bg-green-600';
+                        } else if (userScore < oppScore) {
+                          bgColor = 'bg-red-500 dark:bg-red-600';
                         }
                       }
                     }
                   }
                   
-                  const resultText = isPlayed ? `${match.gamesP1}-${match.gamesP2}` : '';
-                  const matchTitle = getMatchTitle(match);
-
                   return (
                     <div
                       key={match.id}
@@ -177,20 +165,14 @@ export default function CalendarView({ matches, currentUserId, onDayClick, onMat
                         e.stopPropagation();
                         onMatchClick?.(match);
                       }}
-                      className={`text-xs ${bgColor} p-1.5 rounded cursor-pointer truncate transition-colors`}
-                      title={`${matchTitle}\n${match.location}${resultText ? `\nResultado: ${resultText}` : ''}`}
-                    >
-                      <div className="font-semibold truncate">
-                        vs. {matchTitle}
-                      </div>
-                      {resultText && (
-                        <div className="text-xs font-bold">
-                          {resultText}
-                        </div>
-                      )}
-                    </div>
+                      className={`h-1.5 sm:h-2 rounded-full cursor-pointer hover:opacity-80 transition-opacity ${bgColor}`}
+                      title={getMatchTitle(match)}
+                    />
                   );
                 })}
+                {dayMatches.length > 3 && (
+                  <div className="text-xs text-slate-500 dark:text-slate-400 px-1 font-semibold text-center">+{dayMatches.length - 3}</div>
+                )}
               </div>
             </div>
           );

@@ -8,6 +8,7 @@ import Loader from '../../components/Loader';
 export default function Dashboard() {
     const { user, loading } = useAuth();
     const [showBanner, setShowBanner] = useState(true);
+    const calendarEnabled = user?.player?.calendarEnabled ?? false;
 
     // Auto-dismiss banner after 10s
     useEffect(() => {
@@ -44,7 +45,7 @@ export default function Dashboard() {
                 new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime()
             );
         },
-        enabled: !!user?.player?.id,
+        enabled: !!user?.player?.id && calendarEnabled,
     });
 
     // Obtener currentGroup desde el contexto (ya viene del backend con la temporada activa)
@@ -194,7 +195,7 @@ export default function Dashboard() {
 
 
             {/* Próximos Partidos */}
-            {upcomingMatches && upcomingMatches.length > 0 && (
+            {calendarEnabled && upcomingMatches && upcomingMatches.length > 0 && (
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                     <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
                         <h2 className="text-xl font-bold text-slate-900 dark:text-white">Próximos Partidos</h2>

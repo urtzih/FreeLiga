@@ -34,12 +34,14 @@ import Layout from './components/Layout';
 
 function ProtectedRoute({
     children,
-    adminOnly = false
+    adminOnly = false,
+    requiresCalendarAccess = false
 }: {
     children: React.ReactNode;
     adminOnly?: boolean;
+    requiresCalendarAccess?: boolean;
 }) {
-    const { isAuthenticated, isAdmin, loading } = useAuth();
+    const { isAuthenticated, isAdmin, loading, user } = useAuth();
 
     if (loading) {
         return <div className="flex items-center justify-center min-h-screen">
@@ -52,6 +54,10 @@ function ProtectedRoute({
     }
 
     if (adminOnly && !isAdmin) {
+        return <Navigate to="/dashboard" replace />;
+    }
+
+    if (requiresCalendarAccess && !(user?.player?.calendarEnabled ?? false)) {
         return <Navigate to="/dashboard" replace />;
     }
 
@@ -140,7 +146,7 @@ function App() {
                                 <Route
                                     path="/calendar"
                                     element={
-                                        <ProtectedRoute>
+                                        <ProtectedRoute requiresCalendarAccess={true}>
                                             <Calendar />
                                         </ProtectedRoute>
                                     }
@@ -148,7 +154,7 @@ function App() {
                                 <Route
                                     path="/scheduled-matches"
                                     element={
-                                        <ProtectedRoute>
+                                        <ProtectedRoute requiresCalendarAccess={true}>
                                             <ScheduledMatches />
                                         </ProtectedRoute>
                                     }

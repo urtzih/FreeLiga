@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useAuth } from '../../contexts/AuthContext';
-import { useGroup } from '../../hooks/useGroup';
-import { apiCall } from '../../lib/api';
+import { useAuth } from '../contexts/AuthContext';
+import { useGroup } from '../hooks/useGroup';
+import api from '../lib/api';
 import { toast } from 'react-hot-toast';
 
 interface Match {
@@ -40,13 +40,14 @@ export default function ScheduledMatchesPage() {
     const fetchMatches = async () => {
       try {
         setLoading(true);
-        const response = await apiCall('/matches', {
+        const response = await api.get('/matches', {
           params: {
             groupId: currentGroup.id,
             scheduled: 'true',
           },
         });
-        setMatches(response || []);
+        const matchesData = response.data;
+        setMatches(matchesData || []);
       } catch (error) {
         console.error('Error fetching matches:', error);
         toast.error('Error al cargar los partidos programados');
@@ -91,12 +92,10 @@ export default function ScheduledMatchesPage() {
 
   const handleSaveEdit = async (matchId: string) => {
     try {
-      const response = await apiCall(`/matches/${matchId}`, {
-        method: 'PUT',
-        body: editFormData,
-      });
+      const response = await api.put(`/matches/${matchId}`, editFormData);
+      const matchData = response.data;
 
-      setMatches(prev => prev.map(m => m.id === matchId ? response : m));
+      setMatches(prev => prev.map(m => m.id === matchId ? matchData : m));
       setEditingMatchId(null);
       toast.success('Partido actualizado exitosamente');
     } catch (error: any) {
@@ -108,9 +107,7 @@ export default function ScheduledMatchesPage() {
     if (!confirm('¿Estás seguro de que deseas cancelar este partido?')) return;
 
     try {
-      await apiCall(`/matches/${matchId}`, {
-        method: 'DELETE',
-      });
+      await api.delete(`/matches/${matchId}`);
 
       setMatches(prev => prev.filter(m => m.id !== matchId));
       toast.success('Partido cancelado exitosamente');

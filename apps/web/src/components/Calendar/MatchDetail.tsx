@@ -8,8 +8,8 @@ interface Match {
   scheduledDate: string;
   location: string;
   googleEventId?: string;
-  gamesP1?: number;
-  gamesP2?: number;
+  gamesP1?: number | null;
+  gamesP2?: number | null;
   matchStatus?: string;
 }
 
@@ -44,78 +44,85 @@ export default function MatchDetail({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full">
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-4 sm:p-6 w-full border border-slate-200 dark:border-slate-700">
       <div className="space-y-4">
-        {/* Title */}
-        <div className="border-b pb-4">
-          <h3 className="text-2xl font-bold text-gray-800">
+        {/* Título Principal */}
+        <div className="border-b border-slate-200 dark:border-slate-700 pb-4">
+          <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
             vs. {getOpponentName()}
           </h3>
-          <p className="text-sm text-gray-500 mt-1">
-            {match.googleEventId && '📅'} Sincronizado con Google Calendar
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-2 flex items-center gap-2">
+            {match.googleEventId && (
+              <span className="inline-flex items-center gap-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs font-semibold">
+                📅 Google Sync
+              </span>
+            )}
           </p>
         </div>
 
-        {/* Date and Time */}
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <p className="text-sm text-gray-600">Fecha y Hora</p>
-          <p className="text-lg font-semibold text-gray-800">
-            {format(matchDate, 'EEEE d MMMM yyyy HH:mm', { locale: es })}
+        {/* Fecha y Hora */}
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 p-4 rounded-lg border border-blue-200 dark:border-blue-700">
+          <p className="text-xs sm:text-sm text-blue-700 dark:text-blue-200 font-semibold uppercase">🕐 Fecha y Hora</p>
+          <p className="text-base sm:text-lg font-bold text-blue-900 dark:text-blue-100 mt-2">
+            {format(matchDate, 'EEEE d MMMM', { locale: es })}
+          </p>
+          <p className="text-sm sm:text-base font-semibold text-blue-800 dark:text-blue-200">
+            {format(matchDate, 'HH:mm', { locale: es })}
           </p>
         </div>
 
-        {/* Location */}
-        <div className="bg-green-50 p-4 rounded-lg">
-          <p className="text-sm text-gray-600">📍 Lugar</p>
-          <p className="text-lg font-semibold text-gray-800">{match.location}</p>
+        {/* Ubicación */}
+        <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 p-4 rounded-lg border border-green-200 dark:border-green-700">
+          <p className="text-xs sm:text-sm text-green-700 dark:text-green-200 font-semibold uppercase">📍 Ubicación</p>
+          <p className="text-base sm:text-lg font-bold text-green-900 dark:text-green-100 mt-2">{match.location}</p>
         </div>
 
-        {/* Result if exists */}
+        {/* Resultado */}
         {hasResult && (
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600">Resultado</p>
-            <p className="text-xl font-bold text-gray-800">
-              {match.player1.name} {match.gamesP1} - {match.gamesP2} {match.player2.name}
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
+            <p className="text-xs sm:text-sm text-purple-700 dark:text-purple-200 font-semibold uppercase">🏆 Resultado</p>
+            <p className="text-base sm:text-lg font-bold text-purple-900 dark:text-purple-100 mt-2">
+              {match.player1.name} <span className="text-lg">{match.gamesP1} - {match.gamesP2}</span> {match.player2.name}
             </p>
           </div>
         )}
 
         {/* Status */}
-        <div className="bg-gray-100 p-4 rounded-lg">
-          <p className="text-sm text-gray-600">Estado</p>
-          <p className="text-lg font-semibold text-gray-800">
-            {match.matchStatus === 'PLAYED' && hasResult && '✓ Jugado'}
+        <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-600 p-4 rounded-lg border border-slate-200 dark:border-slate-600">
+          <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 font-semibold uppercase">ℹ️ Estado</p>
+          <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 mt-2">
+            {match.matchStatus === 'PLAYED' && hasResult && '✅ Jugado'}
             {!hasResult && '📅 Programado'}
-            {match.matchStatus === 'CANCELLED' && '✕ Cancelado'}
+            {match.matchStatus === 'CANCELLED' && '❌ Cancelado'}
           </p>
         </div>
 
         {/* Action Buttons */}
-        <div className="border-t pt-4 space-y-2">
-          {isPlayer && (
+        <div className="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-2">
+          {isPlayer && !hasResult && (
             <>
               <button
                 onClick={onEdit}
                 disabled={isLoading}
-                className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors font-medium"
+                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-2.5 rounded-lg hover:from-blue-700 hover:to-blue-800 disabled:from-slate-400 disabled:to-slate-400 transition-all font-semibold text-sm sm:text-base shadow-md hover:shadow-lg"
               >
-                {isLoading ? 'Guardando...' : 'Editar'}
+                {isLoading ? '⏳ Guardando...' : '✏️ Editar'}
               </button>
               <button
                 onClick={onDelete}
                 disabled={isLoading}
-                className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 disabled:bg-gray-400 transition-colors font-medium"
+                className="w-full bg-gradient-to-r from-red-600 to-red-700 text-white py-2.5 rounded-lg hover:from-red-700 hover:to-red-800 disabled:from-slate-400 disabled:to-slate-400 transition-all font-semibold text-sm sm:text-base shadow-md hover:shadow-lg"
               >
-                {isLoading ? 'Eliminando...' : 'Cancelar Partido'}
+                {isLoading ? '⏳ Eliminando...' : '❌ Cancelar'}
               </button>
             </>
           )}
           {onCancel && (
             <button
               onClick={onCancel}
-              className="w-full bg-gray-300 text-gray-800 py-2 rounded-lg hover:bg-gray-400 transition-colors font-medium"
+              className="w-full bg-slate-300 dark:bg-slate-600 text-slate-800 dark:text-slate-100 py-2.5 rounded-lg hover:bg-slate-400 dark:hover:bg-slate-500 transition-all font-semibold text-sm sm:text-base"
             >
-              Cerrar
+              ✕ Cerrar
             </button>
           )}
         </div>

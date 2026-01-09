@@ -203,13 +203,20 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 return reply.status(403).send({ error: 'You can only update your own profile' });
             }
 
+            const updateData: any = {
+                name: body.name,
+                nickname: body.nickname,
+                phone: body.phone,
+            };
+
+            // Allow updating calendarEnabled
+            if (body.calendarEnabled !== undefined) {
+                updateData.calendarEnabled = body.calendarEnabled;
+            }
+
             const player = await prisma.player.update({
                 where: { id },
-                data: {
-                    name: body.name,
-                    nickname: body.nickname,
-                    phone: body.phone,
-                },
+                data: updateData,
             });
 
             return player;
