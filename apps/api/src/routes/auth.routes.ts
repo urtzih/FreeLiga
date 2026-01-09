@@ -92,14 +92,18 @@ export async function authRoutes(fastify: FastifyInstance) {
 
     // Login
     fastify.post('/login', async (request, reply) => {
+        const requestId = Math.random().toString(36).substring(7);
+        const log = (msg: string, data?: any) => console.log(`\n${'='.repeat(60)}\n🔐 LOGIN [${requestId}] ${msg}\n${data ? JSON.stringify(data, null, 2) : ''}${'='.repeat(60)}`);
+        const logError = (msg: string, data?: any) => console.error(`\n${'!'.repeat(60)}\n❌ LOGIN [${requestId}] ${msg}\n${data ? JSON.stringify(data, null, 2) : ''}${'!'.repeat(60)}`);
+        
         try {
-            console.log('🔐 LOGIN - ENDPOINT HIT - Request received');
-            console.log('🔐 LOGIN - Body:', request.body);
+            log('⏳ ENDPOINT HIT - Request received', request.body);
+            
             const body = loginSchema.parse(request.body);
-            console.log('🔐 LOGIN - Credentials parsed:', { email: body.email });
+            log('✅ Credentials parsed successfully', { email: body.email, passwordLength: body.password.length });
 
             // Find user
-            console.log('🔐 LOGIN - Querying user with email:', body.email);
+            log('🔎 Querying database for user...');
             const user = await prisma.user.findUnique({
                 where: { email: body.email },
                 include: {
@@ -107,55 +111,63 @@ export async function authRoutes(fastify: FastifyInstance) {
                 },
             });
 
-            console.log('🔐 LOGIN - User found:', { userId: user?.id, hasPlayer: !!user?.player });
-
             if (!user) {
-                console.log('🔐 LOGIN - User not found for email:', body.email);
+                logError('👤 User not found in database', { email: body.email });
                 return reply.status(401).send({ error: 'Invalid credentials' });
             }
 
+            log('✅ User found in database', { userId: user.id, email: user.email, hasPlayer: !!user.player });
+
             // Check password
-            console.log('🔐 LOGIN - Checking password hash');
+            log('🔑 Comparing password with hash...');
             const validPassword = await bcrypt.compare(body.password, user.password);
 
             if (!validPassword) {
-                console.log('🔐 LOGIN - Invalid password for user:', body.email);
+                logError('❌ Password comparison FAILED', { email: body.email });
                 return reply.status(401).send({ error: 'Invalid credentials' });
             }
 
-            console.log('🔐 LOGIN - Password valid, checking if active');
+            log('✅ Password validation PASSED');
 
             // Check if user is active
+            log('📋 Checking if user is active...');
             if (!user.isActive) {
-                console.log('🔐 LOGIN - User is inactive:', body.email);
+                logError('🚫 User account is inactive', { email: body.email });
                 return reply.status(403).send({ error: 'Account is deactivated. Please contact an administrator.' });
             }
+            log('✅ User is ACTIVE');
 
             // Obtener grupo actual basado en temporada activa
+            log('👥 Fetching current group for player...');
             let currentGroup = null;
             if (user.player) {
                 try {
-                    console.log('🔐 LOGIN - Fetching current group for player:', user.player.id);
                     currentGroup = await getPlayerCurrentGroup(user.player.id);
-                    console.log('🔐 LOGIN - Current group fetched:', { groupId: currentGroup?.id });
+                    log('✅ Current group fetched', { groupId: currentGroup?.id, groupName: currentGroup?.name });
                 } catch (err) {
-                    console.error('🔐 LOGIN - Error fetching current group:', err);
+                    logError('⚠️ Error fetching current group (non-fatal)', err);
                     // No fallar el login si hay error al obtener grupo
                     currentGroup = null;
                 }
+            } else {
+                log('ℹ️ No player record associated with user');
             }
 
-            console.log('🔐 LOGIN - Generating JWT token');
-
-            // Generate JWT
+            log('🔐 Generating JWT token...');
             const token = fastify.jwt.sign({
                 id: user.id,
                 email: user.email,
                 role: user.role,
                 playerId: user.player?.id || null,
             });
+            log('✅ JWT Token generated successfully');
 
-            console.log('🔐 LOGIN - Login successful for:', { userId: user.id, email: user.email });
+            log('🎉 LOGIN SUCCESSFUL - Returning user data', { 
+                userId: user.id, 
+                email: user.email, 
+                role: user.role,
+                hasGroup: !!currentGroup
+            });
 
             return {
                 token,
@@ -170,24 +182,29 @@ export async function authRoutes(fastify: FastifyInstance) {
                 },
             };
         } catch (error) {
-            console.error('🔐 LOGIN - CATCH BLOCK HIT');
-            console.error('🔐 LOGIN - ERROR:', error);
-            console.error('🔐 LOGIN - Error type:', error instanceof Error ? error.constructor.name : typeof error);
+            logError('💥 EXCEPTION CAUGHT IN CATCH BLOCK');
+            logError('Error type', error instanceof Error ? error.constructor.name : typeof error);
+            logError('Error message', error instanceof Error ? error.message : String(error));
+            
+            if (error instanceof Error && error.stack) {
+                logError('Stack trace', error.stack);
+            }
+
             if (error instanceof z.ZodError) {
-                console.error('🔐 LOGIN - Zod validation error:', error.errors);
+                logError('🔴 Zod validation error (400)', error.errors);
                 return reply.status(400).send({ error: error.errors });
             }
+
             const errorMessage = error instanceof Error ? error.message : String(error);
-            const errorStack = error instanceof Error ? error.stack : undefined;
-            console.error('🔐 LOGIN - Exception details:', {
-                message: errorMessage,
-                stack: errorStack
-            });
             fastify.log.error(error);
+            
+            logError('Sending 500 response with details', { details: errorMessage });
+            
             return reply.status(500).send({ 
                 error: 'Internal server error', 
                 details: errorMessage,
-                type: error instanceof Error ? error.constructor.name : typeof error
+                type: error instanceof Error ? error.constructor.name : typeof error,
+                requestId
             });
         }
     });
