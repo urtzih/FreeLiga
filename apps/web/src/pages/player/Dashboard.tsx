@@ -8,6 +8,7 @@ import Loader from '../../components/Loader';
 export default function Dashboard() {
     const { user, loading } = useAuth();
     const [showBanner, setShowBanner] = useState(true);
+    const calendarEnabled = user?.player?.calendarEnabled ?? false;
 
     // Auto-dismiss banner after 10s
     useEffect(() => {
@@ -24,6 +25,27 @@ export default function Dashboard() {
             return data;
         },
         enabled: !!user?.player?.id,
+    });
+
+    // Fetch upcoming scheduled matches
+    const { data: upcomingMatches } = useQuery({
+        queryKey: ['upcomingMatches', user?.player?.id],
+        queryFn: async () => {
+            const { data } = await api.get('/matches', {
+                params: {
+                    playerId: user?.player?.id,
+                    scheduled: 'true',
+                },
+            });
+            // Filter only future matches
+            return data.filter((m: any) => {
+                if (!m.scheduledDate) return false;
+                return new Date(m.scheduledDate) >= new Date();
+            }).sort((a: any, b: any) => 
+                new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime()
+            );
+        },
+        enabled: !!user?.player?.id && calendarEnabled,
     });
 
     // Obtener currentGroup desde el contexto (ya viene del backend con la temporada activa)
@@ -167,6 +189,63 @@ export default function Dashboard() {
             )}
 
 
+
+            {/* Próximos Partidos */}
+            {calendarEnabled && upcomingMatches && upcomingMatches.length > 0 && (
+                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Próximos Partidos</h2>
+                    </div>
+                    <div className="divide-y divide-slate-200 dark:divide-slate-700">
+                        {upcomingMatches.map((match: any) => {
+                            const opponent = match.player1Id === user?.player?.id ? match.player2 : match.player1;
+                            return (
+                                <Link
+                                    key={match.id}
+                                    to="/calendar"
+                                    className="block p-4 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center space-x-4">
+                                            <span className="text-2xl">⏳</span>
+                                            <div>
+                                                <p className="font-medium text-slate-900 dark:text-white">
+                                                    vs {opponent.name}
+                                                </p>
+                                                <p className="text-sm text-slate-600 dark:text-slate-400">
+                                                    📍 {match.location}
+                                                </p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                                    {new Date(match.scheduledDate).toLocaleString('es-ES', {
+                                                        day: '2-digit',
+                                                        month: '2-digit',
+                                                        year: 'numeric',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit'
+                                                    })}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {match.googleEventId && (
+                                            <div className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                                                📅 Google
+                                            </div>
+                                        )}
+                                    </div>
+                                </Link>
+                            );
+                        })}
+                    </div>
+                    <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900">
+                        <Link
+                            to="/calendar"
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-medium"
+                        >
+                            Ver Calendario →
+                        </Link>
+                    </div>
+                </div>
+            )}
 
             {/* Partidos Recientes */}
             {playerStats?.recentMatches && playerStats.recentMatches.length > 0 && (

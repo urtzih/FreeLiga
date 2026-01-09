@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../lib/api';
 
 interface CurrentGroup {
@@ -20,6 +20,7 @@ interface User {
         id: string;
         name: string;
         nickname?: string;
+        calendarEnabled?: boolean;
         currentGroup?: CurrentGroup;
     };
 }
@@ -32,6 +33,7 @@ interface AuthContextType {
     register: (data: RegisterData) => Promise<void>;
     logout: () => void;
     loading: boolean;
+    refreshUser: () => Promise<void>;
 }
 
 interface RegisterData {
@@ -104,6 +106,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
     };
 
+    const refreshUser = useCallback(async () => {
+        try {
+            const { data } = await api.get('/auth/me');
+            setUser(data);
+            localStorage.setItem('user', JSON.stringify(data));
+        } catch (error) {
+            console.error('Error refreshing user:', error);
+        }
+    }, []);
+
     return (
         <AuthContext.Provider
             value={{
@@ -114,6 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 register,
                 logout,
                 loading,
+                refreshUser,
             }}
         >
             {children}

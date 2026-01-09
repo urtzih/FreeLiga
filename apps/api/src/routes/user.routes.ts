@@ -26,6 +26,7 @@ const updateUserSchema = z.object({
     phone: z.string().optional(),
     role: z.enum(['PLAYER', 'ADMIN']).optional(),
     isActive: z.boolean().optional(),
+    calendarEnabled: z.boolean().optional(),
 });
 
 const updateEmailSchema = z.object({
@@ -288,11 +289,12 @@ export async function userRoutes(fastify: FastifyInstance) {
                 });
 
                 // Actualizar player si existe (name, nickname, phone)
-                if (updated.player && (body.name || body.nickname !== undefined || body.phone !== undefined)) {
+                if (updated.player && (body.name || body.nickname !== undefined || body.phone !== undefined || body.calendarEnabled !== undefined)) {
                     const playerUpdate: any = {};
                     if (body.name) playerUpdate.name = body.name;
                     if (body.nickname !== undefined) playerUpdate.nickname = body.nickname || null;
                     if (body.phone !== undefined) playerUpdate.phone = body.phone || null;
+                    if (body.calendarEnabled !== undefined) playerUpdate.calendarEnabled = body.calendarEnabled;
 
                     await tx.player.update({
                         where: { id: updated.player.id },

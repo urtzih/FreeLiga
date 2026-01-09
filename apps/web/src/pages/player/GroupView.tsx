@@ -28,6 +28,7 @@ interface ClassificationRow {
 export default function GroupView() {
     const { id } = useParams<{ id: string }>();
     const { user } = useAuth();
+    const calendarEnabled = user?.player?.calendarEnabled ?? false;
 
     const { data: group, isLoading } = useQuery({
         queryKey: ['group', id],
@@ -47,9 +48,18 @@ export default function GroupView() {
     });
 
     // Filter matches for current player
-    const myMatches = group?.matches.filter((match: any) =>
-        match.player1Id === user?.player?.id || match.player2Id === user?.player?.id
-    ) || [];
+    const myMatches = group?.matches.filter((match: any) => {
+        const isMyMatch = match.player1Id === user?.player?.id || match.player2Id === user?.player?.id;
+        if (!isMyMatch) return false;
+        
+        // Si calendario deshabilitado, filtrar partidos programados sin resultado
+        if (!calendarEnabled) {
+            const isScheduled = match.scheduledDate && (!match.gamesP1 || !match.gamesP2);
+            if (isScheduled) return false;
+        }
+        
+        return true;
+    }) || [];
 
     if (isLoading || loadingClassification) {
         return <div className="py-12"><Loader /></div>;
@@ -480,7 +490,10 @@ export default function GroupView() {
                         <h2 className="text-xl font-bold text-slate-900 dark:text-white">Partidos Recientes</h2>
                     </div>
                     <div className="divide-y divide-slate-200 dark:divide-slate-700">
-                        {group.matches.slice(0, 10).map((match: any) => (
+                        {group.matches
+                            .filter((match: any) => match.matchStatus === 'PLAYED' && match.gamesP1 !== null && match.gamesP2 !== null)
+                            .slice(0, 10)
+                            .map((match: any) => (
                             <div key={match.id} className="p-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex-1">
@@ -521,7 +534,7 @@ export default function GroupView() {
                     <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
                         <h2 className="text-xl font-bold text-slate-900 dark:text-white">Mis Partidos</h2>
                         <span className="text-sm text-slate-500 dark:text-slate-400">
-                            {myMatches.filter((m: any) => m.matchStatus === 'PLAYED').length} jugados de {myMatches.length} totales
+                            {myMatches.filter((m: any) => m.matchStatus === 'PLAYED' && m.gamesP1 !== null && m.gamesP2 !== null).length} jugados de {myMatches.length} totales
                         </span>
                     </div>
                     <div className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -533,7 +546,7 @@ export default function GroupView() {
                                 const myScore = isPlayer1 ? match.gamesP1 : match.gamesP2;
                                 const opponentScore = isPlayer1 ? match.gamesP2 : match.gamesP1;
                                 const won = match.winnerId === user?.player?.id;
-                                const played = match.matchStatus === 'PLAYED';
+                                const played = match.matchStatus === 'PLAYED' && match.gamesP1 !== null && match.gamesP2 !== null;
 
                                 return (
                                     <div key={match.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
@@ -553,7 +566,12 @@ export default function GroupView() {
                                                             vs {opponent.name}
                                                         </p>
                                                         <p className="text-sm text-slate-500 dark:text-slate-400">
-                                                            {new Date(match.date).toLocaleDateString('es-ES')}
+                                                            {new Date(played ? match.date : (match.scheduledDate || match.date)).toLocaleDateString('es-ES', { 
+                                                                day: '2-digit', 
+                                                                month: '2-digit', 
+                                                                year: 'numeric',
+                                                                ...(match.scheduledDate && !played ? { hour: '2-digit', minute: '2-digit' } : {})
+                                                            })}
                                                         </p>
                                                     </div>
                                                 </div>

@@ -142,6 +142,36 @@ export async function groupRoutes(fastify: FastifyInstance) {
         }
     });
 
+    // Get group players
+    fastify.get('/:id/players', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const { id } = request.params as { id: string };
+
+            const groupPlayers = await prisma.groupPlayer.findMany({
+                where: { groupId: id },
+                include: {
+                    player: true,
+                },
+                orderBy: {
+                    rankingPosition: 'asc',
+                },
+            });
+
+            // Transform to return only player data with id and name
+            const players = groupPlayers.map(gp => ({
+                id: gp.player.id,
+                name: gp.player.name,
+            }));
+
+            return reply.send(players);
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
     // Update group (admin only)
     fastify.put('/:id', {
         onRequest: [fastify.authenticate],

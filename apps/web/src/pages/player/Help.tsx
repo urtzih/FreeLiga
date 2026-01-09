@@ -159,6 +159,138 @@ export default function Help() {
                 </div>
             </section>
 
+            {/* Calendario y Programación de Partidos */}
+            <section className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">📅 Calendario y Programación de Partidos</h2>
+                <div className="space-y-4 text-slate-600 dark:text-slate-400">
+                    <p>El Calendario te permite programar partidos con tus rivales de forma anticipada y sincronizarlos con Google Calendar.</p>
+                    
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">¿Cómo Programar un Partido?</h3>
+                        <ol className="list-decimal list-inside space-y-3 ml-4">
+                            <li>
+                                <strong>Accede al Calendario</strong>
+                                <p className="ml-6 mt-1">En el menú superior, haz clic en "Calendario". Verás un calendario mensual con tus partidos programados y jugados.</p>
+                            </li>
+                            <li>
+                                <strong>Haz clic en "Programar Partido"</strong>
+                                <p className="ml-6 mt-1">Verás un botón verde "+ Programar Partido" en la parte derecha. Al hacer clic se abrirá un formulario.</p>
+                            </li>
+                            <li>
+                                <strong>Selecciona tu rival</strong>
+                                <p className="ml-6 mt-1">Elige de la lista desplegable contra quién quieres jugar. Solo aparecen jugadores de tu grupo con los que NO has jugado todavía.</p>
+                            </li>
+                            <li>
+                                <strong>Elige fecha y hora</strong>
+                                <p className="ml-6 mt-1">Selecciona el día y hora del partido. Las restricciones son:</p>
+                                <ul className="list-disc list-inside ml-6 mt-1 space-y-1">
+                                    <li>Solo de lunes a viernes (no fines de semana)</li>
+                                    <li>Entre las 08:00 y las 21:00 horas</li>
+                                    <li>Solo en horas en punto o medias (ej: 10:00, 10:30, 11:00...)</li>
+                                </ul>
+                            </li>
+                            <li>
+                                <strong>Indica la ubicación</strong>
+                                <p className="ml-6 mt-1">Escribe dónde van a jugar (ej: "Mendi, pista 2", "Mendizorrotza pista 1"). Esto ayudará a recordar dónde quedaste.</p>
+                            </li>
+                            <li>
+                                <strong>Guarda el partido</strong>
+                                <p className="ml-6 mt-1">Haz clic en "Programar". El partido aparecerá en el calendario en color <span className="text-blue-600 dark:text-blue-400 font-semibold">azul</span> (partidos programados pendientes de jugar).</p>
+                            </li>
+                        </ol>
+                    </div>
+
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Códigos de Color en el Calendario</h3>
+                        <ul className="list-disc list-inside space-y-2 ml-4">
+                            <li><span className="inline-block w-4 h-4 bg-blue-100 border border-blue-300 rounded mr-2"></span><strong className="text-blue-600 dark:text-blue-400">Azul:</strong> Partidos programados (todavía no jugados)</li>
+                            <li><span className="inline-block w-4 h-4 bg-green-100 border border-green-300 rounded mr-2"></span><strong className="text-green-600 dark:text-green-400">Verde:</strong> Partidos que ganaste</li>
+                            <li><span className="inline-block w-4 h-4 bg-red-100 border border-red-300 rounded mr-2"></span><strong className="text-red-600 dark:text-red-400">Rojo:</strong> Partidos que perdiste</li>
+                            <li><span className="inline-block w-4 h-4 bg-gray-100 border border-gray-300 rounded mr-2"></span><strong className="text-gray-600 dark:text-gray-400">Gris:</strong> Partidos de otros jugadores (no estás involucrado)</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Sincronización con Google Calendar</h3>
+                        <p className="mb-2">Puedes conectar tu cuenta de Google para que los partidos programados aparezcan automáticamente en tu Google Calendar.</p>
+                        <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4 my-3">
+                            <p className="text-sm"><strong>🔗 Cómo conectar con Google:</strong></p>
+                            <ol className="list-decimal list-inside ml-4 mt-2 text-sm space-y-1">
+                                <li>En la página del Calendario, verás un recuadro arriba que dice "Google Calendar"</li>
+                                <li>Haz clic en el botón azul "Conectar"</li>
+                                <li>Se abrirá una ventana de Google pidiendo permisos</li>
+                                <li>Selecciona tu cuenta de Google e inicia sesión</li>
+                                <li>Acepta los permisos (necesarios para crear eventos en tu calendario)</li>
+                                <li>Volverás automáticamente a FreeSquash y verás "✓ Conectado"</li>
+                            </ol>
+                        </div>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+                            <strong>Nota:</strong> Una vez conectado, todos los partidos que programes se sincronizarán automáticamente con tu Google Calendar. Verás un badge azul 📅 Google en los partidos sincronizados.
+                        </p>
+                    </div>
+
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Ver Detalles de un Partido</h3>
+                        <p>Haz clic en cualquier partido del calendario para ver sus detalles:</p>
+                        <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
+                            <li><strong>Partidos programados:</strong> Verás fecha/hora, ubicación, estado (Programado) y opciones para Editar o Cancelar</li>
+                            <li><strong>Partidos jugados:</strong> Verás el resultado final y quién ganó</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Próximos Partidos</h3>
+                        <p>Debajo del calendario mensual verás dos listas:</p>
+                        <ul className="list-disc list-inside ml-4 mt-2 space-y-1">
+                            <li><strong>"Próximos Partidos":</strong> Todos tus partidos programados que todavía no se han jugado, ordenados por fecha</li>
+                            <li><strong>"Partidos Recientes":</strong> Los últimos 5 partidos que has jugado con sus resultados</li>
+                        </ul>
+                        <p className="mt-2">También puedes ver tus próximos partidos en el Dashboard (página de inicio) en la sección "Próximos Partidos".</p>
+                    </div>
+
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Registrar Resultado de Partido Programado</h3>
+                        <p className="mb-2">Una vez hayas jugado el partido programado:</p>
+                        <ol className="list-decimal list-inside ml-4 space-y-2">
+                            <li>Ve a "Registrar" en el menú superior (como siempre)</li>
+                            <li>Selecciona tu rival de la lista</li>
+                            <li>Introduce el resultado (3-0, 3-1 o 3-2)</li>
+                            <li>El sistema automáticamente:
+                                <ul className="list-disc list-inside ml-6 mt-1">
+                                    <li>Encontrará el partido programado que tenías</li>
+                                    <li>Lo actualizará con el resultado</li>
+                                    <li>Cambiará su color en el calendario (verde si ganaste, rojo si perdiste)</li>
+                                    <li>NO creará un partido duplicado</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Cancelar un Partido Programado</h3>
+                        <p className="mb-2">Si necesitas cancelar un partido que habías programado:</p>
+                        <ol className="list-decimal list-inside ml-4 space-y-1">
+                            <li>Haz clic en el partido en el calendario</li>
+                            <li>Se abrirá un panel lateral con los detalles</li>
+                            <li>Haz clic en el botón rojo "Cancelar Partido"</li>
+                            <li>Confirma la cancelación</li>
+                            <li>El partido desaparecerá del calendario y (si estaba sincronizado) también de tu Google Calendar</li>
+                        </ol>
+                    </div>
+
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4">
+                        <p className="text-sm"><strong>⚠️ Importante sobre Partidos Programados:</strong></p>
+                        <ul className="list-disc list-inside ml-4 mt-2 text-sm space-y-1">
+                            <li>Los partidos programados NO cuentan en la clasificación hasta que se registre el resultado</li>
+                            <li>NO aparecen en "Partidos Recientes" porque todavía no se han jugado</li>
+                            <li>Puedes programar varios partidos con diferentes rivales</li>
+                            <li>El sistema te recordará visualmente (⏳) cuáles son los partidos pendientes de jugar</li>
+                            <li>La programación es opcional - puedes seguir jugando y registrando partidos sin programarlos primero</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
             {/* Clasificación y Grupos */}
             <section className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">📊 Clasificación y Grupos</h2>

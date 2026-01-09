@@ -6,9 +6,14 @@ FROM node:20-bullseye-slim AS base
 
 WORKDIR /app
 
-# Ensure OpenSSL 1.1 is available for Prisma
+# Ensure OpenSSL 1.1 is available for Prisma and build tools for native modules
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends openssl ca-certificates \
+    && apt-get install -y --no-install-recommends \
+       openssl \
+       ca-certificates \
+       python3 \
+       make \
+       g++ \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
@@ -16,6 +21,9 @@ COPY package*.json ./
 COPY apps/api/package*.json ./apps/api/
 COPY packages/database/package*.json ./packages/database/
 COPY tsconfig*.json ./
+
+# Clean up any pre-existing node_modules (important for Windows Docker)
+RUN rm -rf node_modules apps/api/node_modules packages/database/node_modules
 
 # Install dependencies (both production and dev for flexibility)
 RUN npm install

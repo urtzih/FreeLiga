@@ -28,16 +28,20 @@ const Help = lazy(() => import('./pages/player/Help'));
 const AdminHelp = lazy(() => import('./pages/admin/AdminHelp'));
 const GroupsSummary = lazy(() => import('./pages/player/GroupsSummary'));
 const Welcome = lazy(() => import('./pages/public/Welcome'));
+const Calendar = lazy(() => import('./pages/Calendar'));
+const ScheduledMatches = lazy(() => import('./pages/ScheduledMatches'));
 import Layout from './components/Layout';
 
 function ProtectedRoute({
     children,
-    adminOnly = false
+    adminOnly = false,
+    requiresCalendarAccess = false
 }: {
     children: React.ReactNode;
     adminOnly?: boolean;
+    requiresCalendarAccess?: boolean;
 }) {
-    const { isAuthenticated, isAdmin, loading } = useAuth();
+    const { isAuthenticated, isAdmin, loading, user } = useAuth();
 
     if (loading) {
         return <div className="flex items-center justify-center min-h-screen">
@@ -50,6 +54,10 @@ function ProtectedRoute({
     }
 
     if (adminOnly && !isAdmin) {
+        return <Navigate to="/dashboard" replace />;
+    }
+
+    if (requiresCalendarAccess && !(user?.player?.calendarEnabled ?? false)) {
         return <Navigate to="/dashboard" replace />;
     }
 
@@ -132,6 +140,22 @@ function App() {
                                     element={
                                         <ProtectedRoute>
                                             <MatchHistory />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/calendar"
+                                    element={
+                                        <ProtectedRoute requiresCalendarAccess={true}>
+                                            <Calendar />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/scheduled-matches"
+                                    element={
+                                        <ProtectedRoute requiresCalendarAccess={true}>
+                                            <ScheduledMatches />
                                         </ProtectedRoute>
                                     }
                                 />

@@ -83,6 +83,8 @@ export async function playerRoutes(fastify: FastifyInstance) {
                         { player2Id: id },
                     ],
                     matchStatus: 'PLAYED', // Only count played matches
+                    gamesP1: { not: null }, // Only matches with results
+                    gamesP2: { not: null }, // Only matches with results
                 },
                 include: {
                     player1: true,
@@ -201,13 +203,20 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 return reply.status(403).send({ error: 'You can only update your own profile' });
             }
 
+            const updateData: any = {
+                name: body.name,
+                nickname: body.nickname,
+                phone: body.phone,
+            };
+
+            // Allow updating calendarEnabled
+            if (body.calendarEnabled !== undefined) {
+                updateData.calendarEnabled = body.calendarEnabled;
+            }
+
             const player = await prisma.player.update({
                 where: { id },
-                data: {
-                    name: body.name,
-                    nickname: body.nickname,
-                    phone: body.phone,
-                },
+                data: updateData,
             });
 
             return player;
@@ -283,7 +292,9 @@ export async function playerRoutes(fastify: FastifyInstance) {
             const matches = await prisma.match.findMany({
                 where: {
                     OR: [ { player1Id: id }, { player2Id: id } ],
-                    matchStatus: 'PLAYED'
+                    matchStatus: 'PLAYED',
+                    gamesP1: { not: null },
+                    gamesP2: { not: null }
                 },
                 include: { player1: true, player2: true },
                 orderBy: { date: 'asc' }
