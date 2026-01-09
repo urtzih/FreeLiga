@@ -93,7 +93,9 @@ export async function authRoutes(fastify: FastifyInstance) {
     // Login
     fastify.post('/login', async (request, reply) => {
         try {
+            console.log('🔐 LOGIN - Starting login attempt');
             const body = loginSchema.parse(request.body);
+            console.log('🔐 LOGIN - Credentials parsed:', { email: body.email });
 
             // Find user
             const user = await prisma.user.findUnique({
@@ -102,6 +104,8 @@ export async function authRoutes(fastify: FastifyInstance) {
                     player: true,
                 },
             });
+
+            console.log('🔐 LOGIN - User found:', { userId: user?.id, hasPlayer: !!user?.player });
 
             if (!user) {
                 return reply.status(401).send({ error: 'Invalid credentials' });
@@ -114,6 +118,8 @@ export async function authRoutes(fastify: FastifyInstance) {
                 return reply.status(401).send({ error: 'Invalid credentials' });
             }
 
+            console.log('🔐 LOGIN - Password valid, checking if active');
+
             // Check if user is active
             if (!user.isActive) {
                 return reply.status(403).send({ error: 'Account is deactivated. Please contact an administrator.' });
@@ -123,13 +129,17 @@ export async function authRoutes(fastify: FastifyInstance) {
             let currentGroup = null;
             if (user.player) {
                 try {
+                    console.log('🔐 LOGIN - Fetching current group for player:', user.player.id);
                     currentGroup = await getPlayerCurrentGroup(user.player.id);
+                    console.log('🔐 LOGIN - Current group fetched:', { groupId: currentGroup?.id });
                 } catch (err) {
-                    console.error('Error fetching current group:', err);
+                    console.error('🔐 LOGIN - Error fetching current group:', err);
                     // No fallar el login si hay error al obtener grupo
                     currentGroup = null;
                 }
             }
+
+            console.log('🔐 LOGIN - Generating JWT token');
 
             // Generate JWT
             const token = fastify.jwt.sign({
@@ -138,6 +148,8 @@ export async function authRoutes(fastify: FastifyInstance) {
                 role: user.role,
                 playerId: user.player?.id || null,
             });
+
+            console.log('🔐 LOGIN - Login successful for:', { userId: user.id, email: user.email });
 
             return {
                 token,
@@ -152,11 +164,17 @@ export async function authRoutes(fastify: FastifyInstance) {
                 },
             };
         } catch (error) {
+            console.error('🔐 LOGIN - ERROR:', error);
             if (error instanceof z.ZodError) {
+                console.error('🔐 LOGIN - Zod validation error:', error.errors);
                 return reply.status(400).send({ error: error.errors });
             }
+            console.error('🔐 LOGIN - Exception details:', {
+                message: error instanceof Error ? error.message : String(error),
+                stack: error instanceof Error ? error.stack : undefined
+            });
             fastify.log.error(error);
-            return reply.status(500).send({ error: 'Internal server error' });
+            return reply.status(500).send({ error: 'Internal server error', details: error instanceof Error ? error.message : String(error) });
         }
     });
 
