@@ -48,7 +48,6 @@ export default function ScheduleMatchForm({
   players,
   matches = [],
   onSubmit,
-  onCancel,
   isLoading = false,
   currentUserId,
 }: ScheduleMatchFormProps) {
@@ -94,7 +93,7 @@ export default function ScheduleMatchForm({
     return available;
   }, [players, matches, currentUserId]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
