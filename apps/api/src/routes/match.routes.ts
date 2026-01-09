@@ -193,10 +193,11 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 matchStatus: body.matchStatus,
             });
 
-            // Recalculate rankings if match was PLAYED
+            // Recalculate rankings if match was PLAYED (async, don't wait)
             if (body.matchStatus === 'PLAYED') {
-                await calculateGroupRankings(body.groupId);
-                logger.info({ groupId: body.groupId }, 'Rankings recalculated after match creation');
+                calculateGroupRankings(body.groupId).catch(err => {
+                    logger.error({ groupId: body.groupId, error: err }, 'Error recalculating rankings');
+                });
             }
 
             return match;
@@ -275,10 +276,10 @@ export async function matchRoutes(fastify: FastifyInstance) {
             });
             logger.info({ matchId: id }, 'Match updated in DB');
 
-            // Recalculate rankings
-            logger.info({ groupId: existingMatch.groupId }, 'Recalculating rankings for group');
-            await calculateGroupRankings(existingMatch.groupId);
-            logger.info({ groupId: existingMatch.groupId }, 'Rankings recalculated');
+            // Recalculate rankings (async, don't wait)
+            calculateGroupRankings(existingMatch.groupId).catch(err => {
+                logger.error({ groupId: existingMatch.groupId, error: err }, 'Error recalculating rankings');
+            });
 
             logBusinessEvent('match_updated', {
                 matchId: id,
@@ -354,8 +355,10 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 deletedBy: decoded.id,
             });
 
-            // Recalculate rankings
-            await calculateGroupRankings(groupId);
+            // Recalculate rankings (async, don't wait)
+            calculateGroupRankings(groupId).catch(err => {
+                logger.error({ groupId, error: err }, 'Error recalculating rankings');
+            });
 
             return { success: true };
         } catch (error) {

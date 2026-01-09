@@ -18,39 +18,59 @@ interface PlayerStanding {
  *    - Internal sets averás
  * 4. Global sets averás
  * 5. Alphabetical order (last resort)
+ * 
+ * OPTIMIZED: Single DB call to get all data, batch updates
  */
 export async function calculateGroupRankings(groupId: string): Promise<void> {
-    const groupPlayers = await prisma.groupPlayer.findMany({
-        where: { groupId },
-        include: { player: true },
-    });
-    if (groupPlayers.length === 0) return;
+    try {
+        // Single query to get all groupPlayers and all PLAYED matches at once
+        const [groupPlayers, matches] = await Promise.all([
+            prisma.groupPlayer.findMany({
+                where: { groupId },
+                include: { player: true },
+            }),
+            prisma.match.findMany({
+                where: { groupId, matchStatus: 'PLAYED' },
+                include: { player1: true, player2: true },
+            })
+        ]);
 
-    const matches = await prisma.match.findMany({
-        where: { groupId, matchStatus: 'PLAYED' },
-        include: { player1: true, player2: true },
-    });
+        if (groupPlayers.length === 0) return;
 
-    const standings: PlayerStanding[] = groupPlayers.map(gp => {
-        const playerId = gp.playerId;
-        const playerMatches = matches.filter(m => m.player1Id === playerId || m.player2Id === playerId);
-        const matchesWon = playerMatches.filter(m => m.winnerId === playerId).length;
-        let setsWon = 0; let setsLost = 0;
-        playerMatches.forEach(match => {
-            if (match.player1Id === playerId) { setsWon += match.gamesP1; setsLost += match.gamesP2; }
-            else { setsWon += match.gamesP2; setsLost += match.gamesP1; }
+        // Calculate standings in-memory (no DB queries in loop)
+        const standings: PlayerStanding[] = groupPlayers.map(gp => {
+            const playerId = gp.playerId;
+            const playerMatches = matches.filter(m => m.player1Id === playerId || m.player2Id === playerId);
+            const matchesWon = playerMatches.filter(m => m.winnerId === playerId).length;
+            let setsWon = 0; 
+            let setsLost = 0;
+            playerMatches.forEach(match => {
+                if (match.player1Id === playerId) { 
+                    setsWon += match.gamesP1; 
+                    setsLost += match.gamesP2; 
+                } else { 
+                    setsWon += match.gamesP2; 
+                    setsLost += match.gamesP1; 
+                }
+            });
+            return { playerId, playerName: gp.player.name, matchesWon, setsWon, setsLost, average: setsWon - setsLost };
         });
-        return { playerId, playerName: gp.player.name, matchesWon, setsWon, setsLost, average: setsWon - setsLost };
-    });
 
-    const sorted = [...standings].sort((a, b) => b.matchesWon - a.matchesWon);
-    const rankedPlayers = resolveTies(sorted, matches);
+        const sorted = [...standings].sort((a, b) => b.matchesWon - a.matchesWon);
+        const rankedPlayers = resolveTies(sorted, matches);
 
-    for (let i = 0; i < rankedPlayers.length; i++) {
-        await prisma.groupPlayer.update({
-            where: { groupId_playerId: { groupId, playerId: rankedPlayers[i].playerId } },
-            data: { rankingPosition: i + 1 },
-        });
+        // Batch update all positions at once instead of individual updates
+        const updateOperations = rankedPlayers.map((player, index) =>
+            prisma.groupPlayer.update({
+                where: { groupId_playerId: { groupId, playerId: player.playerId } },
+                data: { rankingPosition: index + 1 },
+            })
+        );
+
+        await Promise.all(updateOperations);
+    } catch (error) {
+        console.error('Error in calculateGroupRankings:', error);
+        throw error;
     }
 }
 

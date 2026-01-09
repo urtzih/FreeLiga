@@ -61,6 +61,7 @@ export async function classificationRoutes(fastify: FastifyInstance) {
                     include: { player: true }
                 });
                 players = groupPlayers.map(gp => gp.player);
+                fastify.log.info({ groupId, playerCount: players.length }, 'Players found in group');
             } else {
                 // Otherwise get all players
                 players = await prisma.player.findMany();
@@ -136,7 +137,7 @@ export async function classificationRoutes(fastify: FastifyInstance) {
                 };
             });
 
-            // Sort by wins (descending), then by win percentage, then by average
+            // Sort by wins (descending), then by win percentage, then by average, then alphabetically
             const sorted = classification.sort((a, b) => {
                 if (b.wins !== a.wins) {
                     return b.wins - a.wins;
@@ -144,12 +145,22 @@ export async function classificationRoutes(fastify: FastifyInstance) {
                 if (b.winPercentage !== a.winPercentage) {
                     return b.winPercentage - a.winPercentage;
                 }
-                return b.average - a.average;
+                if (b.average !== a.average) {
+                    return b.average - a.average;
+                }
+                // If all stats are equal, sort alphabetically by name
+                return a.playerName.localeCompare(b.playerName);
             });
 
             // Filter out players with no matches ONLY if not filtering by groupId
             // When viewing a specific group, show all players even if they haven't played
             const filtered = groupId ? sorted : sorted.filter(p => p.totalMatches > 0);
+
+            fastify.log.info({ 
+                groupId, 
+                totalClassification: classification.length, 
+                afterFilter: filtered.length 
+            }, 'Classification results');
 
             return filtered;
         } catch (error) {

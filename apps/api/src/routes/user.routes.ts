@@ -59,7 +59,7 @@ export async function userRoutes(fastify: FastifyInstance) {
                 return reply.status(403).send({ error: 'Forbidden' });
             }
 
-            const { page = '1', limit = '50', search = '' } = request.query as { page?: string; limit?: string; search?: string };
+            const { page = '1', limit = '50', search = '', isActive } = request.query as { page?: string; limit?: string; search?: string; isActive?: string };
             const skip = (parseInt(page) - 1) * parseInt(limit);
 
             const where: any = {};
@@ -69,6 +69,13 @@ export async function userRoutes(fastify: FastifyInstance) {
                     { player: { name: { contains: search } } },
                     { player: { nickname: { contains: search } } },
                 ];
+            }
+            
+            // Filtrar por estado activo/inactivo
+            if (isActive === 'true') {
+                where.isActive = true;
+            } else if (isActive === 'false') {
+                where.isActive = false;
             }
 
             const [users, total] = await Promise.all([

@@ -39,13 +39,14 @@ enum BugStatus {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String   // Hashed with bcrypt
-  role      Role     @default(PLAYER)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String   @id @default(cuid())
+  email            String   @unique
+  password         String   // Hashed with bcrypt
+  role             Role     @default(PLAYER)
+  isActive         Boolean  @default(true)
+  lastConnection   DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   player Player?
   bugReports BugReport[]
@@ -160,6 +161,7 @@ model Match {
   @@index([date])
   @@index([createdAt])
   @@index([groupId, date])
+  @@index([groupId, matchStatus])
   @@index([player1Id, date])
   @@index([player2Id, date])
   @@map("matches")

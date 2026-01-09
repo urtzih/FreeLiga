@@ -12,6 +12,13 @@ const assignPlayerSchema = z.object({
     playerId: z.string(),
 });
 
+const swapPlayersSchema = z.object({
+    player1Id: z.string(),
+    group1Id: z.string(),
+    player2Id: z.string(),
+    group2Id: z.string(),
+});
+
 export async function groupRoutes(fastify: FastifyInstance) {
     // Get all groups
     fastify.get('/', {
@@ -66,7 +73,16 @@ export async function groupRoutes(fastify: FastifyInstance) {
                     season: true,
                     groupPlayers: {
                         include: {
-                            player: true,
+                            player: {
+                                include: {
+                                    user: {
+                                        select: {
+                                            email: true,
+                                            role: true,
+                                        },
+                                    },
+                                },
+                            },
                         },
                         orderBy: {
                             rankingPosition: 'asc',
@@ -274,6 +290,94 @@ export async function groupRoutes(fastify: FastifyInstance) {
 
             return { success: true };
         } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // Swap players between groups (admin only)
+    fastify.post('/swap-players', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            const body = swapPlayersSchema.parse(request.body);
+            const { player1Id, group1Id, player2Id, group2Id } = body;
+
+            // Verify both players exist in their respective groups
+            const groupPlayer1 = await prisma.groupPlayer.findUnique({
+                where: {
+                    groupId_playerId: {
+                        groupId: group1Id,
+                        playerId: player1Id,
+                    },
+                },
+            });
+
+            const groupPlayer2 = await prisma.groupPlayer.findUnique({
+                where: {
+                    groupId_playerId: {
+                        groupId: group2Id,
+                        playerId: player2Id,
+                    },
+                },
+            });
+
+            if (!groupPlayer1 || !groupPlayer2) {
+                return reply.status(404).send({ error: 'One or both players not found in their groups' });
+            }
+
+            // Store ranking positions
+            const rank1 = groupPlayer1.rankingPosition;
+            const rank2 = groupPlayer2.rankingPosition;
+
+            // Perform the swap in a transaction
+            await prisma.$transaction([
+                // Delete both players from their current groups
+                prisma.groupPlayer.delete({
+                    where: {
+                        groupId_playerId: {
+                            groupId: group1Id,
+                            playerId: player1Id,
+                        },
+                    },
+                }),
+                prisma.groupPlayer.delete({
+                    where: {
+                        groupId_playerId: {
+                            groupId: group2Id,
+                            playerId: player2Id,
+                        },
+                    },
+                }),
+                // Add player1 to group2 with player2's ranking
+                prisma.groupPlayer.create({
+                    data: {
+                        groupId: group2Id,
+                        playerId: player1Id,
+                        rankingPosition: rank2,
+                    },
+                }),
+                // Add player2 to group1 with player1's ranking
+                prisma.groupPlayer.create({
+                    data: {
+                        groupId: group1Id,
+                        playerId: player2Id,
+                        rankingPosition: rank1,
+                    },
+                }),
+            ]);
+
+            return { success: true, message: 'Players swapped successfully' };
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                return reply.status(400).send({ error: error.errors });
+            }
             fastify.log.error(error);
             return reply.status(500).send({ error: 'Internal server error' });
         }

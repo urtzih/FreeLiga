@@ -9,6 +9,7 @@ interface User {
     email: string;
     role: 'PLAYER' | 'ADMIN';
     isActive: boolean;
+    lastConnection?: string | null;
     createdAt: string;
     player?: {
         id: string;
@@ -143,9 +144,15 @@ export default function ManageUsers() {
 
     // Fetch users (paginated & filtered)
     const { data, isLoading } = useAdminQuery<UsersResponse>({
-        queryKey: ['users', page, debouncedSearchTerm],
+        queryKey: ['users', page, debouncedSearchTerm, filterActive],
         queryFn: async () => {
-            const { data } = await api.get(`/users?page=${page}&limit=20&search=${encodeURIComponent(debouncedSearchTerm)}`);
+            let url = `/users?page=${page}&limit=20&search=${encodeURIComponent(debouncedSearchTerm)}`;
+            if (filterActive === 'active') {
+                url += '&isActive=true';
+            } else if (filterActive === 'inactive') {
+                url += '&isActive=false';
+            }
+            const { data } = await api.get(url);
             return data;
         }
     });
@@ -162,15 +169,8 @@ export default function ManageUsers() {
                 matchesGroup = user.player?.currentGroup?.id === filterGroup;
             }
 
-            // Filter by active status
-            let matchesActive = true;
-            if (filterActive === 'active') {
-                matchesActive = user.isActive === true;
-            } else if (filterActive === 'inactive') {
-                matchesActive = user.isActive === false;
-            }
-
-            return matchesGroup && matchesActive;
+            // El filtro de active/inactive ahora se hace en el backend
+            return matchesGroup;
         })
         .sort((a, b) => {
             let aVal: any, bVal: any;
@@ -525,7 +525,10 @@ export default function ManageUsers() {
                                 </label>
                                 <select
                                     value={filterActive}
-                                    onChange={e => setFilterActive(e.target.value as 'all' | 'active' | 'inactive')}
+                                    onChange={e => {
+                                        setFilterActive(e.target.value as 'all' | 'active' | 'inactive');
+                                        setPage(1); // Reset page when filter changes
+                                    }}
                                     className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                                 >
                                     <option value="all">Todos los estados</option>
@@ -562,6 +565,9 @@ export default function ManageUsers() {
                                         <th onClick={() => handleSort('createdAt')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
                                             <div className="flex items-center gap-1">Fecha Registro {sortField === 'createdAt' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}</div>
                                         </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                            <div className="flex items-center gap-1">Última Conexión</div>
+                                        </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Acciones</th>
                                     </tr>
                                 </thead>
@@ -590,6 +596,17 @@ export default function ManageUsers() {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="text-sm text-slate-600 dark:text-slate-400">{new Date(user.createdAt).toLocaleDateString('es-ES')}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm">
+                                                    {user.lastConnection ? (
+                                                        <span className="text-slate-600 dark:text-slate-400">
+                                                            {new Date(user.lastConnection).toLocaleDateString('es-ES')} {new Date(user.lastConnection).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-slate-400 dark:text-slate-500 italic">Nunca</span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex flex-wrap gap-2">

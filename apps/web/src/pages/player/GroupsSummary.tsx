@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import api from '../../lib/api';
 import Loader from '../../components/Loader';
+import ProgressBar from '../../components/ProgressBar';
 import { Link } from 'react-router-dom';
 
 interface Group {
@@ -116,6 +117,14 @@ export default function GroupsSummary() {
                                     <div className="text-lg font-semibold text-slate-900 dark:text-white">{progress}%</div>
                                     <div className="text-[11px] text-slate-500">{played}/{possibleMatches || 0} partidos</div>
                                 </div>
+                            </div>
+
+                            <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                                <ProgressBar 
+                                    percentage={progress} 
+                                    height="md"
+                                    showPercentage={false}
+                                />
                             </div>
 
                             <div className="p-5 flex-1 flex flex-col gap-4">
