@@ -137,6 +137,14 @@ export async function authRoutes(fastify: FastifyInstance) {
             }
             log('✅ User is ACTIVE');
 
+            // Actualizar lastConnection
+            log('🕐 Updating lastConnection timestamp...');
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { lastConnection: new Date() }
+            });
+            log('✅ lastConnection updated');
+
             // Obtener grupo actual basado en temporada activa
             log('👥 Fetching current group for player...');
             let currentGroup = null;

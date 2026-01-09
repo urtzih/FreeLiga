@@ -158,6 +158,23 @@ export default function CalendarView({ matches, currentUserId, onDayClick, onMat
                     }
                   }
                   
+                  const matchTitle = getMatchTitle(match);
+                  const matchTime = format(new Date(match.scheduledDate || match.date || ''), 'HH:mm');
+                  
+                  // Para partidos jugados, mostrar contrincante + resultado
+                  let displayText = '';
+                  if (isPlayed && isUserInMatch) {
+                    const userScore = match.player1.id === currentUserId ? match.gamesP1 : match.gamesP2;
+                    const oppScore = match.player1.id === currentUserId ? match.gamesP2 : match.gamesP1;
+                    displayText = `${matchTitle} ${userScore}-${oppScore}`;
+                  } else if (isPlayed) {
+                    // Si no es el usuario pero está jugado, mostrar solo resultado
+                    displayText = `${match.player1.name.split(' ')[0]} ${match.gamesP1}-${match.gamesP2} ${match.player2.name.split(' ')[0]}`;
+                  } else {
+                    // Partidos programados: mostrar hora + contrincante
+                    displayText = `${matchTime} ${matchTitle.split(' ').slice(0, 2).join(' ')}`;
+                  }
+                  
                   return (
                     <div
                       key={match.id}
@@ -165,9 +182,17 @@ export default function CalendarView({ matches, currentUserId, onDayClick, onMat
                         e.stopPropagation();
                         onMatchClick?.(match);
                       }}
-                      className={`h-1.5 sm:h-2 rounded-full cursor-pointer hover:opacity-80 transition-opacity ${bgColor}`}
-                      title={getMatchTitle(match)}
-                    />
+                      className={`rounded-md cursor-pointer hover:opacity-80 transition-all ${bgColor} group relative`}
+                      title={`${matchTitle} @ ${matchTime}`}
+                    >
+                      {/* Indicador visual para mobile */}
+                      <div className="sm:hidden h-1.5 sm:h-2 rounded-full w-full" />
+                      
+                      {/* Tooltip visible en desktop con información diferente según estado */}
+                      <div className="hidden sm:block text-xs p-1 text-white font-semibold truncate">
+                        {displayText}
+                      </div>
+                    </div>
                   );
                 })}
                 {dayMatches.length > 3 && (

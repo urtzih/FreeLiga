@@ -48,7 +48,7 @@ export default function ManageUsers() {
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [filterGroup, setFilterGroup] = useState('');
     const [filterActive, setFilterActive] = useState<'all' | 'active' | 'inactive'>('all');
-    const [sortField, setSortField] = useState<'email' | 'name' | 'phone' | 'group' | 'role' | 'isActive' | 'createdAt'>('createdAt');
+    const [sortField, setSortField] = useState<'email' | 'name' | 'phone' | 'group' | 'role' | 'isActive' | 'createdAt' | 'lastConnection'>('createdAt');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
     // Handle search with Enter key or button
@@ -189,6 +189,10 @@ export default function ManageUsers() {
                     aVal = a.isActive ? 1 : 0; bVal = b.isActive ? 1 : 0; break;
                 case 'createdAt':
                     aVal = new Date(a.createdAt).getTime(); bVal = new Date(b.createdAt).getTime(); break;
+                case 'lastConnection':
+                    aVal = a.lastConnection ? new Date(a.lastConnection).getTime() : 0;
+                    bVal = b.lastConnection ? new Date(b.lastConnection).getTime() : 0;
+                    break;
                 default:
                     aVal = ''; bVal = '';
             }
@@ -565,8 +569,8 @@ export default function ManageUsers() {
                                         <th onClick={() => handleSort('createdAt')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
                                             <div className="flex items-center gap-1">Fecha Registro {sortField === 'createdAt' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}</div>
                                         </th>
-                                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                            <div className="flex items-center gap-1">Última Conexión</div>
+                                        <th onClick={() => handleSort('lastConnection')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+                                            <div className="flex items-center gap-1">Última Conexión {sortField === 'lastConnection' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}</div>
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Acciones</th>
                                     </tr>

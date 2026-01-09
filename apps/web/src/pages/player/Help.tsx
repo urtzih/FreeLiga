@@ -485,6 +485,68 @@ export default function Help() {
                 </div>
             </section>
 
+            {/* Características de Prueba */}
+            <section className="bg-purple-50 dark:bg-purple-900/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-700">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">⚗️ Características de Prueba (Beta)</h2>
+                <div className="space-y-4 text-slate-600 dark:text-slate-400">
+                    <div className="bg-purple-100 dark:bg-purple-900/30 border-l-4 border-purple-400 p-4 mb-4">
+                        <p className="text-sm"><strong>ℹ️ Aviso Importante:</strong> Algunas características de esta plataforma están en fase de prueba (beta). Esto significa que pueden cambiar, tener comportamientos inesperados, o ser eliminadas en el futuro sin previo aviso.</p>
+                    </div>
+                    
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">¿Cuáles son las Características de Prueba?</h3>
+                        <p className="mb-2">Las características de prueba te permiten acceder a funcionalidades experimentales. Estas están identificadas en la plataforma y pueden no estar completamente estables. Algunos ejemplos incluyen:</p>
+                        <ul className="list-disc list-inside ml-4 space-y-1">
+                            <li>Nuevas integraciones con calendarios</li>
+                            <li>Nuevas opciones de programación de partidos</li>
+                            <li>Mejoras experimentales en reportes y estadísticas</li>
+                            <li>Otras funcionalidades marcadas como "Beta" o "Experimental"</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">¿Qué Debo Hacer con las Características de Prueba?</h3>
+                        <p className="mb-2">Te recomendamos que <strong>desactives las características de prueba</strong> desde tu perfil si:</p>
+                        <ul className="list-disc list-inside ml-4 space-y-1">
+                            <li>Prefieres usar solo funcionalidades estables y probadas</li>
+                            <li>Experimentas problemas o comportamientos extraños</li>
+                            <li>Quieres una experiencia de usuario más predecible</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Cómo Desactivar las Características de Prueba</h3>
+                        <ol className="list-decimal list-inside ml-4 space-y-2">
+                            <li>
+                                <strong>Abre tu Perfil</strong>
+                                <p className="ml-6 mt-1">Haz clic en tu nombre en la esquina superior derecha de la página y selecciona "Perfil".</p>
+                            </li>
+                            <li>
+                                <strong>Busca la sección "Preferencias"</strong>
+                                <p className="ml-6 mt-1">Desplázate hacia abajo en tu perfil hasta encontrar la sección de "Características de Prueba" o "Beta Features".</p>
+                            </li>
+                            <li>
+                                <strong>Desactiva la opción</strong>
+                                <p className="ml-6 mt-1">Verás un interruptor (toggle) que dice "Activar Características de Prueba" o similar. Si está activado (en azul o verde), haz clic para desactivarlo (se volverá gris).</p>
+                            </li>
+                            <li>
+                                <strong>Guarda los cambios</strong>
+                                <p className="ml-6 mt-1">Tu perfil se actualizará automáticamente. Las características de prueba estarán desactivadas inmediatamente.</p>
+                            </li>
+                        </ol>
+                    </div>
+
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4">
+                        <p className="text-sm"><strong>💡 Consejo:</strong> Si desactivas las características de prueba y luego quieres volver a activarlas, puedes hacer lo mismo en cualquier momento. Esto solo afecta a tu cuenta individual.</p>
+                    </div>
+
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">¿Qué Pasa si Encuentro un Problema?</h3>
+                        <p>Si experimentas algún problema con las características de prueba, consulta la sección "¿Has Encontrado un Error?" a continuación para aprender cómo reportar bugs. Tu feedback es muy valioso para mejorar estas características.</p>
+                    </div>
+                </div>
+            </section>
+
             {/* Reportar Bugs Ampliado */}
             <section className="bg-red-50 dark:bg-red-900/20 rounded-2xl p-6 border border-red-200 dark:border-red-700">
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">🐛 ¿Has Encontrado un Error?</h2>

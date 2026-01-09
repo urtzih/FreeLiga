@@ -155,6 +155,7 @@ model Match {
   googleEventId              String?   @unique
   isScheduled                Boolean   @default(false)
   googleCalendarSyncStatus   String?
+  notes                      String?   @db.Text   // Notas opcionales (pista, detalles, etc)
   
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt

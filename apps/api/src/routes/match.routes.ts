@@ -14,6 +14,7 @@ const createMatchSchema = z.object({
     // Campos de programación
     scheduledDate: z.string().datetime().optional(),
     location: z.string().optional(),
+    notes: z.string().max(200).optional(),
     // Campos de resultado
     date: z.string().datetime().optional(),
     gamesP1: z.number().int().min(0).max(3).optional(),
@@ -24,6 +25,7 @@ const createMatchSchema = z.object({
 const updateMatchSchema = z.object({
     scheduledDate: z.string().datetime().optional(),
     location: z.string().optional(),
+    notes: z.string().max(200).nullable().optional(),
     date: z.string().datetime().optional(),
     gamesP1: z.number().int().min(0).max(3).optional(),
     gamesP2: z.number().int().min(0).max(3).optional(),
@@ -243,6 +245,9 @@ export async function matchRoutes(fastify: FastifyInstance) {
             if (isScheduled) {
                 matchData.scheduledDate = new Date(body.scheduledDate!);
                 matchData.location = body.location;
+                if (body.notes) {
+                    matchData.notes = body.notes;
+                }
                 matchData.matchStatus = 'PLAYED'; // Default status
                 matchData.googleCalendarSyncStatus = 'NOT_SYNCED';
             }

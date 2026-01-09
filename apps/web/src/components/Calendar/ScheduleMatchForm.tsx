@@ -27,6 +27,7 @@ interface ScheduleMatchFormProps {
     player2Id: string;
     scheduledDate: string;
     location: string;
+    notes?: string;
   }) => Promise<void>;
   onCancel?: () => void;
   isLoading?: boolean;
@@ -38,6 +39,7 @@ const scheduleMatchSchema = z.object({
   player2Id: z.string().min(1, 'Selecciona el segundo jugador'),
   scheduledDate: z.string().min(1, 'Selecciona fecha y hora'),
   location: z.string().min(1, 'Ingresa el lugar del partido'),
+  notes: z.string().optional(),
 });
 
 type ScheduleMatchFormData = z.infer<typeof scheduleMatchSchema>;
@@ -55,6 +57,7 @@ export default function ScheduleMatchForm({
     player2Id: '',
     scheduledDate: '',
     location: '',
+    notes: '',
   });
   const [timeHour, setTimeHour] = useState('12');
   const [timeMinute, setTimeMinute] = useState('00');
@@ -138,6 +141,7 @@ export default function ScheduleMatchForm({
         player2Id: '',
         scheduledDate: '',
         location: '',
+        notes: '',
       });
       setErrors({});
     } catch (error) {
@@ -203,7 +207,11 @@ export default function ScheduleMatchForm({
                 scheduledDate: fullDateTime,
               }));
             }}
-            className="w-full px-3 py-2.5 border-2 border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-600 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-500 transition-all text-sm"
+            onClick={(e) => {
+              // Auto-abrir el calendar picker en navegadores que lo soportan
+              (e.target as HTMLInputElement).showPicker?.();
+            }}
+            className="w-full px-3 py-2.5 border-2 border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-600 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-500 transition-all text-sm cursor-pointer"
           />
         </div>
 
@@ -265,24 +273,31 @@ export default function ScheduleMatchForm({
         {errors.location && <p className="text-red-500 dark:text-red-400 text-sm mt-2 font-semibold">⚠️ {errors.location}</p>}
       </div>
 
+      {/* Notes (opcional) */}
+      <div>
+        <label className="block text-sm font-semibold text-slate-900 dark:text-white mb-2">
+          📝 Notas Adicionales (opcional)
+        </label>
+        <textarea
+          name="notes"
+          value={formData.notes || ''}
+          onChange={handleChange}
+          placeholder="Ej: Pista 05, entrada por la puerta sur..."
+          rows={2}
+          className="w-full px-4 py-3 border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-500 transition-all text-sm resize-none"
+        />
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Máximo 200 caracteres</p>
+      </div>
+
       {/* Actions */}
       <div className="flex gap-3 pt-2">
         <button
           type="submit"
           disabled={isSubmitting || isLoading || availableOpponents.length === 0}
-          className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white py-3 rounded-lg hover:from-green-700 hover:to-green-800 disabled:from-slate-400 disabled:to-slate-400 transition-all font-semibold text-sm sm:text-base shadow-md hover:shadow-lg disabled:shadow-none"
+          className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 rounded-lg hover:from-green-700 hover:to-green-800 disabled:from-slate-400 disabled:to-slate-400 transition-all font-semibold text-sm sm:text-base shadow-md hover:shadow-lg disabled:shadow-none"
         >
           {isSubmitting ? '⏳ Programando...' : '✓ Programar'}
         </button>
-        {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="flex-1 bg-slate-300 dark:bg-slate-600 text-slate-800 dark:text-slate-100 py-3 rounded-lg hover:bg-slate-400 dark:hover:bg-slate-500 transition-all font-semibold text-sm sm:text-base"
-          >
-            ✕ Cancelar
-          </button>
-        )}
       </div>
     </form>
   );

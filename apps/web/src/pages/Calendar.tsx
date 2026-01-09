@@ -4,6 +4,7 @@ import { useGroup } from '../hooks/useGroup';
 import CalendarView from '../components/Calendar/CalendarView';
 import ScheduleMatchForm from '../components/Calendar/ScheduleMatchForm';
 import MatchDetail from '../components/Calendar/MatchDetail';
+import EditScheduledMatchModal from '../components/EditScheduledMatchModal';
 import api from '../lib/api';
 import { toast } from 'react-hot-toast';
 
@@ -36,6 +37,7 @@ export default function CalendarPage() {
   const [showForm, setShowForm] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [showDetail, setShowDetail] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [isGoogleConnected, setIsGoogleConnected] = useState(false);
   const [isConnectingGoogle, setIsConnectingGoogle] = useState(false);
 
@@ -162,6 +164,7 @@ export default function CalendarPage() {
     player2Id: string;
     scheduledDate: string;
     location: string;
+    notes?: string;
   }) => {
     try {
       // Convertir scheduledDate a ISO string completo
@@ -173,6 +176,7 @@ export default function CalendarPage() {
         player2Id: data.player2Id,
         scheduledDate: scheduledDateISO,
         location: data.location,
+        notes: data.notes,
       });
 
       const response = await api.post('/matches', {
@@ -181,6 +185,7 @@ export default function CalendarPage() {
         player2Id: data.player2Id,
         scheduledDate: scheduledDateISO,
         location: data.location,
+        notes: data.notes,
       });
 
       setMatches(prev => {
@@ -357,6 +362,7 @@ export default function CalendarPage() {
                 onCancel={() => setShowDetail(false)}
                 onEdit={() => {
                   setShowDetail(false);
+                  setShowEditModal(true);
                 }}
                 onDelete={async () => {
                   try {
@@ -435,6 +441,45 @@ export default function CalendarPage() {
             </button>
           </div>
         </div>
+
+        {/* Edit Scheduled Match Modal */}
+        {selectedMatch && (
+          <EditScheduledMatchModal
+            match={selectedMatch}
+            isOpen={showEditModal}
+            onClose={() => {
+              setShowEditModal(false);
+              // Recargar los partidos después de editar
+              if (currentGroup?.id) {
+                api.get('/matches', {
+                  params: {
+                    groupId: currentGroup.id,
+                    scheduled: 'true',
+                  },
+                })
+                  .then(res => {
+                    api.get('/matches', {
+                      params: {
+                        groupId: currentGroup.id,
+                        matchStatus: 'PLAYED',
+                        withResults: 'true',
+                      },
+                    })
+                      .then(playedRes => {
+                        const merged = new Map<string, Match>();
+                        [...(res.data || []), ...(playedRes.data || [])].forEach((m: Match) => {
+                          merged.set(m.id, m);
+                        });
+                        setMatches(Array.from(merged.values()));
+                      });
+                  });
+              }
+            }}
+            onSuccess={() => {
+              toast.success('Programación actualizada');
+            }}
+          />
+        )}
       </div>
     </div>
   );

@@ -43,6 +43,25 @@ export default function MatchDetail({
     return `${match.player1.name} vs ${match.player2.name}`;
   };
 
+  // Determinar si el usuario actual ganó o perdió
+  const getResultColor = () => {
+    if (!currentUserId || !hasResult) return 'purple';
+    
+    const userIsP1 = match.player1.id === currentUserId;
+    const userIsP2 = match.player2.id === currentUserId;
+    
+    if (!userIsP1 && !userIsP2) return 'purple'; // Usuario no está en el partido
+    
+    const userGames = userIsP1 ? match.gamesP1 : match.gamesP2;
+    const oppGames = userIsP1 ? match.gamesP2 : match.gamesP1;
+    
+    if ((userGames ?? 0) > (oppGames ?? 0)) return 'green'; // Ganó
+    if ((userGames ?? 0) < (oppGames ?? 0)) return 'red'; // Perdió
+    return 'purple'; // Empate (no debería ocurrir en squash)
+  };
+
+  const resultColor = getResultColor();
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-4 sm:p-6 w-full border border-slate-200 dark:border-slate-700">
       <div className="space-y-4">
@@ -72,16 +91,34 @@ export default function MatchDetail({
         </div>
 
         {/* Ubicación */}
-        <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 p-4 rounded-lg border border-green-200 dark:border-green-700">
-          <p className="text-xs sm:text-sm text-green-700 dark:text-green-200 font-semibold uppercase">📍 Ubicación</p>
-          <p className="text-base sm:text-lg font-bold text-green-900 dark:text-green-100 mt-2">{match.location}</p>
+        <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-700 dark:to-slate-600 p-4 rounded-lg border border-slate-200 dark:border-slate-600">
+          <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-200 font-semibold uppercase">📍 Ubicación</p>
+          <p className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 mt-2">{match.location}</p>
         </div>
 
         {/* Resultado */}
         {hasResult && (
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
-            <p className="text-xs sm:text-sm text-purple-700 dark:text-purple-200 font-semibold uppercase">🏆 Resultado</p>
-            <p className="text-base sm:text-lg font-bold text-purple-900 dark:text-purple-100 mt-2">
+          <div className={`bg-gradient-to-br p-4 rounded-lg border ${
+            resultColor === 'green' 
+              ? 'from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 border-green-200 dark:border-green-700'
+              : resultColor === 'red'
+              ? 'from-red-50 to-red-100 dark:from-red-900 dark:to-red-800 border-red-200 dark:border-red-700'
+              : 'from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800 border-purple-200 dark:border-purple-700'
+          }`}>
+            <p className={`text-xs sm:text-sm font-semibold uppercase ${
+              resultColor === 'green'
+                ? 'text-green-700 dark:text-green-200'
+                : resultColor === 'red'
+                ? 'text-red-700 dark:text-red-200'
+                : 'text-purple-700 dark:text-purple-200'
+            }`}>🏆 Resultado</p>
+            <p className={`text-base sm:text-lg font-bold mt-2 ${
+              resultColor === 'green'
+                ? 'text-green-900 dark:text-green-100'
+                : resultColor === 'red'
+                ? 'text-red-900 dark:text-red-100'
+                : 'text-purple-900 dark:text-purple-100'
+            }`}>
               {match.player1.name} <span className="text-lg">{match.gamesP1} - {match.gamesP2}</span> {match.player2.name}
             </p>
           </div>

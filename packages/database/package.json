@@ -12,7 +12,8 @@
         "seed:ciclo2526": "tsx src/seed-ciclo-2526.ts"
     },
     "dependencies": {
-        "@prisma/client": "^5.7.1"
+        "@prisma/client": "^5.7.1",
+        "mysql2": "^3.16.0"
     },
     "devDependencies": {
         "prisma": "^5.7.1",
