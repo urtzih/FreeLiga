@@ -104,12 +104,15 @@ export async function playerRoutes(fastify: FastifyInstance) {
             let setsLost = 0;
 
             matches.forEach(match => {
-                if (match.player1Id === id) {
-                    setsWon += match.gamesP1;
-                    setsLost += match.gamesP2;
-                } else {
-                    setsWon += match.gamesP2;
-                    setsLost += match.gamesP1;
+                // Solo contar partidos con resultado
+                if (match.gamesP1 !== null && match.gamesP2 !== null) {
+                    if (match.player1Id === id) {
+                        setsWon += match.gamesP1;
+                        setsLost += match.gamesP2;
+                    } else {
+                        setsWon += match.gamesP2;
+                        setsLost += match.gamesP1;
+                    }
                 }
             });
 
@@ -246,8 +249,11 @@ export async function playerRoutes(fastify: FastifyInstance) {
             for (const m of matches) {
                 const won = m.winnerId === id;
                 if (won) wins++; else if (m.winnerId) losses++;
-                if (m.player1Id === id) { setsWon += m.gamesP1; setsLost += m.gamesP2; }
-                else { setsWon += m.gamesP2; setsLost += m.gamesP1; }
+                // Solo contar partidos con resultado
+                if (m.gamesP1 !== null && m.gamesP2 !== null) {
+                    if (m.player1Id === id) { setsWon += m.gamesP1; setsLost += m.gamesP2; }
+                    else { setsWon += m.gamesP2; setsLost += m.gamesP1; }
+                }
                 const total = wins + losses;
                 const winPercentage = total > 0 ? +(wins / total * 100).toFixed(2) : 0;
                 points.push({

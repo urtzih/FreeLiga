@@ -45,12 +45,15 @@ export async function calculateGroupRankings(groupId: string): Promise<void> {
             let setsWon = 0; 
             let setsLost = 0;
             playerMatches.forEach(match => {
-                if (match.player1Id === playerId) { 
-                    setsWon += match.gamesP1; 
-                    setsLost += match.gamesP2; 
-                } else { 
-                    setsWon += match.gamesP2; 
-                    setsLost += match.gamesP1; 
+                // Solo contar partidos con resultado
+                if (match.gamesP1 !== null && match.gamesP2 !== null) {
+                    if (match.player1Id === playerId) { 
+                        setsWon += match.gamesP1; 
+                        setsLost += match.gamesP2; 
+                    } else { 
+                        setsWon += match.gamesP2; 
+                        setsLost += match.gamesP1; 
+                    }
                 }
             });
             return { playerId, playerName: gp.player.name, matchesWon, setsWon, setsLost, average: setsWon - setsLost };

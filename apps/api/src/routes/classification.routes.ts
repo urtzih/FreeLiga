@@ -109,12 +109,15 @@ export async function classificationRoutes(fastify: FastifyInstance) {
                 let setsLost = 0;
 
                 playerMatches.forEach(match => {
-                    if (match.player1Id === player.id) {
-                        setsWon += match.gamesP1;
-                        setsLost += match.gamesP2;
-                    } else {
-                        setsWon += match.gamesP2;
-                        setsLost += match.gamesP1;
+                    // Solo contar partidos con resultado
+                    if (match.gamesP1 !== null && match.gamesP2 !== null) {
+                        if (match.player1Id === player.id) {
+                            setsWon += match.gamesP1;
+                            setsLost += match.gamesP2;
+                        } else {
+                            setsWon += match.gamesP2;
+                            setsLost += match.gamesP1;
+                        }
                     }
                 });
 
