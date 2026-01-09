@@ -306,7 +306,7 @@ export default function Profile() {
               <label className="flex items-center justify-between">
                 <div>
                   <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    Funcionalidad de Calendario
+                    (Ojo, todavía esta en fase de prueba) Funcionalidad de Calendario
                   </span>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     Habilita la programación de partidos y sincronización con Google Calendar
