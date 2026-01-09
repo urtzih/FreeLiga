@@ -92,5 +92,6 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD node -e "require('http').get('http://localhost:3001/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})" || exit 1
 
-# Run database migrations and start the application
-CMD ["sh", "-c", "npx prisma migrate deploy --schema=packages/database/prisma/schema.prisma && node apps/api/dist/server.js"]
+# Use Railway's startCommand if available, otherwise fallback to migrations + app
+ENTRYPOINT ["sh", "-c"]
+CMD ["npx prisma migrate deploy --schema=packages/database/prisma/schema.prisma && node apps/api/dist/server.js"]
