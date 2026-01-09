@@ -93,11 +93,13 @@ export async function authRoutes(fastify: FastifyInstance) {
     // Login
     fastify.post('/login', async (request, reply) => {
         try {
-            console.log('🔐 LOGIN - Starting login attempt');
+            console.log('🔐 LOGIN - ENDPOINT HIT - Request received');
+            console.log('🔐 LOGIN - Body:', request.body);
             const body = loginSchema.parse(request.body);
             console.log('🔐 LOGIN - Credentials parsed:', { email: body.email });
 
             // Find user
+            console.log('🔐 LOGIN - Querying user with email:', body.email);
             const user = await prisma.user.findUnique({
                 where: { email: body.email },
                 include: {
@@ -108,13 +110,16 @@ export async function authRoutes(fastify: FastifyInstance) {
             console.log('🔐 LOGIN - User found:', { userId: user?.id, hasPlayer: !!user?.player });
 
             if (!user) {
+                console.log('🔐 LOGIN - User not found for email:', body.email);
                 return reply.status(401).send({ error: 'Invalid credentials' });
             }
 
             // Check password
+            console.log('🔐 LOGIN - Checking password hash');
             const validPassword = await bcrypt.compare(body.password, user.password);
 
             if (!validPassword) {
+                console.log('🔐 LOGIN - Invalid password for user:', body.email);
                 return reply.status(401).send({ error: 'Invalid credentials' });
             }
 
@@ -122,6 +127,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
             // Check if user is active
             if (!user.isActive) {
+                console.log('🔐 LOGIN - User is inactive:', body.email);
                 return reply.status(403).send({ error: 'Account is deactivated. Please contact an administrator.' });
             }
 
@@ -164,17 +170,25 @@ export async function authRoutes(fastify: FastifyInstance) {
                 },
             };
         } catch (error) {
+            console.error('🔐 LOGIN - CATCH BLOCK HIT');
             console.error('🔐 LOGIN - ERROR:', error);
+            console.error('🔐 LOGIN - Error type:', error instanceof Error ? error.constructor.name : typeof error);
             if (error instanceof z.ZodError) {
                 console.error('🔐 LOGIN - Zod validation error:', error.errors);
                 return reply.status(400).send({ error: error.errors });
             }
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorStack = error instanceof Error ? error.stack : undefined;
             console.error('🔐 LOGIN - Exception details:', {
-                message: error instanceof Error ? error.message : String(error),
-                stack: error instanceof Error ? error.stack : undefined
+                message: errorMessage,
+                stack: errorStack
             });
             fastify.log.error(error);
-            return reply.status(500).send({ error: 'Internal server error', details: error instanceof Error ? error.message : String(error) });
+            return reply.status(500).send({ 
+                error: 'Internal server error', 
+                details: errorMessage,
+                type: error instanceof Error ? error.constructor.name : typeof error
+            });
         }
     });
 
