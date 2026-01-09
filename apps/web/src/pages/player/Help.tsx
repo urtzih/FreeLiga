@@ -161,7 +161,12 @@ export default function Help() {
 
             {/* Calendario y Programación de Partidos */}
             <section className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">📅 Calendario y Programación de Partidos</h2>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">📅 (En fase de pruebas) Calendario y Programación de Partidos</h2>
+                
+                <div className="bg-purple-100 dark:bg-purple-900/30 border-l-4 border-purple-400 p-4 mb-4">
+                    <p className="text-sm"><strong>⚠️ Nota Importante:</strong> Esta es una característica en fase de pruebas. Para usar el Calendario, primero debes <strong>habilitarlo en tu perfil</strong>. Ve a tu Perfil → Características de Prueba → Activa "Características de Prueba". Una vez habilitado, verás el menú "Calendario" en la parte superior.</p>
+                </div>
+
                 <div className="space-y-4 text-slate-600 dark:text-slate-400">
                     <p>El Calendario te permite programar partidos con tus rivales de forma anticipada y sincronizarlos con Google Calendar.</p>
                     

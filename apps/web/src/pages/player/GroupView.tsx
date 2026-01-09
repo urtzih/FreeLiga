@@ -30,7 +30,7 @@ export default function GroupView() {
     const { user } = useAuth();
     const calendarEnabled = user?.player?.calendarEnabled ?? false;
 
-    const { data: group, isLoading } = useQuery({
+    const { data: group, isLoading, error: groupError } = useQuery({
         queryKey: ['group', id],
         queryFn: async () => {
             const { data } = await api.get(`/groups/${id}`);
@@ -65,8 +65,28 @@ export default function GroupView() {
         return <div className="py-12"><Loader /></div>;
     }
 
+    if (groupError) {
+        return (
+            <div className="text-center py-12">
+                <div className="text-red-600 dark:text-red-400 text-lg mb-4">Error cargando el grupo</div>
+                <p className="text-slate-600 dark:text-slate-400 mb-4">Es posible que:</p>
+                <ul className="text-left max-w-md mx-auto text-slate-600 dark:text-slate-400 space-y-2">
+                    <li>• El grupo no exista o haya sido eliminado</li>
+                    <li>• No tengas permiso para ver este grupo</li>
+                    <li>• Tu sesión haya expirado</li>
+                </ul>
+                <a href="/dashboard" className="text-blue-600 dark:text-blue-400 hover:underline mt-6 inline-block">Volver al inicio</a>
+            </div>
+        );
+    }
+
     if (!group) {
-        return <div className="text-center py-12">Grupo no encontrado</div>;
+        return (
+            <div className="text-center py-12">
+                <div className="text-slate-600 dark:text-slate-400 text-lg mb-4">Grupo no encontrado</div>
+                <a href="/dashboard" className="text-blue-600 dark:text-blue-400 hover:underline">Volver al inicio</a>
+            </div>
+        );
     }
 
     if (classificationError) {
