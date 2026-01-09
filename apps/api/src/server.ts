@@ -13,6 +13,9 @@ import compress from '@fastify/compress';
 import etag from '@fastify/etag';
 import jwt from '@fastify/jwt';
 import rateLimit from '@fastify/rate-limit';
+import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
 import { authRoutes } from './routes/auth.routes';
 import { playerRoutes } from './routes/player.routes';
 import { groupRoutes } from './routes/group.routes';
@@ -25,6 +28,14 @@ import { bugRoutes } from './routes/bug.routes';
 import { logger, logBusinessEvent } from './utils/logger';
 import { registerHttpLogging, httpErrorHook } from './utils/httpLogger';
 
+// Load root-level .env so running from apps/api picks up shared config
+const rootEnvPath = path.resolve(process.cwd(), '..', '..', '.env');
+if (fs.existsSync(rootEnvPath)) {
+    dotenv.config({ path: rootEnvPath });
+} else {
+    dotenv.config();
+}
+
 const fastify = Fastify({
     logger: true,
     disableRequestLogging: true, // Usamos nuestro middleware personalizado
@@ -32,6 +43,7 @@ const fastify = Fastify({
     genReqId: () => {
         return `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     },
+    bodyLimit: 10 * 1024 * 1024, // 10MB limit for attachments/images
 });
 
 async function start() {

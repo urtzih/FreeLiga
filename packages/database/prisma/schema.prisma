@@ -268,7 +268,7 @@ model BugReport {
   status      BugStatus @default(OPEN)
   userAgent   String?   @db.Text
   appVersion  String?
-  attachments String?   @db.Text
+  attachments String?   @db.LongText
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   comments    BugComment[]

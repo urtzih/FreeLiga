@@ -33,7 +33,8 @@ export async function bugRoutes(fastify: FastifyInstance) {
       if (error instanceof z.ZodError) {
         return reply.status(400).send({ error: error.errors });
       }
-      fastify.log.error(error);
+      // Log detailed error for debugging
+      fastify.log.error({ error, errorMessage: error instanceof Error ? error.message : String(error), stack: error instanceof Error ? error.stack : undefined }, 'Error creating bug report');
       return reply.status(500).send({ error: 'Internal server error' });
     }
   });

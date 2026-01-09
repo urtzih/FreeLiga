@@ -16,6 +16,20 @@ export default function BugReport() {
       const appVersion = (import.meta as any).env?.VITE_APP_VERSION || 'dev';
       let attachments = '';
 
+      // Validar tamaño de archivos (max 5MB por archivo, max 3 archivos)
+      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+      const MAX_FILES = 3;
+      
+      if (files.length > MAX_FILES) {
+        throw new Error(`Máximo ${MAX_FILES} archivos permitidos`);
+      }
+      
+      for (const file of files) {
+        if (file.size > MAX_FILE_SIZE) {
+          throw new Error(`El archivo "${file.name}" excede el tamaño máximo de 5MB`);
+        }
+      }
+
       // Convertir archivos a base64 para enviar (alternativa: subir a servidor/cloud)
       if (files.length > 0) {
         const encoded = await Promise.all(files.map(async (file) => {
@@ -96,7 +110,7 @@ export default function BugReport() {
                 ))}
               </div>
             )}
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Máx. 5 MB por archivo. Formatos: imágenes y videos.</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Máx. 5 MB por archivo, máximo 3 archivos. Formatos: imágenes y videos.</p>
           </div>
           <div className="flex items-center justify-between">
             <button
