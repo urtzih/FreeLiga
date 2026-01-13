@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api';
 import { useToast } from '../contexts/ToastContext';
+import Spinner from './Spinner';
 
 interface Match {
     id: string;
@@ -198,9 +199,16 @@ export default function EditMatchModal({ match, isOpen, onClose }: EditMatchModa
                         <button
                             type="submit"
                             disabled={mutation.isPending}
-                            className="flex-1 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors disabled:opacity-50"
+                            className="flex-1 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center justify-center"
                         >
-                            {mutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
+                            {mutation.isPending ? (
+                                <>
+                                    <Spinner size="sm" className="mr-2" />
+                                    Guardando...
+                                </>
+                            ) : (
+                                'Guardar Cambios'
+                            )}
                         </button>
                     </div>
                 </form>
