@@ -108,7 +108,11 @@ export default function EditMatchModal({ match, isOpen, onClose }: EditMatchModa
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
                 <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white">Editar Partido</h3>
-                    <button onClick={onClose} className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+                    <button
+                        onClick={onClose}
+                        aria-label="Close"
+                        className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-full p-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-800"
+                    >
                         ✕
                     </button>
                 </div>
