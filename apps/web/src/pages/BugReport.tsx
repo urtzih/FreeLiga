@@ -105,7 +105,7 @@ export default function BugReport() {
                 {files.map((file, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
                     <span className="truncate max-w-[150px]">{file.name}</span>
-                    <button type="button" onClick={() => setFiles(files.filter((_, idx) => idx !== i))} className="text-red-600 hover:text-red-800">✕</button>
+                    <button type="button" onClick={() => setFiles(files.filter((_, idx) => idx !== i))} className="text-red-600 hover:text-red-800" aria-label="Quitar archivo">✕</button>
                   </div>
                 ))}
               </div>
