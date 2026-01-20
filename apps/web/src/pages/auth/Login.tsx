@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(() => {
         return sessionStorage.getItem('loginError') || '';
     });
@@ -116,15 +117,34 @@ export default function Login() {
                             <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                                 Contraseña
                             </label>
-                            <input
-                                id="password"
-                                type="password"
-                                required
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                                placeholder="••••••••"
-                            />
+                            <div className="relative">
+                                <input
+                                    id="password"
+                                    type={showPassword ? 'text' : 'password'}
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full px-4 py-3 pr-10 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                    placeholder="••••••••"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute inset-y-0 right-0 px-3 flex items-center text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                                >
+                                    {showPassword ? (
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" clipRule="evenodd" />
+                                            <path fillRule="evenodd" d="M.664 10.596a.75.75 0 010-.192C1.868 6.94 5.522 4.5 10 4.5s8.132 2.44 9.336 5.904a.75.75 0 010 .192C18.132 13.06 14.478 15.5 10 15.5S1.868 13.06.664 10.596zM15 10a5 5 0 11-10 0 5 5 0 0110 0z" clipRule="evenodd" />
+                                        </svg>
+                                    ) : (
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                          <path d="M3.28 2.22a.75.75 0 00-1.06 1.06l14.5 14.5a.75.75 0 101.06-1.06l-1.745-1.745a10.029 10.029 0 003.3-4.38 1.561 1.561 0 000-1.254C16.313 7.03 13.513 5 10 5a9.74 9.74 0 00-2.531.442l-1.398-1.398A9.964 9.964 0 0110 3c4.97 0 8.268 2.943 9.542 7-.138.464-.288.908-.45 1.33L16.25 9.75l-1.06-1.06-1.06 1.06-1.25-1.25a3.5 3.5 0 00-4.95-4.95l-1.25 1.25-1.06-1.06L3.28 2.22zM7.5 11.5c0 .055.003.11.008.164l1.3-1.3A2.5 2.5 0 0111.5 7.5c.055 0 .11.003.164.008l1.3-1.3A3.5 3.5 0 007.5 11.5zM10 15a9.74 9.74 0 01-2.531-.442l1.398-1.398A5.002 5.002 0 0010 12.5a5 5 0 00-2.5-4.41l-1.543-1.543C4.313 7.97 1.513 10 5.03 15a1.56 1.56 0 000 1.254C6.187 12.97 8.987 15 12.469 15a9.964 9.964 0 002.46-3.449l-1.745-1.745A10.029 10.029 0 0110 15z" />
+                                        </svg>
+                                    )}
+                                </button>
+                            </div>
                         </div>
 
                         <button
