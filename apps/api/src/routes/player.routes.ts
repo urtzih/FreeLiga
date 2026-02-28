@@ -530,6 +530,17 @@ export async function playerRoutes(fastify: FastifyInstance) {
             fees.sort((a: number, b: number) => a - b);
             const feesString = JSON.stringify(fees);
 
+            const userUpdateData: any = {
+                termsAcceptanceMethod: 'fee_payment'
+            };
+            const existingUserAsAny = player.user as any;
+            if (!existingUserAsAny.termsAcceptedAt) {
+                userUpdateData.termsAcceptedAt = new Date();
+            }
+            if (!existingUserAsAny.privacyAcceptedAt) {
+                userUpdateData.privacyAcceptedAt = new Date();
+            }
+
             const [updatedPlayer, updatedUser] = await prisma.$transaction([
                 prisma.player.update({
                     where: { id: playerId },
@@ -537,11 +548,7 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 }),
                 prisma.user.update({
                     where: { id: player.user.id },
-                    data: {
-                        termsAcceptedAt: player.user.termsAcceptedAt || new Date(),
-                        privacyAcceptedAt: player.user.privacyAcceptedAt || new Date(),
-                        termsAcceptanceMethod: 'fee_payment'
-                    }
+                    data: userUpdateData
                 })
             ]);
 
@@ -553,12 +560,240 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 },
                 user: {
                     id: updatedUser.id,
-                    email: updatedUser.email,
-                    termsAcceptedAt: updatedUser.termsAcceptedAt,
-                    privacyAcceptedAt: updatedUser.privacyAcceptedAt
+                    email: updatedUser.email
                 },
                 message: `Cuota pagada para ${year} - Términos y condiciones aceptados automáticamente`
             };
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // Get blacklist (players with fewer matches) - Current Season
+    fastify.get('/blacklist/current', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            // Get active season
+            const activeSeason = await prisma.season.findFirst({
+                where: { isActive: true },
+                include: {
+                    groups: {
+                        include: {
+                            groupPlayers: {
+                                include: {
+                                    player: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+
+            if (!activeSeason) {
+                return reply.status(404).send({ error: 'No active season found' });
+            }
+
+            const groupIds = activeSeason.groups.map(g => g.id);
+
+            // Build expected matches by active group membership (round-robin: each player vs others once)
+            const playersMap = new Map<string, {
+                id: string;
+                name: string;
+                nickname: string | null;
+                groupNames: Set<string>;
+                expectedMatches: number;
+            }>();
+
+            for (const group of activeSeason.groups) {
+                const groupPlayers = group.groupPlayers;
+                const expectedPerPlayer = Math.max(groupPlayers.length - 1, 0);
+
+                for (const gp of groupPlayers) {
+                    const existing = playersMap.get(gp.playerId);
+                    if (existing) {
+                        existing.groupNames.add(group.name);
+                        existing.expectedMatches += expectedPerPlayer;
+                    } else {
+                        playersMap.set(gp.playerId, {
+                            id: gp.player.id,
+                            name: gp.player.name,
+                            nickname: gp.player.nickname,
+                            groupNames: new Set([group.name]),
+                            expectedMatches: expectedPerPlayer,
+                        });
+                    }
+                }
+            }
+
+            const playersInActiveSeason = Array.from(playersMap.values());
+
+            // Calculate played/injury matches for each player in active season
+            const blacklistData = await Promise.all(
+                playersInActiveSeason.map(async (player) => {
+                    const playedMatches = await prisma.match.count({
+                        where: {
+                            groupId: { in: groupIds },
+                            OR: [
+                                { player1Id: player.id },
+                                { player2Id: player.id },
+                            ],
+                            gamesP1: { not: null },
+                            gamesP2: { not: null },
+                            matchStatus: { not: 'INJURY' },
+                        },
+                    });
+
+                    const injuredMatches = await prisma.match.count({
+                        where: {
+                            groupId: { in: groupIds },
+                            OR: [
+                                { player1Id: player.id },
+                                { player2Id: player.id },
+                            ],
+                            matchStatus: 'INJURY',
+                        },
+                    });
+
+                    const remainingMatches = Math.max(player.expectedMatches - playedMatches - injuredMatches, 0);
+
+                    return {
+                        id: player.id,
+                        name: player.name,
+                        nickname: player.nickname,
+                        groupName: Array.from(player.groupNames).join(', '),
+                        playedMatches,
+                        injuredMatches,
+                        totalMatches: player.expectedMatches,
+                        remainingMatches,
+                    };
+                })
+            );
+
+            // Show players from active season that still have pending matches (including 0 played)
+            const filtered = blacklistData.filter(p => p.totalMatches > 0 && p.remainingMatches > 0);
+
+            // Sort by remaining matches (descending), then by played matches (ascending)
+            const sorted = filtered.sort((a, b) => {
+                if (b.remainingMatches !== a.remainingMatches) {
+                    return b.remainingMatches - a.remainingMatches;
+                }
+                return a.playedMatches - b.playedMatches;
+            });
+
+            return sorted;
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // Get blacklist (players with fewer matches) - Historical (all participated seasons)
+    fastify.get('/blacklist/history', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const seasons = await prisma.season.findMany({
+                include: {
+                    groups: {
+                        include: {
+                            groupPlayers: {
+                                include: {
+                                    player: true,
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+
+            const allGroupIds = seasons.flatMap(s => s.groups.map(g => g.id));
+
+            const playersMap = new Map<string, {
+                id: string;
+                name: string;
+                nickname: string | null;
+                groupNames: Set<string>;
+                expectedMatches: number;
+            }>();
+
+            for (const season of seasons) {
+                for (const group of season.groups) {
+                    const groupPlayers = group.groupPlayers;
+                    const expectedPerPlayer = Math.max(groupPlayers.length - 1, 0);
+
+                    for (const gp of groupPlayers) {
+                        const existing = playersMap.get(gp.playerId);
+                        if (existing) {
+                            existing.groupNames.add(group.name);
+                            existing.expectedMatches += expectedPerPlayer;
+                        } else {
+                            playersMap.set(gp.playerId, {
+                                id: gp.player.id,
+                                name: gp.player.name,
+                                nickname: gp.player.nickname,
+                                groupNames: new Set([group.name]),
+                                expectedMatches: expectedPerPlayer,
+                            });
+                        }
+                    }
+                }
+            }
+
+            const playersInHistory = Array.from(playersMap.values());
+
+            const blacklistData = await Promise.all(
+                playersInHistory.map(async (player) => {
+                    const playedMatches = await prisma.match.count({
+                        where: {
+                            groupId: { in: allGroupIds },
+                            OR: [
+                                { player1Id: player.id },
+                                { player2Id: player.id },
+                            ],
+                            gamesP1: { not: null },
+                            gamesP2: { not: null },
+                            matchStatus: { not: 'INJURY' },
+                        },
+                    });
+
+                    const injuredMatches = await prisma.match.count({
+                        where: {
+                            groupId: { in: allGroupIds },
+                            OR: [
+                                { player1Id: player.id },
+                                { player2Id: player.id },
+                            ],
+                            matchStatus: 'INJURY',
+                        },
+                    });
+
+                    const remainingMatches = Math.max(player.expectedMatches - playedMatches - injuredMatches, 0);
+
+                    return {
+                        id: player.id,
+                        name: player.name,
+                        nickname: player.nickname,
+                        groupName: Array.from(player.groupNames).join(', '),
+                        playedMatches,
+                        injuredMatches,
+                        totalMatches: player.expectedMatches,
+                        remainingMatches,
+                    };
+                })
+            );
+
+            const filtered = blacklistData.filter(p => p.totalMatches > 0 && p.remainingMatches > 0);
+
+            const sorted = filtered.sort((a, b) => {
+                if (b.remainingMatches !== a.remainingMatches) {
+                    return b.remainingMatches - a.remainingMatches;
+                }
+                return a.playedMatches - b.playedMatches;
+            });
+
+            return sorted;
         } catch (error) {
             fastify.log.error(error);
             return reply.status(500).send({ error: 'Internal server error' });

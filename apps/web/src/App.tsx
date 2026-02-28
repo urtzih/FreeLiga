@@ -22,6 +22,7 @@ const ManageBugs = lazy(() => import('./pages/admin/ManageBugs'));
 const SeasonProposals = lazy(() => import('./pages/admin/SeasonProposals'));
 const BugReport = lazy(() => import('./pages/BugReport'));
 const PlayerProgress = lazy(() => import('./pages/PlayerProgress'));
+const Blacklist = lazy(() => import('./pages/Blacklist'));
 const Profile = lazy(() => import('./pages/player/Profile'));
 const History = lazy(() => import('./pages/player/History'));
 const Help = lazy(() => import('./pages/player/Help'));
@@ -199,6 +200,14 @@ function App() {
                                     element={
                                         <ProtectedRoute>
                                             <PlayerProgress />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/blacklist"
+                                    element={
+                                        <ProtectedRoute>
+                                            <Blacklist />
                                         </ProtectedRoute>
                                     }
                                 />
