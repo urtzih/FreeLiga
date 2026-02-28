@@ -205,6 +205,8 @@ export async function publicRoutes(fastify: FastifyInstance) {
                     matches: {
                         where: {
                             matchStatus: 'PLAYED',
+                            gamesP1: { not: null },
+                            gamesP2: { not: null },
                         },
                         include: {
                             player1: true,
@@ -227,12 +229,68 @@ export async function publicRoutes(fastify: FastifyInstance) {
             // Calcular rankings
             const rankings = await getGroupRankings(groupId);
 
+            const playedMatches = [...group.matches].sort(
+                (matchA, matchB) => new Date(matchB.date).getTime() - new Date(matchA.date).getTime()
+            );
+
+            const recentMatches = playedMatches.slice(0, 6).map((match) => ({
+                id: match.id,
+                date: match.date,
+                gamesP1: match.gamesP1,
+                gamesP2: match.gamesP2,
+                player1: {
+                    id: match.player1.id,
+                    name: match.player1.name,
+                },
+                player2: {
+                    id: match.player2.id,
+                    name: match.player2.name,
+                },
+                winnerId: match.winnerId,
+            }));
+
+            const players = group.groupPlayers.map((groupPlayer) => ({
+                id: groupPlayer.player.id,
+                name: groupPlayer.player.name,
+            }));
+
+            const hasPlayedBetween = (playerAId: string, playerBId: string) => {
+                return playedMatches.some((match) => (
+                    (match.player1Id === playerAId && match.player2Id === playerBId) ||
+                    (match.player1Id === playerBId && match.player2Id === playerAId)
+                ));
+            };
+
+            const remainingMatches: Array<{
+                id: string;
+                player1: { id: string; name: string };
+                player2: { id: string; name: string };
+            }> = [];
+
+            for (let indexA = 0; indexA < players.length; indexA++) {
+                for (let indexB = indexA + 1; indexB < players.length; indexB++) {
+                    const playerA = players[indexA];
+                    const playerB = players[indexB];
+
+                    if (!hasPlayedBetween(playerA.id, playerB.id)) {
+                        remainingMatches.push({
+                            id: `${playerA.id}_${playerB.id}`,
+                            player1: playerA,
+                            player2: playerB,
+                        });
+                    }
+                }
+            }
+
             const response = {
                 id: group.id,
                 name: group.name,
                 seasonName: group.season.name,
-                totalMatches: group.matches.length,
+                totalMatches: playedMatches.length,
                 rankings,
+                recentMatches,
+                remainingMatches,
+                totalRemainingMatches: remainingMatches.length,
                 cached: false,
                 updatedAt: new Date().toISOString(),
             };

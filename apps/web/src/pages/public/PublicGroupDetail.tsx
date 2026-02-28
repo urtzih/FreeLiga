@@ -21,6 +21,21 @@ interface GroupData {
     seasonName: string;
     totalMatches: number;
     rankings: PlayerRanking[];
+    recentMatches: Array<{
+        id: string;
+        date: string;
+        gamesP1: number;
+        gamesP2: number;
+        player1: { id: string; name: string };
+        player2: { id: string; name: string };
+        winnerId: string | null;
+    }>;
+    remainingMatches: Array<{
+        id: string;
+        player1: { id: string; name: string };
+        player2: { id: string; name: string };
+    }>;
+    totalRemainingMatches: number;
 }
 
 export default function PublicGroupDetail() {
@@ -29,6 +44,7 @@ export default function PublicGroupDetail() {
     const [data, setData] = useState<GroupData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [visibleRemainingMatches, setVisibleRemainingMatches] = useState(6);
 
     useEffect(() => {
         if (!id) return;
@@ -177,6 +193,72 @@ export default function PublicGroupDetail() {
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+
+                        {/* Partidos Recientes */}
+                        <div className="mt-8 bg-white rounded-xl shadow-lg p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-xl font-bold text-gray-900">Partidos Recientes</h2>
+                                <span className="text-sm text-gray-500">Últimos {Math.min(data.recentMatches.length, 6)}</span>
+                            </div>
+
+                            {data.recentMatches.length === 0 ? (
+                                <p className="text-gray-600">Aún no hay partidos jugados en este grupo.</p>
+                            ) : (
+                                <div className="space-y-3">
+                                    {data.recentMatches.map((match) => (
+                                        <div key={match.id} className="border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+                                            <div>
+                                                <p className="font-semibold text-gray-900">
+                                                    {match.player1.name} <span className="text-gray-400">vs</span> {match.player2.name}
+                                                </p>
+                                                <p className="text-sm text-gray-500 mt-1">
+                                                    {new Date(match.date).toLocaleDateString('es-ES')}
+                                                </p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-xl font-bold text-gray-900">{match.gamesP1} - {match.gamesP2}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Partidos Restantes */}
+                        <div className="mt-8 bg-white rounded-xl shadow-lg p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-xl font-bold text-gray-900">Partidos Restantes</h2>
+                                <span className="text-sm text-gray-500">Total: {data.totalRemainingMatches}</span>
+                            </div>
+
+                            {data.remainingMatches.length === 0 ? (
+                                <p className="text-gray-600">No quedan partidos pendientes en este grupo.</p>
+                            ) : (
+                                <>
+                                    <div className="space-y-3">
+                                        {data.remainingMatches.slice(0, visibleRemainingMatches).map((match) => (
+                                            <div key={match.id} className="border border-amber-200 bg-amber-50 rounded-lg p-4 flex items-center justify-between">
+                                                <p className="font-semibold text-gray-900">
+                                                    {match.player1.name} <span className="text-gray-400">vs</span> {match.player2.name}
+                                                </p>
+                                                <span className="text-xs font-medium text-amber-700 uppercase">Pendiente</span>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {visibleRemainingMatches < data.remainingMatches.length && (
+                                        <div className="mt-4 text-center">
+                                            <button
+                                                onClick={() => setVisibleRemainingMatches((prev) => prev + 6)}
+                                                className="px-5 py-2 rounded-lg bg-indigo-100 text-indigo-700 font-semibold hover:bg-indigo-200 transition-colors"
+                                            >
+                                                Ver más
+                                            </button>
+                                        </div>
+                                    )}
+                                </>
+                            )}
                         </div>
 
                         {/* Legend */}
