@@ -46,6 +46,7 @@ const createUserSchema = z.object({
     phone: z.string().optional(),
     role: z.enum(['PLAYER', 'ADMIN']).default('PLAYER'),
     groupId: z.string().optional(),
+    annualFeesPaid: z.array(z.number()).optional(),
 });
 
 export async function userRoutes(fastify: FastifyInstance) {
@@ -94,16 +95,19 @@ export async function userRoutes(fastify: FastifyInstance) {
                 prisma.user.count({ where }),
             ]);
 
-            // Añadir currentGroup para cada usuario
+            // Añadir currentGroup para cada usuario y parsear annualFeesPaid
             const usersWithGroups = await Promise.all(
                 users.map(async (user) => {
                     let currentGroup = null;
+                    let playerData = undefined;
                     if (user.player) {
                         currentGroup = await getPlayerCurrentGroup(user.player.id);
+                        const fees = user.player.annualFeesPaid ? JSON.parse(user.player.annualFeesPaid) : [];
+                        playerData = { ...user.player, currentGroup, annualFeesPaid: fees };
                     }
                     return {
                         ...user,
-                        player: user.player ? { ...user.player, currentGroup } : undefined,
+                        player: playerData,
                     };
                 })
             );
@@ -162,6 +166,7 @@ export async function userRoutes(fastify: FastifyInstance) {
                         name: body.name,
                         nickname: body.nickname,
                         phone: body.phone,
+                        annualFeesPaid: body.annualFeesPaid ? JSON.stringify(body.annualFeesPaid.sort((a, b) => a - b)) : '[]',
                     },
                 };
             }
@@ -187,11 +192,16 @@ export async function userRoutes(fastify: FastifyInstance) {
             let currentGroup = null;
             if (user.player) {
                 currentGroup = await getPlayerCurrentGroup(user.player.id);
+                const fees = user.player.annualFeesPaid ? JSON.parse(user.player.annualFeesPaid) : [];
+                return {
+                    ...user,
+                    player: { ...user.player, currentGroup, annualFeesPaid: fees },
+                };
             }
 
             return {
                 ...user,
-                player: user.player ? { ...user.player, currentGroup } : null,
+                player: null,
             };
         } catch (error) {
             if (error instanceof z.ZodError) {

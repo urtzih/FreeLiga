@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '@freesquash/database';
 import { z } from 'zod';
 import { computeSeasonClosure } from '../services/ranking.service';
+import { cacheService } from '../services/cache.service';
 import { addMonths } from '../utils/date';
 
 const createSeasonSchema = z.object({
@@ -39,7 +40,22 @@ export async function seasonRoutes(fastify: FastifyInstance) {
             const season = await prisma.season.findUnique({
                 where: { id },
                 include: {
-                    groups: { include: { groupPlayers: { include: { player: true } }, _count: { select: { matches: true } } } },
+                    groups: { 
+                        include: { 
+                            groupPlayers: { include: { player: true } },
+                            matches: {
+                                where: { matchStatus: 'PLAYED' },
+                                select: {
+                                    id: true,
+                                    player1Id: true,
+                                    player2Id: true,
+                                    winnerId: true,
+                                    matchStatus: true,
+                                }
+                            },
+                            _count: { select: { matches: true } } 
+                        } 
+                    },
                     closure: {
                         include: {
                             entries: {
@@ -117,6 +133,10 @@ export async function seasonRoutes(fastify: FastifyInstance) {
                     data: { isActive: true }
                 });
             });
+
+            // Invalidar cache público automáticamente
+            cacheService.invalidatePattern('public:');
+            fastify.log.info(`🔄 Public cache invalidated after season change to ${id}`);
 
             const season = await prisma.season.findUnique({ where: { id } });
             return season;

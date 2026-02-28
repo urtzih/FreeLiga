@@ -25,6 +25,7 @@ import { classificationRoutes } from './routes/classification.routes';
 import { userRoutes } from './routes/user.routes';
 import { adminRoutes } from './routes/admin.routes';
 import { bugRoutes } from './routes/bug.routes';
+import { publicRoutes } from './routes/public.routes';
 import { logger, logBusinessEvent } from './utils/logger';
 import { registerHttpLogging, httpErrorHook } from './utils/httpLogger';
 
@@ -168,6 +169,7 @@ async function start() {
 
         // Register routes
         await fastify.register(authRoutes, { prefix: '/api/auth' });
+        await fastify.register(publicRoutes, { prefix: '/api/public' });
         await fastify.register(playerRoutes, { prefix: '/api/players' });
         await fastify.register(groupRoutes, { prefix: '/api/groups' });
         await fastify.register(matchRoutes, { prefix: '/api/matches' });

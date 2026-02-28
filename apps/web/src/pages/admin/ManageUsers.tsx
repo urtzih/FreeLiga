@@ -16,6 +16,7 @@ interface User {
         name: string;
         nickname?: string;
         phone?: string;
+        annualFeesPaid?: number[];
         currentGroup?: {
             id: string;
             name: string;
@@ -43,13 +44,17 @@ export default function ManageUsers() {
     const [showResetPassword, setShowResetPassword] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showFeesModal, setShowFeesModal] = useState(false);
     const [newPassword, setNewPassword] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [filterGroup, setFilterGroup] = useState('');
     const [filterActive, setFilterActive] = useState<'all' | 'active' | 'inactive'>('all');
+    const [filterFeeYears, setFilterFeeYears] = useState<number[]>([new Date().getFullYear()]); // Default to current year
+    const [filterFeeStatus, setFilterFeeStatus] = useState<'all' | 'paid' | 'unpaid'>('all');
     const [sortField, setSortField] = useState<'email' | 'name' | 'phone' | 'group' | 'role' | 'isActive' | 'createdAt' | 'lastConnection'>('createdAt');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+    const [editingFees, setEditingFees] = useState<number[]>([]);
 
     // Handle search with Enter key or button
     const handleSearch = () => {
@@ -77,7 +82,8 @@ export default function ManageUsers() {
         nickname: '',
         phone: '',
         role: 'PLAYER' as 'PLAYER' | 'ADMIN',
-        groupId: ''
+        groupId: '',
+        annualFeesPaid: [new Date().getFullYear()]
     });
     const [validationErrors, setValidationErrors] = useState({
         createName: '',
@@ -169,8 +175,24 @@ export default function ManageUsers() {
                 matchesGroup = user.player?.currentGroup?.id === filterGroup;
             }
 
+            // Filter by fee years and status
+            let matchesFeeYears = true;
+            if (filterFeeYears.length > 0) {
+                const paidYears = user.player?.annualFeesPaid || [];
+                const paidAnySelected = filterFeeYears.some(year => paidYears.includes(year));
+                
+                if (filterFeeStatus === 'paid') {
+                    // Show only those who paid ANY of the selected years
+                    matchesFeeYears = paidAnySelected;
+                } else if (filterFeeStatus === 'unpaid') {
+                    // Show only those who paid NONE of the selected years
+                    matchesFeeYears = !paidAnySelected;
+                }
+                // If 'all', don't filter
+            }
+
             // El filtro de active/inactive ahora se hace en el backend
-            return matchesGroup;
+            return matchesGroup && matchesFeeYears;
         })
         .sort((a, b) => {
             let aVal: any, bVal: any;
@@ -228,7 +250,7 @@ export default function ManageUsers() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['users'] });
             setShowCreateModal(false);
-            setCreateForm({ email: '', password: '', name: '', nickname: '', phone: '', role: 'PLAYER', groupId: '' });
+            setCreateForm({ email: '', password: '', name: '', nickname: '', phone: '', role: 'PLAYER', groupId: '', annualFeesPaid: [new Date().getFullYear()] });
             setValidationErrors({ createName: '', createPhone: '', createEmail: '', editName: '', editPhone: '', editEmail: '' });
         },
         onError: (error: any) => {
@@ -306,6 +328,22 @@ export default function ManageUsers() {
         }
     });
 
+    const updateAnnualFeesMutation = useMutation({
+        mutationFn: async ({ playerId, annualFeesPaid }: { playerId: string; annualFeesPaid: number[] }) => {
+            const { data } = await api.put(`/players/${playerId}/annual-fees`, { annualFeesPaid });
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['users'] });
+            setShowFeesModal(false);
+            setSelectedUser(null);
+            alert('Cuotas anuales actualizadas correctamente');
+        },
+        onError: (error: any) => {
+            alert(`Error al actualizar cuotas: ${error.response?.data?.error || error.message}`);
+        }
+    });
+
     // Handlers for modals
     const handleOpenEditModal = (user: User) => {
         setSelectedUser(user);
@@ -355,6 +393,38 @@ export default function ManageUsers() {
             return;
         }
         resetPasswordMutation.mutate({ userId: selectedUser.id, newPassword });
+    };
+
+    const handleOpenFeesModal = (user: User) => {
+        if (!user.player) return;
+        setSelectedUser(user);
+        setEditingFees(Array.isArray(user.player.annualFeesPaid) ? [...user.player.annualFeesPaid] : []);
+        setShowFeesModal(true);
+    };
+
+    const handleToggleFeeYear = (year: number) => {
+        setEditingFees(prev => {
+            const index = prev.indexOf(year);
+            if (index > -1) {
+                return prev.filter((_, i) => i !== index);
+            } else {
+                return [...prev, year].sort((a, b) => a - b);
+            }
+        });
+    };
+
+    const handleAddFeeYear = (year: number) => {
+        if (!editingFees.includes(year)) {
+            setEditingFees(prev => [...prev, year].sort((a, b) => a - b));
+        }
+    };
+
+    const handleSaveFees = () => {
+        if (!selectedUser?.player) return;
+        updateAnnualFeesMutation.mutate({
+            playerId: selectedUser.player.id,
+            annualFeesPaid: editingFees
+        });
     };
 
     const handleExportCSV = async () => {
@@ -513,7 +583,10 @@ export default function ManageUsers() {
                                 </label>
                                 <select
                                     value={filterGroup}
-                                    onChange={e => setFilterGroup(e.target.value)}
+                                    onChange={e => {
+                                        setFilterGroup(e.target.value);
+                                        setPage(1);
+                                    }}
                                     className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                                 >
                                     <option value="">Todos los grupos</option>
@@ -539,6 +612,59 @@ export default function ManageUsers() {
                                     <option value="active">✓ Activos</option>
                                     <option value="inactive">✗ Inactivos</option>
                                 </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                                    💰 Filtrar por cuotas pagada
+                                </label>
+                                <div className="space-y-3">
+                                    <div className="space-y-2">
+                                        <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Seleccionar años:</label>
+                                        {Array.from({ length: new Date().getFullYear() - 2026 + 3 }, (_, i) => 2026 + i).map((year) => (
+                                            <label key={year} className="flex items-center gap-2 cursor-pointer">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={filterFeeYears.includes(year)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setFilterFeeYears([...filterFeeYears, year]);
+                                                        } else {
+                                                            setFilterFeeYears(filterFeeYears.filter(y => y !== year));
+                                                        }
+                                                        setPage(1);
+                                                    }}
+                                                    className="w-4 h-4 rounded border-slate-300 cursor-pointer"
+                                                />
+                                                <span className="text-sm text-slate-700 dark:text-slate-300">{year}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                    {filterFeeYears.length > 0 && (
+                                        <div className="border-t border-slate-200 dark:border-slate-600 pt-3 mt-3 space-y-2">
+                                            <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Mostrar:</label>
+                                            {[
+                                                { value: 'all', label: 'Todos' },
+                                                { value: 'paid', label: '✓ Que pagaron (alguno de estos años)' },
+                                                { value: 'unpaid', label: '✗ Que no pagaron (ninguno de estos años)' }
+                                            ].map((option) => (
+                                                <label key={option.value} className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="radio"
+                                                        name="feeStatus"
+                                                        value={option.value}
+                                                        checked={filterFeeStatus === option.value}
+                                                        onChange={() => {
+                                                            setFilterFeeStatus(option.value as 'all' | 'paid' | 'unpaid');
+                                                            setPage(1);
+                                                        }}
+                                                        className="w-4 h-4 cursor-pointer"
+                                                    />
+                                                    <span className="text-sm text-slate-700 dark:text-slate-300">{option.label}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -624,6 +750,17 @@ export default function ManageUsers() {
                                                         {user.isActive ? '✓ Activo' : '✗ Inactivo'}
                                                     </button>
                                                     <button onClick={() => handleOpenEditModal(user)} className="text-sm px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Editar</button>
+                                                    <button 
+                                                        onClick={() => handleOpenFeesModal(user)} 
+                                                        className={`text-xs px-2 py-1 rounded border font-medium transition-colors ${
+                                                            user.player?.annualFeesPaid?.includes(2026)
+                                                                ? 'border-green-600 text-green-600 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/40'
+                                                                : 'border-red-600 text-red-600 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40'
+                                                        }`}
+                                                        title="Editar cuotas anuales"
+                                                    >
+                                                        {user.player?.annualFeesPaid?.includes(2026) ? '✓ 2026' : '✗ 2026'}
+                                                    </button>
                                                     <button onClick={() => { setSelectedUser(user); setShowResetPassword(true); }} className="text-sm px-3 py-1 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">Resetear</button>
                                                 </div>
                                             </td>
@@ -757,6 +894,28 @@ export default function ManageUsers() {
                                         {createForm.role === 'ADMIN' && (
                                             <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">⚠️ Los administradores no pueden estar en grupos</p>
                                         )}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">💰 Cuota pagada para años</label>
+                                        <div className="space-y-2">
+                                            {Array.from({ length: new Date().getFullYear() - 2026 + 3 }, (_, i) => 2026 + i).map((year) => (
+                                                <label key={year} className="flex items-center gap-2 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={createForm.annualFeesPaid.includes(year)}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) {
+                                                                setCreateForm({ ...createForm, annualFeesPaid: [...createForm.annualFeesPaid, year] });
+                                                            } else {
+                                                                setCreateForm({ ...createForm, annualFeesPaid: createForm.annualFeesPaid.filter(y => y !== year) });
+                                                            }
+                                                        }}
+                                                        className="w-4 h-4 rounded border-slate-300 cursor-pointer"
+                                                    />
+                                                    <span className="text-sm text-slate-700 dark:text-slate-300">{year}</span>
+                                                </label>
+                                            ))}
+                                        </div>
                                     </div>
                                     <div className="flex space-x-3 mt-6">
                                         <button onClick={() => createUserMutation.mutate(createForm)} disabled={createUserMutation.isPending} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
@@ -904,6 +1063,97 @@ export default function ManageUsers() {
                                         {resetPasswordMutation.isPending ? 'Reseteando...' : 'Resetear'}
                                     </button>
                                     <button onClick={() => { setShowResetPassword(false); setNewPassword(''); setSelectedUser(null); }} className="flex-1 px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Annual Fees Modal */}
+                    {showFeesModal && selectedUser && selectedUser.player && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-xl max-h-[90vh] overflow-y-auto">
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Cuotas Anuales de Club</h3>
+                                <p className="text-slate-600 dark:text-slate-400 mb-6">Jugador: <strong>{selectedUser.player.name}</strong></p>
+                                
+                                <div className="space-y-4 mb-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Años en los que ha pagado la cuota:</label>
+                                        <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 space-y-2 max-h-48 overflow-y-auto">
+                                            {editingFees.length > 0 ? (
+                                                editingFees.map((year) => (
+                                                    <div key={year} className="flex items-center justify-between bg-white dark:bg-slate-800 p-3 rounded border border-slate-200 dark:border-slate-700">
+                                                        <span className="font-semibold text-slate-900 dark:text-white">{year}</span>
+                                                        <button
+                                                            onClick={() => handleToggleFeeYear(year)}
+                                                            className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                                                        >
+                                                            ✕ Quitar
+                                                        </button>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className="text-slate-500 dark:text-slate-400 italic">Sin años registrados</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Añadir año:</label>
+                                        <div className="flex gap-2 flex-wrap">
+                                            {[new Date().getFullYear(), new Date().getFullYear() - 1, new Date().getFullYear() + 1].map((year) => (
+                                                <button
+                                                    key={year}
+                                                    onClick={() => handleAddFeeYear(year)}
+                                                    disabled={editingFees.includes(year)}
+                                                    className="px-4 py-2 rounded border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                                >
+                                                    {year}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">O prueba con otros años aquí:</p>
+                                        <div className="flex gap-2 mt-2">
+                                            <input 
+                                                type="number" 
+                                                id="customYear"
+                                                placeholder="Ej: 2023" 
+                                                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm"
+                                                min={2000}
+                                                max={new Date().getFullYear() + 1}
+                                            />
+                                            <button
+                                                onClick={() => {
+                                                    const input = document.getElementById('customYear') as HTMLInputElement;
+                                                    if (input && input.value) {
+                                                        const year = parseInt(input.value, 10);
+                                                        if (!isNaN(year) && year > 0) {
+                                                            handleAddFeeYear(year);
+                                                            input.value = '';
+                                                        }
+                                                    }
+                                                }}
+                                                className="px-4 py-2 bg-slate-600 text-white rounded hover:bg-slate-700 transition-colors text-sm font-medium"
+                                            >
+                                                Añadir
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex space-x-3 mt-6">
+                                    <button 
+                                        onClick={handleSaveFees} 
+                                        disabled={updateAnnualFeesMutation.isPending} 
+                                        className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 font-medium transition-colors"
+                                    >
+                                        {updateAnnualFeesMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
+                                    </button>
+                                    <button 
+                                        onClick={() => { setShowFeesModal(false); setSelectedUser(null); setEditingFees([]); }} 
+                                        className="flex-1 px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 font-medium transition-colors"
+                                    >
                                         Cancelar
                                     </button>
                                 </div>

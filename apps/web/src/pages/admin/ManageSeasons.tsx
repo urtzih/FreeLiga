@@ -138,30 +138,47 @@ export default function ManageSeasons() {
     };
 
     // Función para exportar CSV de una temporada
-    const handleExportCSV = (season: any) => {
+    const handleExportCSV = async (season: any) => {
         if (!season.groups) return;
         
-        const rows: string[] = [];
-        rows.push('Temporada,Grupo,Posición,Jugador,Movimiento,Partidos Ganados');
-        
-        season.groups.forEach((group: any) => {
-            const sortedPlayers = [...(group.groupPlayers || [])].sort((a: any, b: any) => a.rankingPosition - b.rankingPosition);
-            sortedPlayers.forEach((gp: any) => {
-                const totalPlayers = group.groupPlayers.length;
-                const movement = gp.rankingPosition <= 2 ? 'ASCENSO' : gp.rankingPosition > totalPlayers - 2 ? 'DESCENSO' : 'MANTIENE';
-                const matchesWon = gp.player.matches?.filter((m: any) => m.winnerId === gp.playerId).length || 0;
-                
-                rows.push(`"${season.name}","${group.name}",${gp.rankingPosition},"${gp.player.name}","${movement}",${matchesWon}`);
+        try {
+            // Obtener datos completos de la temporada con matches
+            const { data: fullSeason } = await api.get(`/seasons/${season.id}`);
+            
+            const rows: string[] = [];
+            rows.push('Temporada,Grupo,Posición,Jugador,Movimiento,Partidos Ganados,Partidos Perdidos,Partidos Restantes');
+            
+            fullSeason.groups.forEach((group: any) => {
+                const sortedPlayers = [...(group.groupPlayers || [])].sort((a: any, b: any) => a.rankingPosition - b.rankingPosition);
+                sortedPlayers.forEach((gp: any) => {
+                    const totalPlayers = group.groupPlayers.length;
+                    const movement = gp.rankingPosition <= 2 ? 'ASCENSO' : gp.rankingPosition > totalPlayers - 2 ? 'DESCENSO' : 'MANTIENE';
+                    
+                    // Calcular partidos desde los matches del grupo
+                    const playerMatches = group.matches?.filter((m: any) => 
+                        m.matchStatus === 'PLAYED' && (m.player1Id === gp.playerId || m.player2Id === gp.playerId)
+                    ) || [];
+                    
+                    const matchesWon = playerMatches.filter((m: any) => m.winnerId === gp.playerId).length;
+                    const matchesLost = playerMatches.filter((m: any) => m.winnerId && m.winnerId !== gp.playerId).length;
+                    const totalExpectedMatches = totalPlayers - 1;
+                    const matchesRemaining = totalExpectedMatches - (matchesWon + matchesLost);
+                    
+                    rows.push(`"${fullSeason.name}","${group.name}",${gp.rankingPosition},"${gp.player.name}","${movement}",${matchesWon},${matchesLost},${matchesRemaining}`);
+                });
             });
-        });
-        
-        const csv = rows.join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `clasificacion_${season.name.replace(/\s+/g, '_')}.csv`);
-        link.click();
+            
+            const csv = rows.join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `clasificacion_${fullSeason.name.replace(/\s+/g, '_')}.csv`);
+            link.click();
+        } catch (error) {
+            console.error('Error exporting CSV:', error);
+            alert('Error al exportar CSV. Por favor, intenta de nuevo.');
+        }
     };
 
     return (

@@ -26,6 +26,7 @@
     "restore": "powershell -File scripts/restore-database.ps1"
   },
   "devDependencies": {
+    "baseline-browser-mapping": "^2.10.0",
     "concurrently": "^8.2.2",
     "typescript": "^5.3.3"
   },

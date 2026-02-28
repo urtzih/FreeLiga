@@ -1,4 +1,9 @@
 import { Link } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+
+const RecentMatches = lazy(() => import('../components/RecentMatches'));
+const PublicGroupsClassification = lazy(() => import('../components/PublicGroupsClassification'));
+const PublicStats = lazy(() => import('../components/PublicStats'));
 
 export default function Home() {
     return (
@@ -48,6 +53,42 @@ export default function Home() {
                             </p>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            {/* Public Data Section - Matchs, Groups, Classification */}
+            <div className="bg-white py-16">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <Suspense fallback={<div className="text-center py-8">Cargando datos...</div>}>
+                        {/* Public Stats */}
+                        <PublicStats />
+
+                        {/* Groups Classification - First */}
+                        <div className="mb-16">
+                            <PublicGroupsClassification />
+                            <div className="text-center mt-8">
+                                <Link
+                                    to="/public/groups"
+                                    className="inline-block px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors"
+                                >
+                                    Explorar todos los grupos →
+                                </Link>
+                            </div>
+                        </div>
+
+                        {/* Recent Matches - Second */}
+                        <div>
+                            <RecentMatches />
+                            <div className="text-center mt-6">
+                                <Link
+                                    to="/public/matches"
+                                    className="inline-block px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                                >
+                                    Ver todos los partidos →
+                                </Link>
+                            </div>
+                        </div>
+                    </Suspense>
                 </div>
             </div>
 

@@ -9,7 +9,16 @@ export async function playerRoutes(fastify: FastifyInstance) {
     }, async (request, reply) => {
         try {
             const players = await prisma.player.findMany({
-                include: {
+                select: {
+                    id: true,
+                    userId: true,
+                    name: true,
+                    nickname: true,
+                    phone: true,
+                    calendarEnabled: true,
+                    annualFeesPaid: true,
+                    createdAt: true,
+                    updatedAt: true,
                     groupPlayers: {
                         include: {
                             group: true,
@@ -18,11 +27,16 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 },
             });
 
-            // Añadir grupo actual para cada jugador
+            // Añadir grupo actual para cada jugador y parse annualFeesPaid
             const playersWithCurrentGroup = await Promise.all(
                 players.map(async (player) => {
                     const currentGroup = await getPlayerCurrentGroup(player.id);
-                    return { ...player, currentGroup };
+                    const fees = player.annualFeesPaid ? JSON.parse(player.annualFeesPaid) : [];
+                    return { 
+                        ...player, 
+                        currentGroup,
+                        annualFeesPaid: fees
+                    };
                 })
             );
 
@@ -60,8 +74,15 @@ export async function playerRoutes(fastify: FastifyInstance) {
 
             // Añadir grupo actual
             const currentGroup = await getPlayerCurrentGroup(player.id);
+            
+            // Parse annualFeesPaid
+            const fees = player.annualFeesPaid ? JSON.parse(player.annualFeesPaid) : [];
 
-            return { ...player, currentGroup };
+            return { 
+                ...player, 
+                currentGroup,
+                annualFeesPaid: fees
+            };
         } catch (error) {
             fastify.log.error(error);
             return reply.status(500).send({ error: 'Internal server error' });
@@ -171,16 +192,30 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 return reply.status(403).send({ error: 'Forbidden' });
             }
 
+            // Prepare update data - only include provided fields
+            const updateData: any = {};
+            if (body.name !== undefined) updateData.name = body.name;
+            if (body.nickname !== undefined) updateData.nickname = body.nickname;
+            if (body.phone !== undefined) updateData.phone = body.phone;
+            // Convert array to string JSON if provided
+            if (body.annualFeesPaid !== undefined) {
+                if (Array.isArray(body.annualFeesPaid)) {
+                    updateData.annualFeesPaid = JSON.stringify(body.annualFeesPaid.sort((a: number, b: number) => a - b));
+                } else if (typeof body.annualFeesPaid === 'string') {
+                    updateData.annualFeesPaid = body.annualFeesPaid;
+                }
+            }
+
             const player = await prisma.player.update({
                 where: { id },
-                data: {
-                    name: body.name,
-                    nickname: body.nickname,
-                    phone: body.phone,
-                },
+                data: updateData,
             });
 
-            return player;
+            // Parse annualFeesPaid back to array for response
+            return {
+                ...player,
+                annualFeesPaid: JSON.parse(player.annualFeesPaid || '[]')
+            };
         } catch (error) {
             fastify.log.error(error);
             return reply.status(500).send({ error: 'Internal server error' });
@@ -222,7 +257,12 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 data: updateData,
             });
 
-            return player;
+            // Parse annualFeesPaid - handle null case
+            const fees = player.annualFeesPaid ? JSON.parse(player.annualFeesPaid) : [];
+            return {
+                ...player,
+                annualFeesPaid: fees,
+            };
         } catch (error) {
             fastify.log.error(error);
             return reply.status(500).send({ error: 'Internal server error' });
@@ -344,4 +384,111 @@ export async function playerRoutes(fastify: FastifyInstance) {
             return reply.status(500).send({ error: 'Internal server error' });
         }
     });
-}
+
+    // Update annual fees paid (admin only) 
+    fastify.put('/:id/annual-fees', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            const { id } = request.params as { id: string };
+            const body = request.body as { annualFeesPaid: number[] };
+
+            // Check if user is admin
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            if (!Array.isArray(body.annualFeesPaid)) {
+                return reply.status(400).send({ error: 'annualFeesPaid must be an array of years' });
+            }
+
+            // Validate all elements are numbers
+            if (!body.annualFeesPaid.every(year => typeof year === 'number')) {
+                return reply.status(400).send({ error: 'All elements must be numbers (years)' });
+            }
+
+            // Sort years in ascending order and convert to string JSON
+            const sortedYears = body.annualFeesPaid.sort((a: number, b: number) => a - b);
+            const annualFeesString = JSON.stringify(sortedYears);
+
+            const player = await prisma.player.update({
+                where: { id },
+                data: { annualFeesPaid: annualFeesString },
+            });
+
+            // Parse annualFeesPaid - handle null case
+            const fees = player.annualFeesPaid ? JSON.parse(player.annualFeesPaid) : [];
+            return {
+                ...player,
+                annualFeesPaid: fees
+            };
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // Toggle annual fee for current year (admin only)
+    fastify.post('/:id/annual-fees/toggle/:year', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            const { id, year } = request.params as { id: string; year: string };
+
+            // Check if user is admin
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            const yearNum = parseInt(year, 10);
+            if (isNaN(yearNum)) {
+                return reply.status(400).send({ error: 'Year must be a valid number' });
+            }
+
+            const player = await prisma.player.findUnique({ where: { id } });
+            if (!player) {
+                return reply.status(404).send({ error: 'Player not found' });
+            }
+
+            // Parse existing fees from string - handle null case
+            let fees: number[] = [];
+            if (player.annualFeesPaid && player.annualFeesPaid !== '[]' && player.annualFeesPaid !== null) {
+                try {
+                    const parsed = JSON.parse(player.annualFeesPaid);
+                    fees = Array.isArray(parsed) ? parsed : [];
+                } catch (e) {
+                    fees = [];
+                }
+            }
+            
+            const index = fees.indexOf(yearNum);
+            if (index > -1) {
+                // Remove year if it exists
+                fees.splice(index, 1);
+            } else {
+                // Add year if it doesn't exist
+                fees.push(yearNum);
+            }
+
+            // Sort years
+            fees = fees.sort((a: number, b: number) => a - b);
+            const feesString = JSON.stringify(fees);
+
+            const updated = await prisma.player.update({
+                where: { id },
+                data: { annualFeesPaid: feesString },
+            });
+
+            // Parse annualFeesPaid - handle null case
+            const updatedFees = updated.annualFeesPaid ? JSON.parse(updated.annualFeesPaid) : [];
+            return {
+                ...updated,
+                annualFeesPaid: updatedFees
+            };
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });}

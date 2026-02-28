@@ -9,6 +9,17 @@ interface PlayerStanding {
     average: number;
 }
 
+export interface RankingResult {
+    id: string;
+    name: string;
+    level: string;
+    played: number;
+    won: number;
+    lost: number;
+    winPercentage: number;
+    points: number;
+}
+
 /**
  * Calculate group rankings using the 4-tier tie-breaking algorithm:
  * 1. Matches won (primary)
@@ -218,4 +229,81 @@ export async function computeSeasonClosure(seasonId: string) {
         where: { seasonId },
         include: { entries: { include: { player: { include: { user: { select: { isActive: true, id: true } } } }, fromGroup: true, toGroup: true } } }
     });
+}
+
+/**
+ * Get group rankings without updating the database
+ * Returns calculated rankings for public API
+ */
+export async function getGroupRankings(groupId: string): Promise<RankingResult[]> {
+    try {
+        const [groupPlayers, matches] = await Promise.all([
+            prisma.groupPlayer.findMany({
+                where: { groupId },
+                include: { player: true },
+            }),
+            prisma.match.findMany({
+                where: { groupId, matchStatus: 'PLAYED' },
+                include: { player1: true, player2: true },
+            })
+        ]);
+
+        if (groupPlayers.length === 0) return [];
+
+        // Calculate standings in-memory
+        const standings: PlayerStanding[] = groupPlayers.map(gp => {
+            const playerId = gp.playerId;
+            const playerMatches = matches.filter(m => m.player1Id === playerId || m.player2Id === playerId);
+            const matchesWon = playerMatches.filter(m => m.winnerId === playerId).length;
+            let setsWon = 0;
+            let setsLost = 0;
+            playerMatches.forEach(match => {
+                if (match.gamesP1 !== null && match.gamesP2 !== null) {
+                    if (match.player1Id === playerId) {
+                        setsWon += match.gamesP1;
+                        setsLost += match.gamesP2;
+                    } else {
+                        setsWon += match.gamesP2;
+                        setsLost += match.gamesP1;
+                    }
+                }
+            });
+            return {
+                playerId,
+                playerName: gp.player.name,
+                matchesWon,
+                setsWon,
+                setsLost,
+                average: setsWon - setsLost,
+            };
+        });
+
+        // Sort by matches won first
+        const sorted = [...standings].sort((a, b) => b.matchesWon - a.matchesWon);
+
+        // Resolve ties using the same logic as calculateGroupRankings
+        const resolved = resolveTies(sorted, matches);
+
+        // Format for API response
+        return resolved.map((standing, index) => {
+            const totalMatches = matches.filter(m => 
+                m.player1Id === standing.playerId || m.player2Id === standing.playerId
+            ).length;
+            const winPercentage = totalMatches > 0 ? (standing.matchesWon / totalMatches) * 100 : 0;
+
+            return {
+                id: standing.playerId,
+                name: standing.playerName,
+                level: 'Squash', // Default level
+                played: totalMatches,
+                won: standing.matchesWon,
+                lost: totalMatches - standing.matchesWon,
+                winPercentage,
+                points: index + 1, // Ranking position as points
+            };
+        });
+    } catch (error) {
+        console.error('Error in getGroupRankings:', error);
+        throw error;
+    }
 }

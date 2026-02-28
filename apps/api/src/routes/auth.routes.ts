@@ -77,6 +77,7 @@ export async function authRoutes(fastify: FastifyInstance) {
                     role: user.role,
                     player: user.player ? {
                         ...user.player,
+                        annualFeesPaid: user.player.annualFeesPaid ? JSON.parse(user.player.annualFeesPaid) : [],
                         currentGroup
                     } : null,
                 },
@@ -185,6 +186,7 @@ export async function authRoutes(fastify: FastifyInstance) {
                     role: user.role,
                     player: user.player ? {
                         ...user.player,
+                        annualFeesPaid: user.player.annualFeesPaid ? JSON.parse(user.player.annualFeesPaid) : [],
                         currentGroup
                     } : null,
                 },
@@ -247,6 +249,7 @@ export async function authRoutes(fastify: FastifyInstance) {
                 role: user.role,
                 player: user.player ? {
                     ...user.player,
+                    annualFeesPaid: user.player.annualFeesPaid ? JSON.parse(user.player.annualFeesPaid) : [],
                     currentGroup
                 } : null,
             };

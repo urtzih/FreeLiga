@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '@freesquash/database';
 import { z } from 'zod';
 import { calculateGroupRankings } from '../services/ranking.service';
+import { cacheService } from '../services/cache.service';
 import { getPlayerCurrentGroupId } from '../utils/playerHelpers';
 import { logger, logBusinessEvent, logError } from '../utils/logger';
 import { GoogleCalendarService } from '../services/googleCalendar.service';
@@ -323,6 +324,10 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 await calculateGroupRankings(body.groupId);
             }
 
+            // Invalidate public cache when a match is registered
+            cacheService.invalidatePattern('public:');
+            fastify.log.info({ matchId: match.id }, '🔄 Public cache invalidated after match creation');
+
             return match;
         } catch (error) {
             if (error instanceof z.ZodError) {
@@ -429,6 +434,10 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 scheduledDateChanged,
                 locationChanged,
             });
+
+            // Invalidate public cache when a match is updated
+            cacheService.invalidatePattern('public:');
+            fastify.log.info({ matchId: id }, '🔄 Public cache invalidated after match update');
 
             return match;
         } catch (error) {

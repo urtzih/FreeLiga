@@ -28,6 +28,9 @@ const Help = lazy(() => import('./pages/player/Help'));
 const AdminHelp = lazy(() => import('./pages/admin/AdminHelp'));
 const GroupsSummary = lazy(() => import('./pages/player/GroupsSummary'));
 const Welcome = lazy(() => import('./pages/public/Welcome'));
+const PublicMatches = lazy(() => import('./pages/public/PublicMatches'));
+const PublicGroups = lazy(() => import('./pages/public/PublicGroups'));
+const PublicGroupDetail = lazy(() => import('./pages/public/PublicGroupDetail'));
 const Calendar = lazy(() => import('./pages/Calendar'));
 const ScheduledMatches = lazy(() => import('./pages/ScheduledMatches'));
 import Layout from './components/Layout';
@@ -95,6 +98,18 @@ function App() {
                             <Route
                                 path="/inicio"
                                 element={<Welcome />}
+                            />
+                            <Route
+                                path="/public/matches"
+                                element={<PublicMatches />}
+                            />
+                            <Route
+                                path="/public/groups"
+                                element={<PublicGroups />}
+                            />
+                            <Route
+                                path="/public/group/:id"
+                                element={<PublicGroupDetail />}
                             />
 
                             {/* Protected player routes */}

@@ -1,0 +1,339 @@
+/**
+ * Public API Routes - Sin autenticación
+ * Endpoints públicos para partidos recientes, grupos y clasificación con caché de 24h
+ */
+
+import { FastifyInstance } from 'fastify';
+import { prisma } from '@freesquash/database';
+import { cacheService } from '../services/cache.service';
+import { getGroupRankings } from '../services/ranking.service';
+
+export async function publicRoutes(fastify: FastifyInstance) {
+    /**
+     * GET /api/public/recent-matches
+     * Obtener últimos 10 partidos jugados (sin autenticación)
+     */
+    fastify.get('/recent-matches', async (request, reply) => {
+        try {
+            // Intentar obtener del caché
+            const cached = cacheService.get<any>('public:recent-matches');
+            if (cached) {
+                fastify.log.info('📦 Recent matches from cache');
+                return cached;
+            }
+
+            // Obtener últimos 10 partidos con resultado
+            const matches = await prisma.match.findMany({
+                where: {
+                    matchStatus: 'PLAYED',
+                    gamesP1: { not: null },
+                    gamesP2: { not: null },
+                },
+                include: {
+                    player1: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
+                    },
+                    player2: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
+                    },
+                    group: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
+                    },
+                    winner: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
+                    },
+                },
+                orderBy: {
+                    date: 'desc',
+                },
+                take: 10,
+            });
+
+            const response = {
+                data: matches,
+                cached: false,
+                updatedAt: new Date().toISOString(),
+            };
+
+            // Guardar en caché por 24h
+            cacheService.set('public:recent-matches', response, 24);
+            fastify.log.info('💾 Recent matches cached for 24h');
+
+            return response;
+        } catch (error) {
+            fastify.log.error(error, 'Error fetching recent matches');
+            return reply.status(500).send({ error: 'Failed to fetch recent matches' });
+        }
+    });
+
+    /**
+     * GET /api/public/groups-summary
+     * Obtener resumen de todos los grupos con clasificación (sin autenticación)
+     */
+    fastify.get('/groups-summary', async (request, reply) => {
+        try {
+            // Intentar obtener del caché
+            const cached = cacheService.get<any>('public:groups-summary');
+            if (cached) {
+                fastify.log.info('📦 Groups summary from cache');
+                return cached;
+            }
+
+            // Obtener temporada activa
+            const activeSeason = await prisma.season.findFirst({
+                where: { isActive: true },
+                orderBy: { startDate: 'desc' },
+            });
+
+            if (!activeSeason) {
+                return reply.status(404).send({ error: 'No active season' });
+            }
+
+            // Obtener grupos de la temporada activa
+            const groups = await prisma.group.findMany({
+                where: { seasonId: activeSeason.id },
+                include: {
+                    groupPlayers: {
+                        include: {
+                            player: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                },
+                            },
+                        },
+                        orderBy: {
+                            rankingPosition: 'asc',
+                        },
+                    },
+                    matches: {
+                        where: {
+                            matchStatus: 'PLAYED',
+                            gamesP1: { not: null },
+                            gamesP2: { not: null },
+                        },
+                        include: {
+                            player1: true,
+                            player2: true,
+                            winner: true,
+                        },
+                    },
+                },
+                orderBy: {
+                    name: 'asc',
+                },
+            });
+
+            // Calcular rankings para cada grupo
+            const groupsWithRankings = await Promise.all(
+                groups.map(async (group) => {
+                    const rankings = await getGroupRankings(group.id);
+
+                    return {
+                        id: group.id,
+                        name: group.name,
+                        playerCount: group.groupPlayers.length,
+                        matchCount: group.matches.length,
+                        rankings: rankings.slice(0, 5), // Top 5 jugadores
+                    };
+                })
+            );
+
+            const response = {
+                seasonName: activeSeason.name,
+                groups: groupsWithRankings,
+                cached: false,
+                updatedAt: new Date().toISOString(),
+            };
+
+            // Guardar en caché por 24h
+            cacheService.set('public:groups-summary', response, 24);
+            fastify.log.info('💾 Groups summary cached for 24h');
+
+            return response;
+        } catch (error) {
+            fastify.log.error(error, 'Error fetching groups summary');
+            return reply.status(500).send({ error: 'Failed to fetch groups summary' });
+        }
+    });
+
+    /**
+     * GET /api/public/group/:id/classification
+     * Obtener clasificación completa de un grupo (sin autenticación)
+     */
+    fastify.get('/group/:id/classification', async (request, reply) => {
+        try {
+            const { id: groupId } = request.params as { id: string };
+
+            // Intentar obtener del caché
+            const cacheKey = `public:group:${groupId}:classification`;
+            const cached = cacheService.get<any>(cacheKey);
+            if (cached) {
+                fastify.log.info(`📦 Group ${groupId} classification from cache`);
+                return cached;
+            }
+
+            // Obtener grupo
+            const group = await prisma.group.findUnique({
+                where: { id: groupId },
+                include: {
+                    groupPlayers: {
+                        include: {
+                            player: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                },
+                            },
+                        },
+                        orderBy: {
+                            rankingPosition: 'asc',
+                        },
+                    },
+                    matches: {
+                        where: {
+                            matchStatus: 'PLAYED',
+                        },
+                        include: {
+                            player1: true,
+                            player2: true,
+                            winner: true,
+                        },
+                    },
+                    season: {
+                        select: {
+                            name: true,
+                        },
+                    },
+                },
+            });
+
+            if (!group) {
+                return reply.status(404).send({ error: 'Group not found' });
+            }
+
+            // Calcular rankings
+            const rankings = await getGroupRankings(groupId);
+
+            const response = {
+                id: group.id,
+                name: group.name,
+                seasonName: group.season.name,
+                totalMatches: group.matches.length,
+                rankings,
+                cached: false,
+                updatedAt: new Date().toISOString(),
+            };
+
+            // Guardar en caché por 24h
+            cacheService.set(cacheKey, response, 24);
+            fastify.log.info(`💾 Group ${groupId} classification cached for 24h`);
+
+            return response;
+        } catch (error) {
+            fastify.log.error(error, 'Error fetching group classification');
+            return reply.status(500).send({ error: 'Failed to fetch group classification' });
+        }
+    });
+
+    /**
+     * GET /api/public/stats
+     * Obtener estadísticas generales públicas (sin autenticación)
+     */
+    fastify.get('/stats', async (request, reply) => {
+        try {
+            // Intentar obtener del caché
+            const cached = cacheService.get<any>('public:stats');
+            if (cached) {
+                fastify.log.info('📦 Stats from cache');
+                return cached;
+            }
+
+            // Obtener temporada activa
+            const activeSeason = await prisma.season.findFirst({
+                where: { isActive: true },
+                orderBy: { startDate: 'desc' },
+            });
+
+            if (!activeSeason) {
+                return reply.status(404).send({ error: 'No active season' });
+            }
+
+            // Estadísticas
+            const totalPlayers = await prisma.player.count();
+            const totalMatches = await prisma.match.count({
+                where: {
+                    matchStatus: 'PLAYED',
+                    group: { seasonId: activeSeason.id },
+                },
+            });
+            const totalGroups = await prisma.group.count({
+                where: { seasonId: activeSeason.id },
+            });
+
+            const response = {
+                seasonName: activeSeason.name,
+                totalPlayers,
+                totalMatches,
+                totalGroups,
+                cached: false,
+                updatedAt: new Date().toISOString(),
+            };
+
+            // Guardar en caché por 24h
+            cacheService.set('public:stats', response, 24);
+            fastify.log.info('💾 Stats cached for 24h');
+
+            return response;
+        } catch (error) {
+            fastify.log.error(error, 'Error fetching stats');
+            return reply.status(500).send({ error: 'Failed to fetch stats' });
+        }
+    });
+
+    /**
+     * Endpoint para invalidar caché (solo para admin, via webhook o interna)
+     * Este endpoint se puede llamar cuando se registra un nuevo partido
+     */
+    fastify.post('/cache/invalidate', async (request, reply) => {
+        try {
+            const token = request.headers['x-cache-token'];
+            const expectedToken = process.env.CACHE_INVALIDATE_TOKEN || 'dev-token';
+
+            if (!token || token !== expectedToken) {
+                return reply.status(401).send({ error: 'Unauthorized' });
+            }
+
+            // Invalidar caché público
+            cacheService.invalidatePattern('public:');
+            fastify.log.info('🔄 Public cache invalidated');
+
+            return { success: true, message: 'Cache invalidated' };
+        } catch (error) {
+            fastify.log.error(error, 'Error invalidating cache');
+            return reply.status(500).send({ error: 'Failed to invalidate cache' });
+        }
+    });
+
+    /**
+     * GET /api/public/cache/stats
+     * Información del caché (desarrollo)
+     */
+    if (process.env.NODE_ENV === 'development') {
+        fastify.get('/cache/stats', async (request, reply) => {
+            return cacheService.getStats();
+        });
+    }
+}
