@@ -491,4 +491,77 @@ export async function playerRoutes(fastify: FastifyInstance) {
             fastify.log.error(error);
             return reply.status(500).send({ error: 'Internal server error' });
         }
-    });}
+    });
+
+    // Mark fee as paid + Register GDPR/Legal acceptance (admin only)
+    fastify.post('/:playerId/mark-fee-paid', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            const { playerId } = request.params as { playerId: string };
+            const { year } = request.body as { year: number };
+
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            const currentYear = new Date().getFullYear();
+            if (year < 2020 || year > currentYear + 1) {
+                return reply.status(400).send({ error: 'Invalid year' });
+            }
+
+            const player = await prisma.player.findUnique({
+                where: { id: playerId },
+                include: { user: true }
+            });
+
+            if (!player || !player.user) {
+                return reply.status(404).send({ error: 'Player not found' });
+            }
+
+            const currentFees = player.annualFeesPaid ? JSON.parse(player.annualFeesPaid) : [];
+            const fees = Array.isArray(currentFees) ? currentFees : [];
+
+            if (!fees.includes(year)) {
+                fees.push(year);
+            }
+
+            fees.sort((a: number, b: number) => a - b);
+            const feesString = JSON.stringify(fees);
+
+            const [updatedPlayer, updatedUser] = await prisma.$transaction([
+                prisma.player.update({
+                    where: { id: playerId },
+                    data: { annualFeesPaid: feesString },
+                }),
+                prisma.user.update({
+                    where: { id: player.user.id },
+                    data: {
+                        termsAcceptedAt: player.user.termsAcceptedAt || new Date(),
+                        privacyAcceptedAt: player.user.privacyAcceptedAt || new Date(),
+                        termsAcceptanceMethod: 'fee_payment'
+                    }
+                })
+            ]);
+
+            const updatedFees = updatedPlayer.annualFeesPaid ? JSON.parse(updatedPlayer.annualFeesPaid) : [];
+            return {
+                player: {
+                    ...updatedPlayer,
+                    annualFeesPaid: updatedFees
+                },
+                user: {
+                    id: updatedUser.id,
+                    email: updatedUser.email,
+                    termsAcceptedAt: updatedUser.termsAcceptedAt,
+                    privacyAcceptedAt: updatedUser.privacyAcceptedAt
+                },
+                message: `Cuota pagada para ${year} - Términos y condiciones aceptados automáticamente`
+            };
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+}

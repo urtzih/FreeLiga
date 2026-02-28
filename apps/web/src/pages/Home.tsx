@@ -11,19 +11,19 @@ export default function Home() {
             {/* Hero Section */}
             <div className="relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-5"></div>
-                <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+                <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
                     <div className="text-center">
-                        {/* Logo FreeSquash */}
+                        {/* Logo FreeSquash - Circular */}
                         <div className="mb-8 flex justify-center">
                             <img
                                 src="/logo.jpg"
                                 alt="FreeSquash Logo"
-                                className="h-32 sm:h-40 lg:h-48 w-auto rounded-2xl shadow-2xl"
+                                className="w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 rounded-full object-cover border-4 border-white dark:border-slate-700 shadow-2xl hover:scale-105 transition-transform cursor-pointer"
                             />
                         </div>
 
                         <h1 className="text-5xl sm:text-6xl lg:text-7xl leading-[1.1] font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-6">
-                            FreeSquash League
+                            FreeSquash Liga
                         </h1>
                         <p className="text-xl sm:text-2xl text-gray-700 mb-4 max-w-3xl mx-auto">
                             Nuestra liga de squash en Vitoria-Gasteiz
@@ -39,18 +39,6 @@ export default function Home() {
                             >
                                 Acceder a la Plataforma
                             </Link>
-                        </div>
-
-                        <div className="mt-6 flex flex-col items-center gap-3">
-                            <Link
-                                to="/inicio"
-                                className="text-blue-600 hover:text-blue-700 font-medium underline decoration-2 underline-offset-4 transition-colors"
-                            >
-                                📋 ¿Eres nuevo? Ver instrucciones de acceso
-                            </Link>
-                            <p className="text-sm text-gray-500">
-                                🔒 Acceso solo para miembros registrados. Contacta con el administrador para unirte.
-                            </p>
                         </div>
                     </div>
                 </div>
@@ -342,7 +330,27 @@ export default function Home() {
                 </div>
             </div>
 
-            {/* CTA Section */}
+            {/* CTA Section - New Members */}
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 py-12">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <h2 className="text-3xl font-bold text-white mb-4">
+                        📋 ¿Eres nuevo?
+                    </h2>
+                    <p className="text-lg text-blue-100 mb-6">
+                        Consulta las instrucciones para solicitar acceso a la plataforma
+                    </p>
+                    <div className="flex justify-center">
+                        <Link
+                            to="/inicio"
+                            className="px-10 py-3 bg-white text-blue-600 text-base font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                        >
+                            Ver instrucciones de acceso
+                        </Link>
+                    </div>
+                </div>
+            </div>
+
+            {/* CTA Section - Existing Members */}
             <div className="bg-gradient-to-r from-indigo-600 to-blue-600 py-16">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
                     <h2 className="text-4xl font-bold text-white mb-6">
@@ -360,7 +368,7 @@ export default function Home() {
                         </Link>
                     </div>
                     <p className="mt-6 text-blue-100 text-sm">
-                        ¿No tienes cuenta? Contacta con el administrador de la liga
+                        ¿Problemas para acceder? Contacta con el administrador
                     </p>
                 </div>
             </div>

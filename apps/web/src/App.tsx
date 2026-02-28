@@ -33,7 +33,11 @@ const PublicGroups = lazy(() => import('./pages/public/PublicGroups'));
 const PublicGroupDetail = lazy(() => import('./pages/public/PublicGroupDetail'));
 const Calendar = lazy(() => import('./pages/Calendar'));
 const ScheduledMatches = lazy(() => import('./pages/ScheduledMatches'));
-import Layout from './components/Layout';
+const Privacy = lazy(() => import('./pages/Privacy'));
+const Terms = lazy(() => import('./pages/Terms'));
+const Legal = lazy(() => import('./pages/Legal'));
+import FooterOnlyLayout from './components/FooterOnlyLayout';
+import ProtectedLayout from './components/ProtectedLayout';
 
 function ProtectedRoute({
     children,
@@ -86,34 +90,50 @@ function App() {
                 <ToastContainer />
                     <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader label="Cargando módulo..." /></div>}>
                         <Routes>
-                            {/* Public routes */}
-                            <Route
-                                path="/"
-                                element={!isAuthenticated ? <Home /> : <Navigate to={defaultRoute} replace />}
-                            />
+                            {/* Login - Full screen, no layout */}
                             <Route
                                 path="/login"
                                 element={!isAuthenticated ? <Login /> : <Navigate to={defaultRoute} replace />}
                             />
-                            <Route
-                                path="/inicio"
-                                element={<Welcome />}
-                            />
-                            <Route
-                                path="/public/matches"
-                                element={<PublicMatches />}
-                            />
-                            <Route
-                                path="/public/groups"
-                                element={<PublicGroups />}
-                            />
-                            <Route
-                                path="/public/group/:id"
-                                element={<PublicGroupDetail />}
-                            />
+
+                            {/* Public routes - With FooterOnlyLayout (footer with legal links, no nav) */}
+                            <Route element={<FooterOnlyLayout />}>
+                                <Route
+                                    path="/"
+                                    element={!isAuthenticated ? <Home /> : <Navigate to={defaultRoute} replace />}
+                                />
+                                <Route
+                                    path="/inicio"
+                                    element={<Welcome />}
+                                />
+                                <Route
+                                    path="/public/matches"
+                                    element={<PublicMatches />}
+                                />
+                                <Route
+                                    path="/public/groups"
+                                    element={<PublicGroups />}
+                                />
+                                <Route
+                                    path="/public/group/:id"
+                                    element={<PublicGroupDetail />}
+                                />
+                                <Route
+                                    path="/privacy"
+                                    element={<Privacy />}
+                                />
+                                <Route
+                                    path="/terms"
+                                    element={<Terms />}
+                                />
+                                <Route
+                                    path="/legal"
+                                    element={<Legal />}
+                                />
+                            </Route>
 
                             {/* Protected player routes */}
-                            <Route element={<Layout />}>
+                            <Route element={<ProtectedLayout />}>
                                 <Route
                                     path="/dashboard"
                                     element={

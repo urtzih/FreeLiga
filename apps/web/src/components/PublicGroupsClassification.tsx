@@ -85,12 +85,6 @@ export default function PublicGroupsClassification() {
                         </span>
                         {data.cached && <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Caché</span>}
                     </h2>
-                    <Link
-                        to="/public/groups"
-                        className="text-indigo-600 text-sm font-medium hover:text-indigo-700 transition-colors"
-                    >
-                        Ver detalles completos →
-                    </Link>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

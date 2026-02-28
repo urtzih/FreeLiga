@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-export default function Layout() {
+export default function ProtectedLayout() {
     const { user, logout, isAdmin } = useAuth();
     const navigate = useNavigate();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -268,10 +268,10 @@ export default function Layout() {
                 <Outlet />
             </main>
 
-            {/* Footer con logo */}
+            {/* Footer SIN enlaces legales */}
             <footer className="bg-gray-100 dark:bg-gray-800 py-8 mt-8 border-t border-slate-200 dark:border-slate-700">
                 <div className="max-w-7xl mx-auto px-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Left: Logo and info */}
                         <div className="flex flex-col items-start gap-3">
                             <div className="flex items-center gap-3">
@@ -290,22 +290,9 @@ export default function Layout() {
                         </div>
                     </div>
 
-                    {/* Legal links */}
-                    <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
-                        <div className="flex flex-wrap gap-4 text-xs text-gray-600 dark:text-gray-400">
-                            <Link to="/privacy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                                Política de Privacidad
-                            </Link>
-                            <span className="text-slate-300 dark:text-slate-600">•</span>
-                            <Link to="/terms" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                                Términos de Servicio
-                            </Link>
-                            <span className="text-slate-300 dark:text-slate-600">•</span>
-                            <Link to="/legal" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                                Aviso Legal
-                            </Link>
-                        </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-4">
+                    {/* Copyright */}
+                    <div className="border-t border-slate-200 dark:border-slate-700 pt-4 mt-6">
+                        <p className="text-xs text-gray-500 dark:text-gray-500">
                             © {new Date().getFullYear()} Free Squash Gasteiz. Todos los derechos reservados.
                         </p>
                     </div>

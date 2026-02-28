@@ -39,14 +39,20 @@ enum BugStatus {
 }
 
 model User {
-  id               String   @id @default(cuid())
-  email            String   @unique
-  password         String   // Hashed with bcrypt
-  role             Role     @default(PLAYER)
-  isActive         Boolean  @default(true)
-  lastConnection   DateTime?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                        String   @id @default(cuid())
+  email                     String   @unique
+  password                  String   // Hashed with bcrypt
+  role                      Role     @default(PLAYER)
+  isActive                  Boolean  @default(true)
+  lastConnection            DateTime?
+  
+  // GDPR/Legal Compliance
+  termsAcceptedAt           DateTime?  // When user accepted terms & conditions
+  privacyAcceptedAt         DateTime?  // When user accepted privacy policy
+  termsAcceptanceMethod     String?    // 'direct_consent', 'fee_payment', etc. Documentation purpose
+  
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
 
   player Player?
   bugReports BugReport[]
