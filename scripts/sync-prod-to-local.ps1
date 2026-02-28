@@ -100,6 +100,33 @@ if (-not $localInfo) {
     exit 1
 }
 
+# Verificar y levantar Docker + MySQL si no está corriendo
+Write-Output ""
+Write-ColorOutput Yellow "Verificando Docker y contenedor MySQL..."
+$dockerRunning = $null
+try {
+    $dockerRunning = docker ps 2>&1 | Select-String "CONTAINER" -Quiet
+} catch {
+    $dockerRunning = $false
+}
+
+if (-not $dockerRunning) {
+    Write-Output "Levantando Docker..."
+    # Docker Desktop debería iniciarse automáticamente
+    docker ps > $null 2>&1
+    Start-Sleep -Seconds 2
+}
+
+# Verificar si el contenedor MySQL está corriendo
+$mysqlRunning = docker ps | Select-String "freeliga-mysql" -Quiet
+
+if (-not $mysqlRunning) {
+    Write-Output "Levantando contenedor MySQL..."
+    docker-compose up -d mysql 2>&1 | Out-Null
+    Start-Sleep -Seconds 3
+    Write-Output "Contenedor MySQL listo"
+}
+
 Write-ColorOutput Yellow "DESCARGANDO DE PRODUCCION..."
 Write-Output "Host: $($prodInfo.Host):$($prodInfo.Port)"
 Write-Output "Database: $($prodInfo.Database)"
