@@ -234,6 +234,13 @@ export async function groupRoutes(fastify: FastifyInstance) {
                 where: { groupId: id },
             });
 
+            // Get existing players in the group
+            const existingPlayers = await prisma.groupPlayer.findMany({
+                where: { groupId: id },
+                include: { player: true },
+            });
+
+            // Create the new group player
             const groupPlayer = await prisma.groupPlayer.create({
                 data: {
                     groupId: id,
@@ -244,6 +251,29 @@ export async function groupRoutes(fastify: FastifyInstance) {
                     player: true,
                 },
             });
+
+            // Create pending matches between the new player and all existing players in the group
+            if (existingPlayers.length > 0) {
+                const matchPromises = existingPlayers.map((existingPlayer) =>
+                    prisma.match.create({
+                        data: {
+                            groupId: id,
+                            player1Id: body.playerId,
+                            player2Id: existingPlayer.playerId,
+                            isScheduled: false, // pending match without result
+                            date: new Date(),
+                            matchStatus: 'PLAYED', // default status
+                        },
+                    })
+                );
+                
+                try {
+                    await Promise.all(matchPromises);
+                    fastify.log.info(`Created ${matchPromises.length} pending matches for new player ${body.playerId} in group ${id}`);
+                } catch (matchError) {
+                    fastify.log.warn({ error: matchError }, 'Failed to create some pending matches, but player was added to group');
+                }
+            }
 
             return groupPlayer;
         } catch (error) {

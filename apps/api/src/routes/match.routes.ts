@@ -171,7 +171,9 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 return reply.status(400).send({ error: 'Both players must be in the group' });
             }
 
-            // Check if match already exists between these two players in this group (ignore scheduled without result so they can be reused)
+            // Check if match already exists between these two players in this group
+            // Allow if: (1) no match exists, (2) match is pending (for recording result), or (3) it's an admin recording a result
+            const isAdmin = decoded.role === 'ADMIN';
             const existingMatch = await prisma.match.findFirst({
                 where: {
                     groupId: body.groupId,
@@ -179,19 +181,30 @@ export async function matchRoutes(fastify: FastifyInstance) {
                         { player1Id: body.player1Id, player2Id: body.player2Id },
                         { player1Id: body.player2Id, player2Id: body.player1Id }
                     ],
-                    NOT: {
-                        AND: [
-                            { isScheduled: true },
-                            { gamesP1: null },
-                            { gamesP2: null }
-                        ]
-                    }
                 }
             });
 
+            // If a match exists, check if it's pending and the request is to record a result
             if (existingMatch) {
-                return reply.status(400).send({ error: 'Ya existe un partido registrado entre estos jugadores en este grupo' });
+                const isPendingMatch = !existingMatch.gamesP1 && !existingMatch.gamesP2;
+                const isRecordingResult = body.matchStatus === 'PLAYED' && body.gamesP1 !== undefined && body.gamesP2 !== undefined;
+                
+                // Allow: pending match being recorded OR admin creating new match entry
+                if (!isPendingMatch && !isAdmin) {
+                    return reply.status(400).send({ error: 'Ya existe un partido registrado entre estos jugadores en este grupo. Solo los administradores pueden crear múltiples partidos entre los mismos jugadores.' });
+                }
+                
+                // If recording result and there's a pending match, the update logic will reuse it
+                if (isPendingMatch && isRecordingResult) {
+                    // This is OK - we'll update the pending match below
+                } else if (!isPendingMatch && isAdmin) {
+                    // Admin can create a new match even if one exists with result
+                } else if (isPendingMatch && !isRecordingResult) {
+                    // This would create a duplicate, prevent it
+                    return reply.status(400).send({ error: 'Ya existe un partido pendiente entre estos jugadores. Registra el resultado del partido existente.' });
+                }
             }
+
 
             // Determine winner (only for PLAYED matches with scores)
             let winnerId: string | null = null;

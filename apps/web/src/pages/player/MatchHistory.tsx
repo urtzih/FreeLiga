@@ -9,6 +9,16 @@ export default function MatchHistory() {
     const { user, isAdmin } = useAuth();
     const queryClient = useQueryClient();
     const [editingMatch, setEditingMatch] = useState<any>(null);
+    const [showCreatePendingModal, setShowCreatePendingModal] = useState(false);
+    const [createPendingError, setCreatePendingError] = useState('');
+    const [createPendingForm, setCreatePendingForm] = useState({
+        groupId: '',
+        player1Id: '',
+        player2Id: '',
+        gamesP1: 0,
+        gamesP2: 0,
+        date: new Date().toISOString().split('T')[0],
+    });
 
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
@@ -69,6 +79,45 @@ export default function MatchHistory() {
         refetchOnWindowFocus: true
     });
 
+    const { data: groupPlayers = [] } = useQuery({
+        queryKey: ['groupPlayersForPendingMatch', createPendingForm.groupId],
+        queryFn: async () => {
+            if (!createPendingForm.groupId) return [];
+            const { data } = await api.get(`/groups/${createPendingForm.groupId}/players`);
+            return data;
+        },
+        enabled: isAdmin && showCreatePendingModal && !!createPendingForm.groupId,
+        staleTime: 0,
+        gcTime: 0,
+        refetchOnMount: 'always',
+        refetchOnWindowFocus: true,
+    });
+
+    const createPendingMatchMutation = useMutation({
+        mutationFn: async (payload: { groupId: string; player1Id: string; player2Id: string; gamesP1: number; gamesP2: number; date: string; matchStatus: 'PLAYED' }) => {
+            const { data } = await api.post('/matches', payload);
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['matches'] });
+            setShowCreatePendingModal(false);
+            setCreatePendingError('');
+            setCreatePendingForm({
+                groupId: '',
+                player1Id: '',
+                player2Id: '',
+                gamesP1: 0,
+                gamesP2: 0,
+                date: new Date().toISOString().split('T')[0],
+            });
+            alert('Partido registrado correctamente');
+        },
+        onError: (error: any) => {
+            const message = error?.response?.data?.error || error?.message || 'No se pudo crear el partido pendiente';
+            setCreatePendingError(String(message));
+        },
+    });
+
     // Delete mutation
     const deleteMutation = useMutation({
         mutationFn: async (matchId: string) => {
@@ -95,21 +144,31 @@ export default function MatchHistory() {
     // Filtered and paginated matches
     const filteredMatches = useMemo(() => {
         return matches.filter((match: any) => {
-            // Exclude scheduled matches without results
-            if (match.gamesP1 === null || match.gamesP2 === null) {
+            // Exclude scheduled matches without results (unless admin viewing all)
+            if (!isAdmin && (match.gamesP1 === null || match.gamesP2 === null)) {
                 return false;
             }
 
-            const isPlayer1 = match.player1Id === user?.player?.id;
-            const opponent = isPlayer1 ? match.player2 : match.player1;
+            // For non-admins, only show their own matches
+            if (!isAdmin) {
+                const isPlayer1 = match.player1Id === user?.player?.id;
+                const opponent = isPlayer1 ? match.player2 : match.player1;
 
-            // Search filter
-            if (searchTerm && !opponent.name.toLowerCase().includes(searchTerm.toLowerCase())) {
-                return false;
+                // Search filter
+                if (searchTerm && !opponent.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+                    return false;
+                }
+            } else {
+                // For admins, search in player names
+                if (searchTerm) {
+                    const p1Match = match.player1?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+                    const p2Match = match.player2?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+                    if (!p1Match && !p2Match) return false;
+                }
             }
 
-            // Date range filter
-            const matchDate = new Date(match.date);
+            // Date range filter (use match.date or match.scheduledDate for pending matches)
+            const matchDate = new Date(match.date || match.scheduledDate || new Date());
             if (dateFrom && matchDate < new Date(dateFrom)) return false;
             if (dateTo && matchDate > new Date(dateTo)) return false;
 
@@ -125,7 +184,7 @@ export default function MatchHistory() {
 
             return true;
         });
-    }, [matches, searchTerm, dateFrom, dateTo, selectedSeason, selectedGroup, user?.player?.id]);
+    }, [matches, searchTerm, dateFrom, dateTo, selectedSeason, selectedGroup, user?.player?.id, isAdmin]);
 
     const totalPages = Math.ceil(filteredMatches.length / itemsPerPage);
     const paginatedMatches = useMemo(() => {
@@ -136,11 +195,135 @@ export default function MatchHistory() {
     // Reset to page 1 when filters change
     const resetToPageOne = () => setCurrentPage(1);
 
+    const selectedGroupMatches = useMemo(() => {
+        if (!createPendingForm.groupId) return [] as any[];
+        return matches.filter((match: any) => match.groupId === createPendingForm.groupId);
+    }, [matches, createPendingForm.groupId]);
+
+    const groupsWithRemainingMatches = useMemo(() => {
+        return allGroups.filter((group: any) => {
+            const groupPlayersData = group.groupPlayers || [];
+            const playerIds = groupPlayersData
+                .map((gp: any) => gp.playerId || gp.player?.id)
+                .filter(Boolean);
+
+            if (playerIds.length < 2) return false;
+
+            const groupPlayedMatches = matches.filter((match: any) => {
+                if (match.groupId !== group.id) return false;
+                return match.gamesP1 !== null && match.gamesP2 !== null;
+            });
+
+            const hasPlayedPair = (aId: string, bId: string) => {
+                return groupPlayedMatches.some((match: any) => (
+                    (match.player1Id === aId && match.player2Id === bId) ||
+                    (match.player1Id === bId && match.player2Id === aId)
+                ));
+            };
+
+            for (let indexA = 0; indexA < playerIds.length; indexA++) {
+                for (let indexB = indexA + 1; indexB < playerIds.length; indexB++) {
+                    if (!hasPlayedPair(playerIds[indexA], playerIds[indexB])) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        });
+    }, [allGroups, matches]);
+
+    const hasPlayedResultBetween = (playerAId: string, playerBId: string) => {
+        return selectedGroupMatches.some((match: any) => {
+            const samePair =
+                (match.player1Id === playerAId && match.player2Id === playerBId) ||
+                (match.player1Id === playerBId && match.player2Id === playerAId);
+
+            if (!samePair) return false;
+
+            return match.gamesP1 !== null && match.gamesP2 !== null;
+        });
+    };
+
+    const playersWithRemainingMatches = useMemo(() => {
+        if (!createPendingForm.groupId || !groupPlayers.length) return [] as any[];
+
+        return groupPlayers.filter((playerA: any) => {
+            return groupPlayers.some((playerB: any) => {
+                if (playerA.id === playerB.id) return false;
+                return !hasPlayedResultBetween(playerA.id, playerB.id);
+            });
+        });
+    }, [groupPlayers, createPendingForm.groupId, selectedGroupMatches]);
+
+    const remainingOpponentsForPlayer1 = useMemo(() => {
+        if (!createPendingForm.player1Id) return [] as any[];
+
+        return groupPlayers.filter((player: any) => {
+            if (player.id === createPendingForm.player1Id) return false;
+            return !hasPlayedResultBetween(createPendingForm.player1Id, player.id);
+        });
+    }, [groupPlayers, createPendingForm.player1Id, selectedGroupMatches]);
+
+    const handleCreatePendingMatch = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setCreatePendingError('');
+
+        if (!createPendingForm.groupId || !createPendingForm.player1Id || !createPendingForm.player2Id) {
+            setCreatePendingError('Debes seleccionar grupo y los dos contrincantes');
+            return;
+        }
+
+        if (createPendingForm.player1Id === createPendingForm.player2Id) {
+            setCreatePendingError('Los contrincantes deben ser diferentes');
+            return;
+        }
+
+        const validScore =
+            (createPendingForm.gamesP1 === 3 && createPendingForm.gamesP2 >= 0 && createPendingForm.gamesP2 <= 2) ||
+            (createPendingForm.gamesP2 === 3 && createPendingForm.gamesP1 >= 0 && createPendingForm.gamesP1 <= 2);
+
+        if (!validScore) {
+            setCreatePendingError('Resultado inválido: formato permitido 3-0, 3-1, 3-2 (o inverso).');
+            return;
+        }
+
+        if (hasPlayedResultBetween(createPendingForm.player1Id, createPendingForm.player2Id)) {
+            setCreatePendingError('Esta pareja ya no tiene partidos restantes en este grupo');
+            return;
+        }
+
+        await createPendingMatchMutation.mutateAsync({
+            groupId: createPendingForm.groupId,
+            player1Id: createPendingForm.player1Id,
+            player2Id: createPendingForm.player2Id,
+            gamesP1: createPendingForm.gamesP1,
+            gamesP2: createPendingForm.gamesP2,
+            date: new Date(createPendingForm.date).toISOString(),
+            matchStatus: 'PLAYED',
+        });
+    };
+
     return (
         <div className="space-y-6">
             <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-2xl p-8 text-white shadow-lg">
-                <h1 className="text-3xl font-bold mb-2">Historial de Partidos</h1>
-                <p className="text-indigo-100">Tu registro completo de partidos</p>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold mb-2">Historial de Partidos</h1>
+                        <p className="text-indigo-100">Tu registro completo de partidos</p>
+                    </div>
+                    {isAdmin && (
+                        <button
+                            onClick={() => {
+                                setCreatePendingError('');
+                                setShowCreatePendingModal(true);
+                            }}
+                            className="px-4 py-2 rounded-lg bg-white text-indigo-700 font-semibold hover:bg-indigo-50 transition-colors"
+                        >
+                            + Registrar partido (admin)
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Filters */}
@@ -279,6 +462,15 @@ export default function MatchHistory() {
                                             </div>
 
                                             <div className="flex flex-col items-end gap-3">
+                                                {/* Pending Match Indicator */}
+                                                {isAdmin && (match.gamesP1 === null || match.gamesP2 === null) && (
+                                                    <div className="text-right">
+                                                        <div className="px-3 py-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                                                            <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">⏳ PENDIENTE</p>
+                                                            <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">Sin resultado registrado</p>
+                                                        </div>
+                                                    </div>
+                                                )}
                                                 {match.matchStatus === 'PLAYED' && (
                                                     <div className="text-right">
                                                         <div className="text-3xl font-bold text-slate-900 dark:text-white">
@@ -365,6 +557,179 @@ export default function MatchHistory() {
                     </>
                 )}
             </div>
+
+            {/* Modal Crear Partido Pendiente (Admin) */}
+            {isAdmin && showCreatePendingModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden">
+                        <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Crear partido pendiente</h3>
+                            <button
+                                onClick={() => {
+                                    if (!createPendingMatchMutation.isPending) {
+                                        setShowCreatePendingModal(false);
+                                        setCreatePendingError('');
+                                        setCreatePendingForm({
+                                            groupId: '',
+                                            player1Id: '',
+                                            player2Id: '',
+                                            gamesP1: 0,
+                                            gamesP2: 0,
+                                            date: new Date().toISOString().split('T')[0],
+                                        });
+                                    }
+                                }}
+                                className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleCreatePendingMatch} className="p-6 space-y-4">
+                            {createPendingError && (
+                                <div className="p-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg text-sm">
+                                    {createPendingError}
+                                </div>
+                            )}
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Grupo</label>
+                                <select
+                                    value={createPendingForm.groupId}
+                                    onChange={(e) => {
+                                        setCreatePendingForm({
+                                            groupId: e.target.value,
+                                            player1Id: '',
+                                            player2Id: '',
+                                            gamesP1: 0,
+                                            gamesP2: 0,
+                                            date: createPendingForm.date,
+                                        });
+                                        setCreatePendingError('');
+                                    }}
+                                    className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                >
+                                    <option value="">Selecciona un grupo</option>
+                                    {groupsWithRemainingMatches.map((group: any) => (
+                                        <option key={group.id} value={group.id}>{group.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Contrincante 1</label>
+                                    <select
+                                        value={createPendingForm.player1Id}
+                                        onChange={(e) => {
+                                            setCreatePendingForm(prev => ({ ...prev, player1Id: e.target.value, player2Id: '' }));
+                                            setCreatePendingError('');
+                                        }}
+                                        disabled={!createPendingForm.groupId}
+                                        className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white disabled:opacity-50"
+                                    >
+                                        <option value="">Selecciona jugador</option>
+                                        {playersWithRemainingMatches.map((player: any) => (
+                                            <option key={player.id} value={player.id}>{player.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Contrincante 2</label>
+                                    <select
+                                        value={createPendingForm.player2Id}
+                                        onChange={(e) => {
+                                            setCreatePendingForm(prev => ({ ...prev, player2Id: e.target.value }));
+                                            setCreatePendingError('');
+                                        }}
+                                        disabled={!createPendingForm.groupId}
+                                        className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white disabled:opacity-50"
+                                    >
+                                        <option value="">Selecciona jugador</option>
+                                        {remainingOpponentsForPlayer1.map((player: any) => (
+                                            <option key={player.id} value={player.id}>{player.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Juegos P1</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="3"
+                                        value={createPendingForm.gamesP1}
+                                        onChange={(e) => {
+                                            setCreatePendingForm(prev => ({ ...prev, gamesP1: parseInt(e.target.value) || 0 }));
+                                            setCreatePendingError('');
+                                        }}
+                                        className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Juegos P2</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="3"
+                                        value={createPendingForm.gamesP2}
+                                        onChange={(e) => {
+                                            setCreatePendingForm(prev => ({ ...prev, gamesP2: parseInt(e.target.value) || 0 }));
+                                            setCreatePendingError('');
+                                        }}
+                                        className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Fecha</label>
+                                    <input
+                                        type="date"
+                                        value={createPendingForm.date}
+                                        onChange={(e) => {
+                                            setCreatePendingForm(prev => ({ ...prev, date: e.target.value }));
+                                            setCreatePendingError('');
+                                        }}
+                                        className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-3 pt-2">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (!createPendingMatchMutation.isPending) {
+                                            setShowCreatePendingModal(false);
+                                            setCreatePendingError('');
+                                            setCreatePendingForm({
+                                                groupId: '',
+                                                player1Id: '',
+                                                player2Id: '',
+                                                gamesP1: 0,
+                                                gamesP2: 0,
+                                                date: new Date().toISOString().split('T')[0],
+                                            });
+                                        }
+                                    }}
+                                    className="px-4 py-2 text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg font-medium transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={createPendingMatchMutation.isPending}
+                                    className="px-4 py-2 text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg font-medium transition-colors disabled:opacity-50"
+                                >
+                                    {createPendingMatchMutation.isPending ? 'Registrando...' : 'Registrar resultado'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* Modal de Edición */}
             <EditMatchModal

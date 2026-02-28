@@ -5,8 +5,8 @@ import { useToast } from '../contexts/ToastContext';
 
 interface Match {
     id: string;
-    gamesP1: number;
-    gamesP2: number;
+    gamesP1: number | null;
+    gamesP2: number | null;
     matchStatus: 'PLAYED' | 'INJURY' | 'CANCELLED';
     date: string;
     player1: { name: string };
@@ -40,8 +40,8 @@ export default function EditMatchModal({ match, isOpen, onClose }: EditMatchModa
     useEffect(() => {
         if (match) {
             setFormData({
-                gamesP1: match.gamesP1,
-                gamesP2: match.gamesP2,
+                gamesP1: match.gamesP1 ?? 0,
+                gamesP2: match.gamesP2 ?? 0,
                 matchStatus: match.matchStatus,
                 date: match.date ? new Date(match.date).toISOString().split('T')[0] : ''
             });
