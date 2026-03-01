@@ -12,10 +12,22 @@ interface CacheEntry<T> {
 class CacheService {
     private cache = new Map<string, CacheEntry<any>>();
     private cleanupTimer: NodeJS.Timeout | null = null;
+    private metricsLogTimer: NodeJS.Timeout | null = null;
+    private hits = 0;
+    private misses = 0;
+    private sets = 0;
+    private invalidations = 0;
+    private expirations = 0;
 
     constructor() {
         // Limpiar caché expirado cada hora
         this.cleanupTimer = setInterval(() => this.cleanup(), 3600000);
+
+        // Log periódico de métricas (default: 10 min, 0 para desactivar)
+        const metricsIntervalMinutes = Number(process.env.CACHE_METRICS_INTERVAL_MINUTES || '10');
+        if (Number.isFinite(metricsIntervalMinutes) && metricsIntervalMinutes > 0) {
+            this.metricsLogTimer = setInterval(() => this.logMetrics(), metricsIntervalMinutes * 60000);
+        }
     }
 
     /**
@@ -25,6 +37,7 @@ class CacheService {
         const entry = this.cache.get(key);
         
         if (!entry) {
+            this.misses++;
             return null;
         }
 
@@ -32,9 +45,12 @@ class CacheService {
         const now = Date.now();
         if (now - entry.timestamp > entry.ttl) {
             this.cache.delete(key);
+            this.misses++;
+            this.expirations++;
             return null;
         }
 
+        this.hits++;
         return entry.data as T;
     }
 
@@ -51,13 +67,16 @@ class CacheService {
             timestamp: Date.now(),
             ttl: ttlMs,
         });
+        this.sets++;
     }
 
     /**
      * Invalidar caché específico
      */
     invalidate(key: string): void {
-        this.cache.delete(key);
+        if (this.cache.delete(key)) {
+            this.invalidations++;
+        }
     }
 
     /**
@@ -67,7 +86,9 @@ class CacheService {
         const regex = new RegExp(pattern);
         for (const key of this.cache.keys()) {
             if (regex.test(key)) {
-                this.cache.delete(key);
+                if (this.cache.delete(key)) {
+                    this.invalidations++;
+                }
             }
         }
     }
@@ -76,6 +97,7 @@ class CacheService {
      * Limpiar todo el caché
      */
     clear(): void {
+        this.invalidations += this.cache.size;
         this.cache.clear();
     }
 
@@ -83,10 +105,33 @@ class CacheService {
      * Obtener información del caché
      */
     getStats() {
+        const totalReads = this.hits + this.misses;
+        const hitRate = totalReads > 0 ? Number(((this.hits / totalReads) * 100).toFixed(2)) : 0;
+
         return {
             size: this.cache.size,
             keys: Array.from(this.cache.keys()),
+            metrics: {
+                hits: this.hits,
+                misses: this.misses,
+                sets: this.sets,
+                invalidations: this.invalidations,
+                expirations: this.expirations,
+                totalReads,
+                hitRate,
+            },
         };
+    }
+
+    /**
+     * Log periódico de métricas de caché para tuning de TTL
+     */
+    private logMetrics(): void {
+        const stats = this.getStats();
+        const metrics = stats.metrics;
+        console.log(
+            `📊 Cache metrics | size=${stats.size} reads=${metrics.totalReads} hitRate=${metrics.hitRate}% hits=${metrics.hits} misses=${metrics.misses} sets=${metrics.sets} invalidations=${metrics.invalidations} expirations=${metrics.expirations}`
+        );
     }
 
     /**
@@ -100,6 +145,7 @@ class CacheService {
             if (now - entry.timestamp > entry.ttl) {
                 this.cache.delete(key);
                 cleaned++;
+                this.expirations++;
             }
         }
 
@@ -114,6 +160,9 @@ class CacheService {
     destroy(): void {
         if (this.cleanupTimer) {
             clearInterval(this.cleanupTimer);
+        }
+        if (this.metricsLogTimer) {
+            clearInterval(this.metricsLogTimer);
         }
     }
 }

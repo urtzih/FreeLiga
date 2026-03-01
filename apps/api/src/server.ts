@@ -157,12 +157,21 @@ async function start() {
             transformStaticCSP: (header: any) => header,
         });
 
-        // No cache by default - results change constantly
+        // Cache policy by route type:
+        // - /api/public/*: short browser cache (server-side cache + invalidation handles freshness)
+        // - other GETs: no-store (authenticated/private data)
         fastify.addHook('onSend', (request: any, reply: any, payload: any, done: any) => {
             if (request.method === 'GET') {
-                reply.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-                reply.header('Pragma', 'no-cache');
-                reply.header('Expires', '0');
+                const isPublicApiRoute = request.url?.startsWith('/api/public/');
+
+                if (isPublicApiRoute) {
+                    reply.header('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
+                    reply.header('Vary', 'Accept-Encoding');
+                } else {
+                    reply.header('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+                    reply.header('Pragma', 'no-cache');
+                    reply.header('Expires', '0');
+                }
             }
             done();
         });

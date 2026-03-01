@@ -176,9 +176,9 @@ export default function PlayerProgress() {
 
   return (
     <div className="space-y-8">
-      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-8 text-white shadow-lg">
-        <h1 className="text-3xl font-bold mb-2">Progreso del Jugador</h1>
-        <p className="text-indigo-100">Evolución de resultados y movimientos entre grupos</p>
+      <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-4 md:p-8 text-white shadow-lg">
+        <h1 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">Progreso del Jugador</h1>
+        <p className="text-sm md:text-base text-indigo-100">Evolución de resultados y movimientos entre grupos</p>
       </div>
 
       {/* Selector de rango de fechas */}

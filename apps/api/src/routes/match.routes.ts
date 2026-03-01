@@ -34,6 +34,27 @@ const updateMatchSchema = z.object({
 });
 
 export async function matchRoutes(fastify: FastifyInstance) {
+    const invalidateMatchRelatedCache = (groupId: string) => {
+        cacheService.invalidate('public:recent-matches');
+        cacheService.invalidate('public:groups-summary');
+        cacheService.invalidate('public:stats');
+        cacheService.invalidatePattern(`^public:group:${groupId}:classification`);
+        cacheService.invalidate(`private:group:${groupId}:detail`);
+        cacheService.invalidatePattern('^private:classification:');
+    };
+
+    const runDetachedTask = (
+        taskName: string,
+        task: () => Promise<void>,
+        context: Record<string, unknown> = {}
+    ) => {
+        queueMicrotask(() => {
+            void task().catch((error) => {
+                logger.error({ error, taskName, ...context }, 'Background task failed');
+            });
+        });
+    };
+
     // Get all matches
     fastify.get('/', {
         onRequest: [fastify.authenticate],
@@ -208,15 +229,18 @@ export async function matchRoutes(fastify: FastifyInstance) {
 
             // Determine winner (only for PLAYED matches with scores)
             let winnerId: string | null = null;
+            const isRecordingResult = body.matchStatus === 'PLAYED' && body.gamesP1 !== undefined && body.gamesP2 !== undefined;
 
-            if (body.matchStatus === 'PLAYED' && body.gamesP1 !== undefined && body.gamesP2 !== undefined) {
-                const validScore = (body.gamesP1 === 3 && body.gamesP2 >= 0 && body.gamesP2 <= 2) || (body.gamesP2 === 3 && body.gamesP1 >= 0 && body.gamesP1 <= 2);
+            if (isRecordingResult) {
+                const gamesP1 = body.gamesP1 as number;
+                const gamesP2 = body.gamesP2 as number;
+                const validScore = (gamesP1 === 3 && gamesP2 >= 0 && gamesP2 <= 2) || (gamesP2 === 3 && gamesP1 >= 0 && gamesP1 <= 2);
                 if (!validScore) {
                     return reply.status(400).send({ error: 'Resultado inválido: formato permitido 3-0, 3-1, 3-2 (o inverso). Un jugador debe llegar a 3.' });
                 }
-                if (body.gamesP1 > body.gamesP2) {
+                if (gamesP1 > gamesP2) {
                     winnerId = body.player1Id;
-                } else if (body.gamesP2 > body.gamesP1) {
+                } else if (gamesP2 > gamesP1) {
                     winnerId = body.player2Id;
                 }
             }
@@ -320,26 +344,34 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 scheduledDate: body.scheduledDate,
             });
 
-            // Sincronizar con Google Calendar si está programado
-            if (match.isScheduled) {
-                try {
-                    const integration = await GoogleCalendarService.getIntegration(decoded.id);
-                    if (integration) {
-                        await MatchSyncService.syncMatchToGoogleCalendar(match.id, decoded.id);
-                    }
-                } catch (error) {
-                    logger.error({ error, matchId: match.id }, 'Failed to sync with Google Calendar');
-                }
-            }
-
-            // Recalculate rankings if match was PLAYED with scores
-            if (body.matchStatus === 'PLAYED' && body.gamesP1 !== undefined && body.gamesP2 !== undefined) {
-                await calculateGroupRankings(body.groupId);
-            }
-
-            // Invalidate public cache when a match is registered
-            cacheService.invalidatePattern('public:');
+            // Invalidate only match-related public cache keys
+            invalidateMatchRelatedCache(body.groupId);
             fastify.log.info({ matchId: match.id }, '🔄 Public cache invalidated after match creation');
+
+            // Sincronizar con Google Calendar solo para partidos programados (nunca al registrar resultado)
+            if (match.isScheduled && !isRecordingResult) {
+                runDetachedTask(
+                    'sync_match_to_google_calendar_after_create',
+                    async () => {
+                        const integration = await GoogleCalendarService.getIntegration(decoded.id);
+                        if (integration) {
+                            await MatchSyncService.syncMatchToGoogleCalendar(match.id, decoded.id);
+                        }
+                    },
+                    { matchId: match.id, userId: decoded.id }
+                );
+            }
+
+            // Recalculate rankings in background to reduce response time
+            if (isRecordingResult) {
+                runDetachedTask(
+                    'recalculate_group_rankings_after_match_create',
+                    async () => {
+                        await calculateGroupRankings(body.groupId);
+                    },
+                    { matchId: match.id, groupId: body.groupId }
+                );
+            }
 
             return match;
         } catch (error) {
@@ -385,6 +417,7 @@ export async function matchRoutes(fastify: FastifyInstance) {
             const gamesP1 = body.gamesP1 ?? existingMatch.gamesP1;
             const gamesP2 = body.gamesP2 ?? existingMatch.gamesP2;
             const matchStatus = body.matchStatus ?? existingMatch.matchStatus;
+            const isRecordingResult = (body.gamesP1 !== undefined || body.gamesP2 !== undefined) && matchStatus === 'PLAYED';
             const scheduledDateChanged = body.scheduledDate && new Date(body.scheduledDate).getTime() !== (existingMatch.scheduledDate?.getTime() ?? 0);
             const locationChanged = body.location !== undefined && body.location !== existingMatch.location;
 
@@ -427,8 +460,8 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 },
             });
 
-            // Sincronizar cambios con Google Calendar
-            if ((scheduledDateChanged || locationChanged) && match.googleEventId) {
+            // Sincronizar cambios con Google Calendar solo para cambios de programación, nunca al registrar resultado
+            if ((scheduledDateChanged || locationChanged) && match.googleEventId && match.isScheduled && !isRecordingResult) {
                 try {
                     await MatchSyncService.updateMatchInGoogleCalendar(id, decoded.id);
                 } catch (error) {
@@ -448,8 +481,8 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 locationChanged,
             });
 
-            // Invalidate public cache when a match is updated
-            cacheService.invalidatePattern('public:');
+            // Invalidate only match-related public cache keys
+            invalidateMatchRelatedCache(existingMatch.groupId);
             fastify.log.info({ matchId: id }, '🔄 Public cache invalidated after match update');
 
             return match;
@@ -520,6 +553,9 @@ export async function matchRoutes(fastify: FastifyInstance) {
             });
 
             await calculateGroupRankings(groupId);
+
+            invalidateMatchRelatedCache(groupId);
+            fastify.log.info({ matchId: id }, '🔄 Public cache invalidated after match delete');
 
             return { success: true };
         } catch (error) {

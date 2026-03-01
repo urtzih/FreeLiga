@@ -149,7 +149,7 @@ export default function Blacklist() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            📋 Lista Negra
+            ⚠️ Lista Negra
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
             Jugadores con menos participación en la liga
@@ -191,8 +191,8 @@ export default function Blacklist() {
           </div>
         ) : (
           <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg overflow-hidden">
-            {/* Table */}
-            <div className="overflow-x-auto">
+            {/* Dynamic layout: Table on desktop, Cards on mobile */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="bg-slate-100 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600">
@@ -307,13 +307,73 @@ export default function Blacklist() {
               </table>
             </div>
 
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-2 p-3">
+              {sortedData.map((player) => {
+                const unplayedPercentage = getUnplayedPercentage(player);
+                const progressColor = getProgressColor(unplayedPercentage);
+                
+                return (
+                  <div 
+                    key={player.id}
+                    className="p-3 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-700/50"
+                  >
+                    <div className="space-y-1.5">
+                      {/* Nombre y Liga */}
+                      <div>
+                        <p className="font-semibold text-sm text-slate-900 dark:text-white truncate">{player.name}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{player.groupName}</p>
+                      </div>
+
+                      {/* Estadísticas en una fila */}
+                      <div className="grid grid-cols-3 gap-1 text-center text-xs">
+                        <div>
+                          <p className="text-slate-600 dark:text-slate-300 font-semibold">{player.totalMatches || 0}</p>
+                          <p className="text-slate-500 dark:text-slate-400 text-xs">Total</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-600 dark:text-slate-300 font-semibold">{player.playedMatches || 0}</p>
+                          <p className="text-slate-500 dark:text-slate-400 text-xs">Jugados</p>
+                        </div>
+                        <div>
+                          <p className={`font-semibold ${
+                            (player.remainingMatches || 0) > 3
+                              ? 'text-red-600 dark:text-red-400'
+                              : 'text-yellow-600 dark:text-yellow-400'
+                          }`}>
+                            {player.remainingMatches || 0}
+                          </p>
+                          <p className="text-slate-500 dark:text-slate-400 text-xs">Rest.</p>
+                        </div>
+                      </div>
+
+                      {/* Barra de progreso */}
+                      <div className="pt-1">
+                        <div className="flex items-center gap-1.5">
+                          <div className="flex-1 h-1.5 rounded-full bg-slate-200 dark:bg-slate-600 overflow-hidden">
+                            <div
+                              className={`h-1.5 rounded-full ${progressColor}`}
+                              style={{ width: `${unplayedPercentage.toFixed(1)}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 w-10 text-right">
+                            {unplayedPercentage.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
             {/* Summary */}
-            <div className="bg-slate-100 dark:bg-slate-700 px-6 py-4 border-t border-slate-200 dark:border-slate-600">
-              <p className="text-sm text-slate-600 dark:text-slate-300">
-                <span className="font-semibold">{sortedData.length}</span> jugador(es) listado(s)
+            <div className="bg-slate-100 dark:bg-slate-700 px-3 md:px-6 py-2 md:py-3 border-t border-slate-200 dark:border-slate-600">
+              <p className="text-xs md:text-sm text-slate-600 dark:text-slate-300">
+                <span className="font-semibold">{sortedData.length}</span> jugador(es)
                 {activeTab === 'current' && (
                   <>
-                    {' '}con partidos restantes ⚠️
+                    {' '}con restantes ⚠️
                   </>
                 )}
               </p>

@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '@freesquash/database';
 import { getPlayerCurrentGroup } from '../utils/playerHelpers';
+import { cacheService } from '../services/cache.service';
 
 export async function classificationRoutes(fastify: FastifyInstance) {
     // Get global classification with filters
@@ -21,6 +22,12 @@ export async function classificationRoutes(fastify: FastifyInstance) {
                 startDate?: string;
                 endDate?: string;
             };
+
+            const cacheKey = `private:classification:${seasonId || 'all'}:${groupId || 'all'}:${opponentId || 'all'}:${startDate || 'all'}:${endDate || 'all'}`;
+            const cached = cacheService.get<any>(cacheKey);
+            if (cached) {
+                return cached;
+            }
 
             // Build match filter
             const matchWhere: any = {
@@ -164,6 +171,8 @@ export async function classificationRoutes(fastify: FastifyInstance) {
                 totalClassification: classification.length, 
                 afterFilter: filtered.length 
             }, 'Classification results');
+
+            cacheService.set(cacheKey, filtered, 5 / 60); // 5 minutos
 
             return filtered;
         } catch (error) {

@@ -94,7 +94,7 @@ export default function Layout() {
                                         to="/blacklist"
                                         className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                                     >
-                                        Lista Negra
+                                        ⚠️ Lista Negra
                                     </Link>
                                 </>
                             ) : (
@@ -217,7 +217,7 @@ export default function Layout() {
                                         ⚽ Ver todos los partidos
                                     </Link>
                                     <Link to="/blacklist" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                                        📋 Lista Negra
+                                        ⚠️ Lista Negra
                                     </Link>
                                 </>
                             ) : (
@@ -246,7 +246,7 @@ export default function Layout() {
                                             <Link to="/groups/summary" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">🗂️ Resumen grupos</Link>
                                             <Link to="/matches/history" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">📜 Mis partidos</Link>
                                             <Link to="/historia" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">📋 General</Link>
-                                            <Link to="/blacklist" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">📋 Lista Negra</Link>
+                                            <Link to="/blacklist" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">⚠️ Lista Negra</Link>
                                             <Link to="/help" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">📚 Ayuda</Link>
                                         </div>
                                     </details>
@@ -280,45 +280,51 @@ export default function Layout() {
             </main>
 
             {/* Footer con logo */}
-            <footer className="bg-gray-100 dark:bg-gray-800 py-8 mt-8 border-t border-slate-200 dark:border-slate-700">
-                <div className="max-w-7xl mx-auto px-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        {/* Left: Logo and info */}
-                        <div className="flex flex-col items-start gap-3">
-                            <div className="flex items-center gap-3">
-                                <img src="/logo.jpg" alt="FreeSquash Liga" className="h-12 w-12 rounded-full object-cover border border-slate-200 dark:border-slate-700" />
-                                <span className="text-lg font-semibold text-slate-800 dark:text-white">Free Squash Gasteiz</span>
-                            </div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Plataforma de gestión de liga de squash</p>
+            <footer className="bg-gray-100 dark:bg-gray-800 py-1.5 md:py-8 mt-4 md:mt-8 border-t border-slate-200 dark:border-slate-700">
+                <div className="max-w-7xl mx-auto px-3 md:px-4 space-y-0.5 md:space-y-4">
+                    {/* Mobile: Single tight line */}
+                    <div className="flex md:grid md:grid-cols-2 items-center justify-between gap-1 md:gap-6">
+                        {/* Left: Logo and title */}
+                        <div className="flex items-center gap-1 md:gap-2 min-w-0">
+                            <img src="/logo.jpg" alt="FreeSquash Liga" className="h-7 md:h-12 w-7 md:w-12 rounded-full object-cover border border-slate-200 dark:border-slate-700 flex-shrink-0" />
+                            <span className="text-xs md:text-lg font-semibold text-slate-800 dark:text-white whitespace-nowrap truncate">FreeSquash</span>
                         </div>
 
-                        {/* Right: Action buttons */}
-                        <div className="flex flex-col items-end gap-3">
-                            <Link to="/report-bug" className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors whitespace-nowrap text-sm">
-                                🐞 Reportar Bug
+                        {/* Buttons row */}
+                        <div className="flex items-center gap-0.5 md:gap-3 md:justify-end">
+                            {/* Desktop full buttons */}
+                            <div className="hidden md:flex md:flex-col md:items-end gap-3">
+                                <Link to="/report-bug" className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors text-sm">
+                                    🐞 Reportar Bug
+                                </Link>
+                                <a href="mailto:ligafreesquash@gmail.com" className="text-sm text-gray-600 dark:text-gray-300 hover:underline">Contacto</a>
+                            </div>
+
+                            {/* Mobile compact buttons */}
+                            <Link to="/report-bug" className="inline-flex items-center justify-center h-6 w-6 rounded-md bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors text-xs flex-shrink-0 md:hidden">
+                                🐞
                             </Link>
-                            <a href="mailto:ligafreesquash@gmail.com" className="text-sm text-gray-600 dark:text-gray-300 hover:underline">Contacto</a>
+                            <a href="mailto:ligafreesquash@gmail.com" className="inline-flex items-center justify-center h-6 w-6 rounded-md bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors text-xs flex-shrink-0 md:hidden">📧</a>
                         </div>
                     </div>
 
-                    {/* Legal links */}
-                    <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
-                        <div className="flex flex-wrap gap-4 text-xs text-gray-600 dark:text-gray-400">
-                            <Link to="/privacy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                                Política de Privacidad
+                    {/* Legal links - Single line */}
+                    <div className="border-t border-slate-200 dark:border-slate-700 pt-0.5 md:pt-4">
+                        <div className="flex items-center flex-wrap gap-0 md:gap-4 text-xs text-gray-500 dark:text-gray-500 justify-center md:justify-start">
+                            <Link to="/privacy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors whitespace-nowrap text-xs">
+                                P
                             </Link>
-                            <span className="text-slate-300 dark:text-slate-600">•</span>
-                            <Link to="/terms" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                                Términos de Servicio
+                            <span className="hidden md:inline">•</span>
+                            <Link to="/terms" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors whitespace-nowrap text-xs">
+                                T
                             </Link>
-                            <span className="text-slate-300 dark:text-slate-600">•</span>
-                            <Link to="/legal" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                                Aviso Legal
+                            <span className="hidden md:inline">•</span>
+                            <Link to="/legal" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors whitespace-nowrap text-xs">
+                                L
                             </Link>
+                            <span className="hidden md:inline md:ml-auto">© {new Date().getFullYear()} FS</span>
+                            <span className="md:hidden">© FS</span>
                         </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-4">
-                            © {new Date().getFullYear()} Free Squash Gasteiz. Todos los derechos reservados.
-                        </p>
                     </div>
                 </div>
             </footer>

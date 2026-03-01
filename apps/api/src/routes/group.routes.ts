@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '@freesquash/database';
 import { z } from 'zod';
 import { calculateGroupRankings } from '../services/ranking.service';
+import { cacheService } from '../services/cache.service';
 
 const createGroupSchema = z.object({
     name: z.string().min(1),
@@ -20,6 +21,13 @@ const swapPlayersSchema = z.object({
 });
 
 export async function groupRoutes(fastify: FastifyInstance) {
+    const invalidateGroupRelatedCache = (groupId: string) => {
+        cacheService.invalidate(`private:group:${groupId}:detail`);
+        cacheService.invalidatePattern('^private:classification:');
+        cacheService.invalidate('public:groups-summary');
+        cacheService.invalidatePattern(`^public:group:${groupId}:classification`);
+    };
+
     // Get all groups
     fastify.get('/', {
         onRequest: [fastify.authenticate],
@@ -67,6 +75,12 @@ export async function groupRoutes(fastify: FastifyInstance) {
         try {
             const { id } = request.params as { id: string };
 
+            const cacheKey = `private:group:${id}:detail`;
+            const cached = cacheService.get<any>(cacheKey);
+            if (cached) {
+                return cached;
+            }
+
             const group = await prisma.group.findUnique({
                 where: { id },
                 include: {
@@ -105,6 +119,8 @@ export async function groupRoutes(fastify: FastifyInstance) {
                 return reply.status(404).send({ error: 'Group not found' });
             }
 
+            cacheService.set(cacheKey, group, 5 / 60); // 5 minutos
+
             return group;
         } catch (error) {
             fastify.log.error(error);
@@ -131,6 +147,9 @@ export async function groupRoutes(fastify: FastifyInstance) {
                     seasonId: body.seasonId,
                 },
             });
+
+            cacheService.invalidatePattern('^private:classification:');
+            cacheService.invalidate('public:groups-summary');
 
             return group;
         } catch (error) {
@@ -193,6 +212,8 @@ export async function groupRoutes(fastify: FastifyInstance) {
                     ...(body.name && { name: body.name }),
                 },
             });
+
+            invalidateGroupRelatedCache(id);
 
             return group;
         } catch (error) {
@@ -275,6 +296,8 @@ export async function groupRoutes(fastify: FastifyInstance) {
                 }
             }
 
+            invalidateGroupRelatedCache(id);
+
             return groupPlayer;
         } catch (error) {
             if (error instanceof z.ZodError) {
@@ -306,6 +329,8 @@ export async function groupRoutes(fastify: FastifyInstance) {
                 },
             });
 
+            invalidateGroupRelatedCache(id);
+
             return { success: true };
         } catch (error) {
             fastify.log.error(error);
@@ -327,6 +352,8 @@ export async function groupRoutes(fastify: FastifyInstance) {
 
             await calculateGroupRankings(id);
 
+            invalidateGroupRelatedCache(id);
+
             return { success: true, message: 'Rankings recalculated' };
         } catch (error) {
             fastify.log.error(error);
@@ -346,6 +373,10 @@ export async function groupRoutes(fastify: FastifyInstance) {
                 return reply.status(403).send({ error: 'Forbidden' });
             }
 
+            cacheService.invalidatePattern('^private:classification:');
+            cacheService.invalidate('public:groups-summary');
+            cacheService.invalidate(`private:group:${id}:detail`);
+            cacheService.invalidatePattern(`^public:group:${id}:classification`);
             await prisma.group.delete({ where: { id } });
 
             return { success: true };
