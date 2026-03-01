@@ -335,8 +335,17 @@ export default function Help() {
                         </ul>
                     </div>
                     <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Estados de los Partidos</h3>
+                        <p>En el historial verás diferentes tipos de partidos:</p>
+                        <ul className="list-disc list-inside space-y-1 ml-4">
+                            <li><strong>Partidos Completados:</strong> Partidos ya jugados con resultado final</li>
+                            <li><strong>Partidos Pendientes (⏳):</strong> Partidos programados que aún no se han jugado</li>
+                            <li><strong>Partidos Recientes:</strong> Últimos 5 partidos jugados (visualización rápida)</li>
+                        </ul>
+                    </div>
+                    <div>
                         <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Editar/Eliminar Partidos</h3>
-                        <p>Puedes editar o eliminar tus propios partidos si cometiste un error al registrarlos. Los administradores pueden modificar cualquier partido.</p>
+                        <p>Puedes editar o eliminar tus propios partidos si cometiste un error al registrarlos. Los administradores pueden modificar cualquier partido. También puedes editar o cancelar partidos pendientes antes de jugarlos.</p>
                     </div>
                 </div>
             </section>
@@ -357,6 +366,14 @@ export default function Help() {
                                     <li>Puntos rojos = Descenso en esa temporada</li>
                                 </ul>
                             </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Partidos Pendientes y Recientes</h3>
+                        <p>En la página de progreso también puedes ver:</p>
+                        <ul className="list-disc list-inside space-y-1 ml-4">
+                            <li><strong>Próximos Partidos:</strong> Lista de partidos programados que aún no has jugado</li>
+                            <li><strong>Partidos Recientes:</strong> Últimos 5 partidos jugados con sus resultados</li>
                         </ul>
                     </div>
                     <div>
@@ -406,6 +423,92 @@ export default function Help() {
                         <p className="mt-3 text-sm text-green-600 dark:text-green-400">
                             <strong>Consejo:</strong> Elige una contraseña que sea fácil de recordar pero difícil de adivinar (no uses tu nombre o fecha de nacimiento).
                         </p>
+                    </div>
+                </div>
+            </section>
+
+            {/* Lista Negra */}
+            <section className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">⚠️ Lista Negra</h2>
+                <div className="space-y-4 text-slate-600 dark:text-slate-400">
+                    <p>La Lista Negra es una herramienta de transparencia que muestra qué jugadores no están cumpliendo con su compromiso de jugar partidos en la liga.</p>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">¿Para qué sirve?</h3>
+                        <p>Esta lista ayuda a identificar jugadores que:</p>
+                        <ul className="list-disc list-inside space-y-1 ml-4">
+                            <li>Tienen muchos partidos pendientes sin jugar</li>
+                            <li>Han registrado muchos partidos como lesión</li>
+                            <li>No están participando activamente en la temporada</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">¿Cómo acceder?</h3>
+                        <p>Puedes acceder a la Lista Negra desde:</p>
+                        <ul className="list-disc list-inside space-y-1 ml-4">
+                            <li>El menú superior: "Más" → "Lista Negra"</li>
+                            <li>En dispositivos móviles: Menú hamburguesa → "⚠️ Lista Negra"</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">¿Qué información muestra?</h3>
+                        <ul className="list-disc list-inside space-y-1 ml-4">
+                            <li><strong>Temporada Actual:</strong> Jugadores con partidos pendientes en la temporada en curso</li>
+                            <li><strong>Historial:</strong> Jugadores que tuvieron muchos partidos sin jugar en temporadas pasadas</li>
+                            <li><strong>Estadísticas:</strong> Número de partidos jugados, pendientes, lesiones y porcentaje sin jugar</li>
+                        </ul>
+                    </div>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4">
+                        <p className="text-sm"><strong>💡 Importante:</strong> Aparecer en la Lista Negra no es un "castigo", sino una herramienta de transparencia. Si tienes una razón válida (lesión, trabajo, viaje), comunícalo a tu grupo. El objetivo es fomentar la participación activa.</p>
+                    </div>
+                </div>
+            </section>
+
+            {/* Páginas Públicas */}
+            <section className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">🌐 Información Pública de la Liga</h2>
+                <div className="space-y-4 text-slate-600 dark:text-slate-400">
+                    <p>Parte de la información de la liga está disponible públicamente (sin necesidad de iniciar sesión) para que cualquiera pueda ver cómo funciona la liga.</p>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">¿Qué se puede ver públicamente?</h3>
+                        <ul className="list-disc list-inside space-y-1 ml-4">
+                            <li><strong>Clasificaciones de Grupos:</strong> Rankings actuales de todos los grupos de la temporada activa</li>
+                            <li><strong>Partidos Recientes:</strong> Últimos partidos jugados en la liga</li>
+                            <li><strong>Estadísticas Generales:</strong> Número de jugadores, grupos, temporadas y partidos totales</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">¿Dónde se accede?</h3>
+                        <p>Esta información está disponible en la página de inicio pública (antes de iniciar sesión) en la URL principal de FreeSquash League.</p>
+                    </div>
+                    <div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-400 p-4">
+                        <p className="text-sm"><strong>🔒 Privacidad:</strong> Los datos de contacto (teléfono, email) NO son públicos. Solo son visibles para jugadores que han iniciado sesión. La información pública solo incluye nombres, resultados de partidos y clasificaciones.</p>
+                    </div>
+                </div>
+            </section>
+
+            {/* Términos y Privacidad */}
+            <section className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">📄 Términos de Servicio y Privacidad</h2>
+                <div className="space-y-4 text-slate-600 dark:text-slate-400">
+                    <p>Al usar FreeSquash League, aceptas nuestros términos de servicio y política de privacidad.</p>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">¿Dónde puedo consultarlos?</h3>
+                        <p>En el pie de página (footer) de cualquier página encontrarás enlaces a:</p>
+                        <ul className="list-disc list-inside space-y-1 ml-4">
+                            <li><strong>Política de Privacidad:</strong> Cómo manejamos y protegemos tus datos personales</li>
+                            <li><strong>Términos de Servicio:</strong> Condiciones de uso de la plataforma</li>
+                            <li><strong>Aviso Legal:</strong> Información legal sobre la plataforma</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Protección de Datos (GDPR)</h3>
+                        <p>Cumplimos con el Reglamento General de Protección de Datos (GDPR). Esto significa que:</p>
+                        <ul className="list-disc list-inside space-y-1 ml-4">
+                            <li>Tus datos personales están protegidos y encriptados</li>
+                            <li>Solo recopilamos la información necesaria para el funcionamiento de la liga</li>
+                            <li>Puedes solicitar la eliminación de tus datos contactando al administrador</li>
+                            <li>No compartimos tu información con terceros sin tu consentimiento</li>
+                        </ul>
                     </div>
                 </div>
             </section>

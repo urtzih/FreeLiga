@@ -51,6 +51,7 @@ export default function AdminHelp() {
                         <li><strong>Grupos:</strong> Creación y gestión de grupos de jugadores</li>
                         <li><strong>Bugs:</strong> Reportes de problemas enviados por los jugadores</li>
                         <li><strong>Ver todos los partidos:</strong> Historial completo de todos los partidos de la liga</li>
+                        <li><strong>⚠️ Lista Negra:</strong> Jugadores con muchos partidos pendientes o lesiones</li>
                         <li><strong>📚 Ayuda:</strong> Este manual que estás leyendo ahora</li>
                     </ul>
                     <div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-400 p-4 mt-4">
@@ -158,8 +159,83 @@ export default function AdminHelp() {
                         <p>Desde el detalle del grupo, puedes añadir jugadores uno por uno. El sistema actualiza automáticamente el ranking cuando se registran partidos.</p>
                     </div>
                     <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Vista del Grupo</h3>
+                        <p>En la página de cada grupo puedes ver:</p>
+                        <ul className="list-disc list-inside space-y-1 ml-4">
+                            <li><strong>Clasificación actual:</strong> Ranking de jugadores del grupo</li>
+                            <li><strong>Partidos Recientes:</strong> Últimos 5 partidos jugados en el grupo</li>
+                            <li><strong>Partidos Pendientes:</strong> Partidos programados que aún no se han jugado</li>
+                            <li><strong>Exportación CSV:</strong> Descarga los datos del grupo para análisis externo</li>
+                        </ul>
+                    </div>
+                    <div>
                         <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Exportar Datos</h3>
                         <p>Cada grupo tiene un botón para exportar la clasificación en formato CSV para análisis externo.</p>
+                    </div>
+                </div>
+            </section>
+
+            {/* Lista Negra */}
+            <section className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">⚠️ Lista Negra</h2>
+                <div className="space-y-4 text-slate-600 dark:text-slate-400">
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">¿Qué es la Lista Negra?</h3>
+                        <p>La Lista Negra es una herramienta de transparencia y gestión que muestra jugadores que no están cumpliendo con su compromiso de participación en la liga. Ayuda a identificar:</p>
+                        <ul className="list-disc list-inside space-y-1 ml-4">
+                            <li>Jugadores con muchos partidos pendientes sin jugar</li>
+                            <li>Jugadores con alta tasa de lesiones</li>
+                            <li>Jugadores que no están participando activamente</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Cómo Usar Esta Información</h3>
+                        <p>Como administrador, puedes usar la Lista Negra para:</p>
+                        <ol className="list-decimal list-inside space-y-1 ml-4">
+                            <li>Identificar jugadores que necesitan recordatorio para jugar sus partidos</li>
+                            <li>Evaluar si un jugador debe continuar en la siguiente temporada</li>
+                            <li>Contactar proactivamente a jugadores con baja participación</li>
+                            <li>Tomar decisiones informadas en el cierre de temporada</li>
+                        </ol>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Dos Vistas Disponibles</h3>
+                        <ul className="list-disc list-inside space-y-1 ml-4">
+                            <li><strong>Temporada Actual:</strong> Muestra la situación en tiempo real de los jugadores activos</li>
+                            <li><strong>Historial:</strong> Muestra jugadores problemáticos de temporadas anteriores (para referencia)</li>
+                        </ul>
+                    </div>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-400 p-4">
+                        <p className="text-sm"><strong>💡 Consejo:</strong> La Lista Negra es pública (visible para todos los jugadores) para fomentar la responsabilidad y transparencia. Usa esta información constructivamente, no como castigo sino como herramienta de mejora.</p>
+                    </div>
+                </div>
+            </section>
+
+            {/* Páginas Públicas y Cache */}
+            <section className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">🌐 Páginas Públicas y Rendimiento</h2>
+                <div className="space-y-4 text-slate-600 dark:text-slate-400">
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Información Pública</h3>
+                        <p>La plataforma ofrece páginas públicas (sin autenticación) que muestran:</p>
+                        <ul className="list-disc list-inside space-y-1 ml-4">
+                            <li><strong>Clasificaciones de Grupos:</strong> Rankings de la temporada activa</li>
+                            <li><strong>Partidos Recientes:</strong> Últimos partidos jugados en la liga</li>
+                            <li><strong>Estadísticas Generales:</strong> Número de jugadores, grupos, temporadas y partidos</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Sistema de Caché</h3>
+                        <p>La plataforma implementa un sistema de caché inteligente para mejorar el rendimiento:</p>
+                        <ul className="list-disc list-inside space-y-1 ml-4">
+                            <li><strong>Datos cacheados:</strong> Clasificaciones, grupos, partidos recientes y estadísticas generales</li>
+                            <li><strong>Actualización automática:</strong> El caché se invalida automáticamente cuando hay cambios (nuevo partido, edición, etc.)</li>
+                            <li><strong>Mejora de rendimiento:</strong> Las consultas frecuentes se sirven desde caché, reduciendo carga en la base de datos</li>
+                            <li><strong>Logging de métricas:</strong> El sistema registra hits/misses del caché para monitorización</li>
+                        </ul>
+                    </div>
+                    <div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-400 p-4">
+                        <p className="text-sm"><strong>🔒 Privacidad en Páginas Públicas:</strong> Los datos de contacto (teléfono, email) NUNCA se muestran en páginas públicas. Solo los jugadores autenticados pueden ver esta información.</p>
                     </div>
                 </div>
             </section>
