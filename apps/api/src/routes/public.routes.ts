@@ -178,7 +178,7 @@ export async function publicRoutes(fastify: FastifyInstance) {
             const { id: groupId } = request.params as { id: string };
 
             // Intentar obtener del caché
-            const cacheKey = `public:group:${groupId}:classification`;
+            const cacheKey = `public:group:${groupId}:classification:v2`;
             const cached = cacheService.get<any>(cacheKey);
             if (cached) {
                 fastify.log.info(`📦 Group ${groupId} classification from cache`);

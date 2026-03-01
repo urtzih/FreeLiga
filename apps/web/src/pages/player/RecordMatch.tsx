@@ -59,7 +59,7 @@ export default function RecordMatch() {
     });
     const [error, setError] = useState('');
 
-    const { data: group } = useQuery({
+    const { data: group, isLoading: isLoadingGroup } = useQuery({
         queryKey: ['group', formData.groupId],
         queryFn: async () => {
             const { data } = await api.get(`/groups/${formData.groupId}`);
@@ -188,23 +188,33 @@ export default function RecordMatch() {
                         <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                             Tu Oponente
                         </label>
-                        <select
-                            value={formData.player2Id}
-                            onChange={(e) => setFormData({ ...formData, player2Id: e.target.value })}
-                            required
-                            className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                        >
-                            <option value="">Selecciona un oponente...</option>
-                            {availableOpponents.map((gp: any) => (
-                                <option key={gp.playerId} value={gp.playerId}>
-                                    {gp.player.name} {gp.player.nickname && `"${gp.player.nickname}"`}
-                                </option>
-                            ))}
-                        </select>
-                        {availableOpponents.length === 0 && group && (
-                            <p className="mt-2 text-sm text-yellow-600 dark:text-yellow-400">
-                                ¡Has jugado contra todos los oponentes disponibles!
-                            </p>
+                        {isLoadingGroup ? (
+                            <div className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-slate-400 border-t-slate-600"></div>
+                                <span>Cargando oponentes...</span>
+                            </div>
+                        ) : (
+                            <>
+                                <select
+                                    value={formData.player2Id}
+                                    onChange={(e) => setFormData({ ...formData, player2Id: e.target.value })}
+                                    required
+                                    disabled={isLoadingGroup || availableOpponents.length === 0}
+                                    className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <option value="">Selecciona un oponente...</option>
+                                    {availableOpponents.map((gp: any) => (
+                                        <option key={gp.playerId} value={gp.playerId}>
+                                            {gp.player.name} {gp.player.nickname && `"${gp.player.nickname}"`}
+                                        </option>
+                                    ))}
+                                </select>
+                                {availableOpponents.length === 0 && group && !isLoadingGroup && (
+                                    <p className="mt-2 text-sm text-yellow-600 dark:text-yellow-400">
+                                        ¡Has jugado contra todos los oponentes disponibles!
+                                    </p>
+                                )}
+                            </>
                         )}
                     </div>
 

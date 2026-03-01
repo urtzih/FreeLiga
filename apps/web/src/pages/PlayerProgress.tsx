@@ -220,28 +220,31 @@ export default function PlayerProgress() {
         {filteredMatches.length === 0 ? (
           <p className="text-slate-500 dark:text-slate-400">No hay partidos registrados en este rango</p>
         ) : (
-          <Line data={matchChartData} options={{
-            responsive: true,
-            plugins: {
-              legend: { position: 'bottom' },
-              tooltip: {
-                callbacks: {
-                  title: (items) => {
-                    const idx = items[0].dataIndex;
-                    return `${cumulativeData[idx].date} vs ${cumulativeData[idx].opponent}`;
-                  },
-                  label: (item) => {
-                    if (item.dataset.label === 'Tendencia de Victorias') return '';
-                    return `${item.dataset.label}: ${item.parsed.y}`;
+          <div className="relative h-64 sm:h-80 md:h-96 lg:h-[450px]">
+            <Line data={matchChartData} options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                  callbacks: {
+                    title: (items) => {
+                      const idx = items[0].dataIndex;
+                      return `${cumulativeData[idx].date} vs ${cumulativeData[idx].opponent}`;
+                    },
+                    label: (item) => {
+                      if (item.dataset.label === 'Tendencia de Victorias') return '';
+                      return `${item.dataset.label}: ${item.parsed.y}`;
+                    }
                   }
                 }
+              },
+              scales: {
+                x: { title: { display: true, text: 'Fecha del Partido' } },
+                y: { beginAtZero: true, title: { display: true, text: 'Acumulado' }, ticks: { stepSize: 1 } }
               }
-            },
-            scales: {
-              x: { title: { display: true, text: 'Fecha del Partido' } },
-              y: { beginAtZero: true, title: { display: true, text: 'Acumulado' }, ticks: { stepSize: 1 } }
-            }
-          }} />
+            }} />
+          </div>
         )}
       </div>
 
@@ -252,44 +255,47 @@ export default function PlayerProgress() {
           <p className="text-slate-500 dark:text-slate-400">No hay historial de movimientos entre grupos</p>
         ) : (
           <>
-            <Line data={movementChartData} options={{
-              responsive: true,
-              plugins: {
-                legend: { display: false },
-                tooltip: {
-                  callbacks: {
-                    title: (items) => {
-                      const idx = items[0].dataIndex;
-                      return movements[idx].seasonName;
-                    },
-                    label: (item) => {
-                      const idx = item.dataIndex;
-                      const mov = movements[idx];
-                      const movText = mov.movement === 'PROMOTION' ? '📈 Ascenso' : mov.movement === 'RELEGATION' ? '📉 Descenso' : '➡️ Se mantiene';
-                      return [`${mov.groupName}`, `${movText}`, `Posición final: ${mov.finalRank}`];
+            <div className="relative h-64 sm:h-80 md:h-96 lg:h-[450px]">
+              <Line data={movementChartData} options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    callbacks: {
+                      title: (items) => {
+                        const idx = items[0].dataIndex;
+                        return movements[idx].seasonName;
+                      },
+                      label: (item) => {
+                        const idx = item.dataIndex;
+                        const mov = movements[idx];
+                        const movText = mov.movement === 'PROMOTION' ? '📈 Ascenso' : mov.movement === 'RELEGATION' ? '📉 Descenso' : '➡️ Se mantiene';
+                        return [`${mov.groupName}`, `${movText}`, `Posición final: ${mov.finalRank}`];
+                      }
                     }
                   }
-                }
-              },
-              scales: {
-                x: { 
-                  title: { display: true, text: 'Temporada' },
-                  grid: { display: false }
                 },
-                y: { 
-                  reverse: true,
-                  beginAtZero: false,
-                  title: { display: true, text: 'Grupo (1 = mejor nivel)' },
-                  ticks: { 
-                    stepSize: 1,
-                    callback: function(value) {
-                      return 'Grupo ' + value;
-                    }
+                scales: {
+                  x: { 
+                    title: { display: true, text: 'Temporada' },
+                    grid: { display: false }
                   },
-                  grid: { color: 'rgba(148,163,184,0.1)' }
+                  y: { 
+                    reverse: true,
+                    beginAtZero: false,
+                    title: { display: true, text: 'Grupo (1 = mejor nivel)' },
+                    ticks: { 
+                      stepSize: 1,
+                      callback: function(value) {
+                        return 'Grupo ' + value;
+                      }
+                    },
+                    grid: { color: 'rgba(148,163,184,0.1)' }
+                  }
                 }
-              }
-            }} />
+              }} />
+            </div>
             <div className="mt-6 flex items-center justify-center gap-6 text-sm">
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 rounded-full bg-green-500 border-2 border-white"></div>

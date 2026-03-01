@@ -1,20 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
 import Loader from '../../components/Loader';
-import { Bar } from 'react-chartjs-2';
-import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    BarElement,
-    Title,
-    Tooltip,
-    Legend
-} from 'chart.js';
-
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 interface ClassificationRow {
     playerId: number;
@@ -29,6 +18,7 @@ export default function GroupView() {
     const { id } = useParams<{ id: string }>();
     const { user } = useAuth();
     const calendarEnabled = user?.player?.calendarEnabled ?? false;
+    const [visibleRemainingMatches, setVisibleRemainingMatches] = useState(6);
 
     const { data: group, isLoading, error: groupError } = useQuery({
         queryKey: ['group', id],
@@ -95,10 +85,37 @@ export default function GroupView() {
 
     const totalPlayers = group.groupPlayers.length;
     const totalPossibleMatches = (totalPlayers * (totalPlayers - 1)) / 2;
-    const matchesPlayed = group.matches.filter((m: any) => m.matchStatus === 'PLAYED').length;
+    const playedMatches = group.matches.filter((m: any) => m.matchStatus === 'PLAYED' && m.gamesP1 !== null && m.gamesP2 !== null);
+    const matchesPlayed = playedMatches.length;
     const completionPercentage = totalPossibleMatches > 0
         ? Math.round((matchesPlayed / totalPossibleMatches) * 100)
         : 0;
+
+    const recentPlayedMatches = [...playedMatches]
+        .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    const hasPlayedBetween = (playerAId: string, playerBId: string) => {
+        return playedMatches.some((match: any) => (
+            (match.player1Id === playerAId && match.player2Id === playerBId) ||
+            (match.player1Id === playerBId && match.player2Id === playerAId)
+        ));
+    };
+
+    const remainingMatchesList: Array<{ id: string; player1Name: string; player2Name: string }> = [];
+    const players = [...group.groupPlayers].sort((a: any, b: any) => a.rankingPosition - b.rankingPosition);
+    for (let i = 0; i < players.length; i++) {
+        for (let j = i + 1; j < players.length; j++) {
+            const playerA = players[i];
+            const playerB = players[j];
+            if (!hasPlayedBetween(playerA.playerId, playerB.playerId)) {
+                remainingMatchesList.push({
+                    id: `${playerA.playerId}_${playerB.playerId}`,
+                    player1Name: playerA.player.name,
+                    player2Name: playerB.player.name,
+                });
+            }
+        }
+    }
 
     // Calcular días restantes
     const endDate = new Date(group.season.endDate);
@@ -276,58 +293,6 @@ export default function GroupView() {
                                     </tbody>
                                 </table>
                             </div>
-                            <div className="w-full hidden md:block">
-                                <h3 className="text-sm font-semibold mb-4 text-slate-700 dark:text-slate-300">Todos los Jugadores (Victorias / Derrotas / Restantes)</h3>
-                                <div className="w-full" style={{ maxHeight: '600px' }}>
-                                    <Bar
-                                        data={{
-                                            labels: classification.map(c => c.playerName.split(' ')[0]),
-                                            datasets: [
-                                                {
-                                                    label: 'Victorias',
-                                                    data: classification.map(c => c.wins),
-                                                    backgroundColor: 'rgba(34,197,94,0.6)'
-                                                },
-                                                {
-                                                    label: 'Derrotas',
-                                                    data: classification.map(c => c.losses),
-                                                    backgroundColor: 'rgba(239,68,68,0.6)'
-                                                },
-                                                {
-                                                    label: 'Restantes',
-                                                    data: classification.map(c => {
-                                                        const played = c.wins + c.losses;
-                                                        return (totalPlayers - 1) - played;
-                                                    }),
-                                                    backgroundColor: 'rgba(148, 163, 184, 0.6)'
-                                                },
-                                                {
-                                                    label: 'Con Lesión',
-                                                    data: classification.map(c => {
-                                                        return group.matches.filter((m: any) =>
-                                                            (m.player1Id === c.playerId || m.player2Id === c.playerId) &&
-                                                            m.matchStatus === 'INJURY'
-                                                        ).length;
-                                                    }),
-                                                    backgroundColor: 'rgba(249, 115, 22, 0.6)'
-                                                }
-                                            ]
-                                        }}
-                                        options={{
-                                            indexAxis: window.innerWidth < 768 ? 'y' : 'x',
-                                            responsive: true,
-                                            maintainAspectRatio: true,
-                                            plugins: {
-                                                legend: { position: 'bottom' },
-                                                title: { display: false, text: '' }
-                                            },
-                                            scales: { 
-                                                y: { beginAtZero: true, max: Math.max(...classification.slice(0, 10).map(c => Math.max(c.wins, c.losses))) + 2 }
-                                            }
-                                        }}
-                                    />
-                                </div>
-                            </div>
                         </>
                     )}
                 </div>
@@ -503,15 +468,14 @@ export default function GroupView() {
             </div>
 
             {/* Partidos Recientes */}
-            {group.matches.length > 0 && (
+            {recentPlayedMatches.length > 0 && (
 
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                     <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
                         <h2 className="text-xl font-bold text-slate-900 dark:text-white">Partidos Recientes</h2>
                     </div>
                     <div className="divide-y divide-slate-200 dark:divide-slate-700">
-                        {group.matches
-                            .filter((match: any) => match.matchStatus === 'PLAYED' && match.gamesP1 !== null && match.gamesP2 !== null)
+                        {recentPlayedMatches
                             .slice(0, 10)
                             .map((match: any) => (
                             <div key={match.id} className="p-4">
@@ -547,6 +511,40 @@ export default function GroupView() {
                 </div>
             )
             }
+
+            {/* Partidos Restantes */}
+            {remainingMatchesList.length > 0 && (
+                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Partidos Restantes</h2>
+                        <span className="text-sm text-slate-500 dark:text-slate-400">{remainingMatchesList.length} pendientes</span>
+                    </div>
+                    <div className="divide-y divide-slate-200 dark:divide-slate-700">
+                        {remainingMatchesList.slice(0, visibleRemainingMatches).map((match) => (
+                            <div key={match.id} className="p-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-2">
+                                        <span className="font-medium text-slate-900 dark:text-white">{match.player1Name}</span>
+                                        <span className="text-slate-600 dark:text-slate-400">vs</span>
+                                        <span className="font-medium text-slate-900 dark:text-white">{match.player2Name}</span>
+                                    </div>
+                                    <span className="text-xs font-semibold uppercase text-amber-700 dark:text-amber-400">Pendiente</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    {visibleRemainingMatches < remainingMatchesList.length && (
+                        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 text-center">
+                            <button
+                                onClick={() => setVisibleRemainingMatches((prev) => prev + 6)}
+                                className="px-4 py-2 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/60 transition-colors font-medium"
+                            >
+                                Ver más
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Mis Partidos - Matches for the current player */}
             {user?.player?.id && myMatches.length > 0 && (

@@ -48,6 +48,7 @@ export default function PublicGroupDetail() {
 
     useEffect(() => {
         if (!id) return;
+        setVisibleRemainingMatches(6);
         fetchData();
     }, [id]);
 
@@ -56,7 +57,15 @@ export default function PublicGroupDetail() {
             const response = await fetch(`/api/public/group/${id}/classification`);
             if (response.ok) {
                 const result = await response.json();
-                setData(result);
+                setData({
+                    ...result,
+                    recentMatches: Array.isArray(result.recentMatches) ? result.recentMatches : [],
+                    remainingMatches: Array.isArray(result.remainingMatches) ? result.remainingMatches : [],
+                    totalRemainingMatches:
+                        typeof result.totalRemainingMatches === 'number'
+                            ? result.totalRemainingMatches
+                            : (Array.isArray(result.remainingMatches) ? result.remainingMatches.length : 0),
+                });
             } else if (response.status === 404) {
                 setError('Grupo no encontrado');
             } else {
