@@ -240,7 +240,8 @@ export default function GroupView() {
                     ) : (
                         <>
 
-                            <div className="overflow-x-auto">
+                            {/* Tabla para escritorio - versión completa */}
+                            <div className="hidden md:block overflow-x-auto">
                                 <table className="w-full text-sm">
                                     <thead className="bg-slate-50 dark:bg-slate-900">
                                         <tr>
@@ -287,6 +288,56 @@ export default function GroupView() {
                                                     <td className="px-3 py-2 text-center font-semibold text-orange-600 dark:text-orange-400">{playerInjuries}</td>
                                                     <td className="px-3 py-2 text-center">{row.setsWon}</td>
                                                     <td className="px-3 py-2 text-center">{row.setsLost}</td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Tabla para móvil - versión compacta */}
+                            <div className="md:hidden overflow-x-auto -mx-2">
+                                <table className="min-w-full text-sm">
+                                    <thead>
+                                        <tr className="text-left text-slate-500 border-b border-slate-200 dark:border-slate-700">
+                                            <th className="px-2 py-2">Pos</th>
+                                            <th className="px-2 py-2">Jugador</th>
+                                            <th className="px-2 py-2 text-center">G</th>
+                                            <th className="px-2 py-2 text-center">P</th>
+                                            <th className="px-2 py-2 text-center">Dif</th>
+                                            <th className="px-2 py-2 text-center">R</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                                        {classification.map((row, idx) => {
+                                            // Calculate remaining matches
+                                            const totalMatchesForPlayer = totalPlayers - 1;
+                                            const played = row.wins + row.losses;
+                                            const remaining = totalMatchesForPlayer - played;
+                                            
+                                            // Calculate set difference
+                                            const setDifference = row.setsWon - row.setsLost;
+                                            
+                                            // Determinar ascenso/descenso
+                                            const isPromotion = idx < 2; // Top 2: ascenso
+                                            const isRelegation = idx >= totalPlayers - 2; // Últimos 2: descenso
+                                            
+                                            const rowClass = isPromotion 
+                                                ? "bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30" 
+                                                : isRelegation 
+                                                ? "bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30"
+                                                : "hover:bg-slate-50 dark:hover:bg-slate-900/60";
+
+                                            return (
+                                                <tr key={row.playerId} className={rowClass}>
+                                                    <td className="px-2 py-2 text-slate-500">{idx + 1}</td>
+                                                    <td className="px-2 py-2 font-medium text-slate-900 dark:text-white">{row.playerName}</td>
+                                                    <td className="px-2 py-2 text-center font-semibold text-green-600 dark:text-green-400">{row.wins}</td>
+                                                    <td className="px-2 py-2 text-center font-semibold text-red-600 dark:text-red-400">{row.losses}</td>
+                                                    <td className={`px-2 py-2 text-center font-semibold ${setDifference >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                                                        {setDifference > 0 ? '+' : ''}{setDifference}
+                                                    </td>
+                                                    <td className="px-2 py-2 text-center text-slate-700 dark:text-slate-200">{remaining}</td>
                                                 </tr>
                                             );
                                         })}

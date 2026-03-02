@@ -217,7 +217,7 @@ export default function ProtectedLayout() {
                                         ⚽ Ver todos los partidos
                                     </Link>
                                     <Link to="/blacklist" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                                        📋 Lista Negra
+                                        ⚠️ Lista Negra
                                     </Link>
                                 </>
                             ) : (
@@ -246,7 +246,7 @@ export default function ProtectedLayout() {
                                             <Link to="/groups/summary" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">🗂️ Resumen grupos</Link>
                                             <Link to="/matches/history" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">📜 Mis partidos</Link>
                                             <Link to="/historia" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">📋 General</Link>
-                                            <Link to="/blacklist" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">📋 Lista Negra</Link>
+                                            <Link to="/blacklist" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">⚠️ Lista Negra</Link>
                                             <Link to="/help" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">📚 Ayuda</Link>
                                         </div>
                                     </details>
