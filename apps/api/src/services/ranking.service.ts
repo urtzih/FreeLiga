@@ -7,6 +7,8 @@ interface PlayerStanding {
     setsWon: number;
     setsLost: number;
     average: number;
+    internalWins?: number;
+    internalAverage?: number;
 }
 
 export interface RankingResult {
@@ -103,30 +105,127 @@ function resolveTies(standings: PlayerStanding[], matches: any[]): PlayerStandin
 
 function resolveHeadToHead(players: PlayerStanding[], matches: any[]): PlayerStanding[] {
     const [p1, p2] = players;
-    const h2hMatch = matches.find(m => (m.player1Id === p1.playerId && m.player2Id === p2.playerId) || (m.player1Id === p2.playerId && m.player2Id === p1.playerId));
-    if (h2hMatch && h2hMatch.winnerId) return h2hMatch.winnerId === p1.playerId ? [p1, p2] : [p2, p1];
+    
+    // Find all matches between these two players
+    const h2hMatches = matches.filter(m => 
+        (m.player1Id === p1.playerId && m.player2Id === p2.playerId) || 
+        (m.player1Id === p2.playerId && m.player2Id === p1.playerId)
+    );
+    
+    // If no matches between them, use global average
+    if (h2hMatches.length === 0) {
+        return resolveByGlobalAverage(players);
+    }
+    
+    // Calculate head-to-head wins and average
+    const p1H2hWins = h2hMatches.filter(m => m.winnerId === p1.playerId).length;
+    const p2H2hWins = h2hMatches.filter(m => m.winnerId === p2.playerId).length;
+    
+    let p1H2hSetsWon = 0, p1H2hSetsLost = 0;
+    let p2H2hSetsWon = 0, p2H2hSetsLost = 0;
+    
+    h2hMatches.forEach(match => {
+        if (match.gamesP1 !== null && match.gamesP2 !== null) {
+            if (match.player1Id === p1.playerId) {
+                p1H2hSetsWon += match.gamesP1;
+                p1H2hSetsLost += match.gamesP2;
+            } else {
+                p1H2hSetsWon += match.gamesP2;
+                p1H2hSetsLost += match.gamesP1;
+            }
+        }
+    });
+    
+    h2hMatches.forEach(match => {
+        if (match.gamesP1 !== null && match.gamesP2 !== null) {
+            if (match.player1Id === p2.playerId) {
+                p2H2hSetsWon += match.gamesP1;
+                p2H2hSetsLost += match.gamesP2;
+            } else {
+                p2H2hSetsWon += match.gamesP2;
+                p2H2hSetsLost += match.gamesP1;
+            }
+        }
+    });
+    
+    const p1H2hAverage = p1H2hSetsWon - p1H2hSetsLost;
+    const p2H2hAverage = p2H2hSetsWon - p2H2hSetsLost;
+    
+    // Resolve by head-to-head wins first
+    if (p1H2hWins !== p2H2hWins) {
+        return p1H2hWins > p2H2hWins ? [p1, p2] : [p2, p1];
+    }
+    
+    // If tied on wins, resolve by head-to-head average
+    if (p1H2hAverage !== p2H2hAverage) {
+        return p1H2hAverage > p2H2hAverage ? [p1, p2] : [p2, p1];
+    }
+    
+    // If still tied, use global average
     return resolveByGlobalAverage(players);
 }
 
 function resolveMiniLeague(players: PlayerStanding[], allMatches: any[]): PlayerStanding[] {
     const playerIds = players.map(p => p.playerId);
     const internalMatches = allMatches.filter(m => playerIds.includes(m.player1Id) && playerIds.includes(m.player2Id));
+    
+    // Calculate mini-league statistics
     const miniLeagueStandings = players.map(player => {
         const internalWins = internalMatches.filter(m => m.winnerId === player.playerId).length;
-        let internalSetsWon = 0; let internalSetsLost = 0;
+        let internalSetsWon = 0;
+        let internalSetsLost = 0;
         internalMatches.forEach(match => {
-            if (match.player1Id === player.playerId) { internalSetsWon += match.gamesP1; internalSetsLost += match.gamesP2; }
-            else if (match.player2Id === player.playerId) { internalSetsWon += match.gamesP2; internalSetsLost += match.gamesP1; }
+            if (match.player1Id === player.playerId) {
+                internalSetsWon += match.gamesP1;
+                internalSetsLost += match.gamesP2;
+            } else if (match.player2Id === player.playerId) {
+                internalSetsWon += match.gamesP2;
+                internalSetsLost += match.gamesP1;
+            }
         });
-        return { ...player, internalWins, internalAverage: internalSetsWon - internalSetsLost };
+        return { 
+            ...player, 
+            internalWins, 
+            internalAverage: internalSetsWon - internalSetsLost 
+        };
     });
-    const sorted = [...miniLeagueStandings].sort((a, b) => {
-        if (b.internalWins !== a.internalWins) return b.internalWins - a.internalWins;
-        if (b.internalAverage !== a.internalAverage) return b.internalAverage - a.internalAverage;
-        if (b.average !== a.average) return b.average - a.average;
-        return a.playerName.localeCompare(b.playerName);
-    });
-    return sorted;
+    
+    // Sort by internal wins first
+    const sortedByInternalWins = [...miniLeagueStandings].sort((a, b) => (b.internalWins ?? 0) - (a.internalWins ?? 0));
+    
+    // Recursively resolve ties using mini-league logic
+    const result: PlayerStanding[] = [];
+    let i = 0;
+    
+    while (i < sortedByInternalWins.length) {
+        const currentInternalWins = sortedByInternalWins[i].internalWins ?? 0;
+        const tiedByInternalWins: PlayerStanding[] = [];
+        let j = i;
+        
+        while (j < sortedByInternalWins.length && ((sortedByInternalWins[j].internalWins ?? 0) === currentInternalWins)) {
+            tiedByInternalWins.push(sortedByInternalWins[j]);
+            j++;
+        }
+        
+        // If only one player with this internal win count
+        if (tiedByInternalWins.length === 1) {
+            result.push(tiedByInternalWins[0]);
+        } else {
+            // Multiple players with same internal wins, sort by internal average
+            const sortedByInternalAverage = [...tiedByInternalWins].sort((a, b) => {
+                if ((b.internalAverage ?? 0) !== (a.internalAverage ?? 0)) return (b.internalAverage ?? 0) - (a.internalAverage ?? 0);
+                // If still tied on internal average, use global average
+                if (b.average !== a.average) return b.average - a.average;
+                // If still tied, use alphabetical order
+                return a.playerName.localeCompare(b.playerName);
+            });
+            result.push(...sortedByInternalAverage);
+        }
+        
+        i = j;
+    }
+    
+    return result;
 }
 
 function resolveByGlobalAverage(players: PlayerStanding[]): PlayerStanding[] {
@@ -165,7 +264,16 @@ export async function computeSeasonClosure(seasonId: string) {
     // Releer grupos con posiciones actualizadas
     const refreshedGroups = await prisma.group.findMany({
         where: { seasonId },
-        include: { groupPlayers: { include: { player: true }, orderBy: { rankingPosition: 'asc' } } }
+        include: { 
+            groupPlayers: { 
+                include: { 
+                    player: { 
+                        include: { user: { select: { isActive: true } } }
+                    } 
+                },
+                orderBy: { rankingPosition: 'asc' } 
+            } 
+        }
     });
     const refreshedOrdered = [...refreshedGroups].sort((a, b) => a.name.localeCompare(b.name));
 
@@ -198,15 +306,34 @@ export async function computeSeasonClosure(seasonId: string) {
         const promotions: string[] = [];
         const relegations: string[] = [];
 
-        if (!isTop) { // grupos con ascensos
-            promotions.push(...players.slice(0, 2).map(p => p.playerId));
+        // Players with isActive = false are automatic relegations (leaving the league)
+        const inactivePlayers = players.filter(p => !p.player.user?.isActive);
+        relegations.push(...inactivePlayers.map(p => p.playerId));
+
+        // Regular relegations: last 2 active (non-relegated) players
+        const activePlayers = players.filter(p => p.player.user?.isActive);
+        if (!isTop && activePlayers.length > 0) { 
+            // Get the last 2 active players for relegation
+            relegations.push(...activePlayers.slice(-2).map(p => p.playerId));
         }
-        if (!isBottom) { // grupos con descensos
-            relegations.push(...players.slice(-2).map(p => p.playerId));
+
+        // Promotions: first 2 active players
+        if (!isBottom && activePlayers.length > 0) {
+            promotions.push(...activePlayers.slice(0, 2).map(p => p.playerId));
         }
 
         for (const gp of players) {
-            const movementType = promotions.includes(gp.playerId) ? 'PROMOTION' : relegations.includes(gp.playerId) ? 'RELEGATION' : 'STAY';
+            const isInactive = !gp.player.user?.isActive;
+            let movementType = 'STAY';
+            
+            if (isInactive) {
+                movementType = 'RELEGATION'; // Inactive players always relegate
+            } else if (promotions.includes(gp.playerId)) {
+                movementType = 'PROMOTION';
+            } else if (relegations.includes(gp.playerId)) {
+                movementType = 'RELEGATION';
+            }
+            
             const playerMatches = allMatches.filter(m => m.groupId === group.id && (m.player1Id === gp.playerId || m.player2Id === gp.playerId) && m.matchStatus === 'PLAYED');
             const matchesWon = playerMatches.filter(m => m.winnerId === gp.playerId).length;
             entriesData.push({
