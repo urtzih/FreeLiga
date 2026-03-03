@@ -77,10 +77,7 @@ export default function PublicHistoricalStats() {
                     <p className="text-gray-600 font-medium">👥 Jugadores Totales</p>
                     <p className="text-xs text-gray-500 mt-2">En la plataforma actual</p>
                 </div>
-            </div>
-
-                        Incluye {stats.inactivePlayers} desactivados
-                    
+            </div>                    
             {stats.cached && (
                 <p className="text-xs text-gray-500 text-center mt-4">
                     ✨ Datos actualizados cada 24 horas. Última actualización: {new Date(stats.updatedAt).toLocaleString('es-ES')}
