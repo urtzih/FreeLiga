@@ -20,9 +20,13 @@ export async function seasonRoutes(fastify: FastifyInstance) {
             reply.header('Pragma', 'no-cache');
             reply.header('Expires', '0');
             
-            // Solo devolver la temporada activa para usuarios normales
+            const decoded = request.user as any;
+            
+            // Admins see all seasons, regular users see only active ones
+            const whereClause = decoded.role === 'ADMIN' ? {} : { isActive: true };
+            
             const seasons = await prisma.season.findMany({
-                where: { isActive: true },
+                where: whereClause,
                 include: { groups: { include: { _count: { select: { groupPlayers: true, matches: true } } } }, closure: true },
                 orderBy: { startDate: 'desc' },
             });
@@ -136,7 +140,8 @@ export async function seasonRoutes(fastify: FastifyInstance) {
 
             // Invalidar cache público automáticamente
             cacheService.invalidatePattern('public:');
-            fastify.log.info(`🔄 Public cache invalidated after season change to ${id}`);
+            cacheService.invalidatePattern('private:');
+            fastify.log.info(`🔄 All caches invalidated after season change to ${id}`);
 
             const season = await prisma.season.findUnique({ where: { id } });
             return season;
@@ -395,7 +400,11 @@ export async function seasonRoutes(fastify: FastifyInstance) {
                 const newGroups: any[] = [];
                 for (const g of season.groups) {
                     const newGroup = await tx.group.create({
-                        data: { name: g.name, seasonId: newSeason.id }
+                        data: { 
+                            name: g.name, 
+                            seasonId: newSeason.id,
+                            whatsappUrl: g.whatsappUrl // Copy WhatsApp link
+                        }
                     });
                     newGroups.push(newGroup);
                 }
@@ -437,6 +446,10 @@ export async function seasonRoutes(fastify: FastifyInstance) {
 
                 return newSeason;
             });
+
+            // Invalidate all caches to ensure fresh data
+            cacheService.invalidatePattern('public:');
+            cacheService.invalidatePattern('private:');
 
             const created = await prisma.season.findUnique({
                 where: { id: next.id },

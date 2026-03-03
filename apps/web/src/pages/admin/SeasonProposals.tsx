@@ -122,8 +122,9 @@ export default function SeasonProposals() {
         mutationFn: async (entries: any[]) => {
             await api.put(`/seasons/${seasonId}/closure/entries`, {
                 entries: entries.map(e => ({
-                    playerId: e.playerId,
-                    movementType: e.movementType
+                    id: e.id,
+                    movementType: e.movementType,
+                    toGroupId: e.toGroupId
                 }))
             });
         },
@@ -132,8 +133,9 @@ export default function SeasonProposals() {
             setHasChanges(false);
             alert('Cambios guardados correctamente');
         },
-        onError: () => {
-            alert('Error al guardar los cambios');
+        onError: (error: any) => {
+            console.error('Error al guardar:', error);
+            alert('Error al guardar los cambios: ' + (error?.response?.data?.error || error?.message || 'Error desconocido'));
         }
     });
 
@@ -192,9 +194,25 @@ export default function SeasonProposals() {
     });
 
     const handleMovementChange = (playerId: string, newType: string) => {
-        setLocalEntries(prev => prev.map(entry =>
-            entry.playerId === playerId ? { ...entry, movementType: newType } : entry
-        ));
+        setLocalEntries(prev => prev.map(entry => {
+            if (entry.playerId !== playerId) return entry;
+            
+            // Calculate toGroupId based on movement type
+            const fromGroupIdx = season?.groups?.findIndex((g: any) => g.id === entry.fromGroupId) ?? -1;
+            const isTop = fromGroupIdx === 0;
+            const isBottom = fromGroupIdx === (season?.groups?.length ?? 1) - 1;
+            
+            let toGroupId = null;
+            if (newType === 'PROMOTION' && !isTop) {
+                // Go to group above (lower index)
+                toGroupId = season?.groups?.[fromGroupIdx - 1]?.id ?? null;
+            } else if (newType === 'RELEGATION' && !isBottom) {
+                // Go to group below (higher index)
+                toGroupId = season?.groups?.[fromGroupIdx + 1]?.id ?? null;
+            }
+            
+            return { ...entry, movementType: newType, toGroupId };
+        }));
         setHasChanges(true);
     };
 
