@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../lib/api';
 import { useToast } from '../contexts/ToastContext';
+import Spinner from './Spinner';
 
 interface Match {
     id: string;
@@ -104,11 +105,20 @@ export default function EditMatchModal({ match, isOpen, onClose }: EditMatchModa
     if (!isOpen || !match) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
+        >
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
                 <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Editar Partido</h3>
-                    <button onClick={onClose} className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+                    <h3 id="modal-title" className="text-xl font-bold text-slate-900 dark:text-white">Editar Partido</h3>
+                    <button
+                        onClick={onClose}
+                        className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                        aria-label="Cerrar"
+                    >
                         ✕
                     </button>
                 </div>
@@ -198,9 +208,9 @@ export default function EditMatchModal({ match, isOpen, onClose }: EditMatchModa
                         <button
                             type="submit"
                             disabled={mutation.isPending}
-                            className="flex-1 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors disabled:opacity-50"
+                            className="flex-1 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors disabled:opacity-50 flex items-center justify-center"
                         >
-                            {mutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
+                            {mutation.isPending ? <Spinner /> : 'Guardar Cambios'}
                         </button>
                     </div>
                 </form>
