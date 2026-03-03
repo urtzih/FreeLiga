@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import api from '../../lib/api';
 
 interface PlayerRanking {
     id: string;
@@ -54,26 +55,23 @@ export default function PublicGroupDetail() {
 
     const fetchData = async () => {
         try {
-            const response = await fetch(`/api/public/group/${id}/classification`);
-            if (response.ok) {
-                const result = await response.json();
-                setData({
-                    ...result,
-                    recentMatches: Array.isArray(result.recentMatches) ? result.recentMatches : [],
-                    remainingMatches: Array.isArray(result.remainingMatches) ? result.remainingMatches : [],
-                    totalRemainingMatches:
-                        typeof result.totalRemainingMatches === 'number'
-                            ? result.totalRemainingMatches
-                            : (Array.isArray(result.remainingMatches) ? result.remainingMatches.length : 0),
-                });
-            } else if (response.status === 404) {
+            const { data: result } = await api.get(`/public/group/${id}/classification`);
+            setData({
+                ...result,
+                recentMatches: Array.isArray(result.recentMatches) ? result.recentMatches : [],
+                remainingMatches: Array.isArray(result.remainingMatches) ? result.remainingMatches : [],
+                totalRemainingMatches:
+                    typeof result.totalRemainingMatches === 'number'
+                        ? result.totalRemainingMatches
+                        : (Array.isArray(result.remainingMatches) ? result.remainingMatches.length : 0),
+            });
+        } catch (err: any) {
+            if (err?.response?.status === 404) {
                 setError('Grupo no encontrado');
             } else {
-                setError('No se pudieron cargar los datos');
+                console.error('Error:', err);
+                setError('Error al cargar la clasificación');
             }
-        } catch (err) {
-            console.error('Error:', err);
-            setError('Error al cargar la clasificación');
         } finally {
             setLoading(false);
         }

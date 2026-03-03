@@ -20,10 +20,8 @@ export async function seasonRoutes(fastify: FastifyInstance) {
             reply.header('Pragma', 'no-cache');
             reply.header('Expires', '0');
             
-            const decoded = request.user as any;
-            
-            // Admins see all seasons, regular users see only active ones
-            const whereClause = decoded.role === 'ADMIN' ? {} : { isActive: true };
+            // Return all seasons for authenticated users so historical filters work
+            const whereClause = {};
             
             const seasons = await prisma.season.findMany({
                 where: whereClause,

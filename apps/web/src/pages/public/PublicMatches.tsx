@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../../lib/api';
 
 interface Match {
     id: string;
@@ -27,13 +28,8 @@ export default function PublicMatches() {
 
     const fetchMatches = async () => {
         try {
-            const response = await fetch('/api/public/recent-matches');
-            if (response.ok) {
-                const data = await response.json();
-                setMatches(data.data || []);
-            } else {
-                setError('No se pudieron cargar los partidos');
-            }
+            const { data } = await api.get('/public/recent-matches');
+            setMatches(data?.data || []);
         } catch (err) {
             console.error('Error:', err);
             setError('Error al cargar los partidos');

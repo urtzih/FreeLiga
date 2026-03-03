@@ -4,6 +4,7 @@ import { lazy, Suspense } from 'react';
 const RecentMatches = lazy(() => import('../components/RecentMatches'));
 const PublicGroupsClassification = lazy(() => import('../components/PublicGroupsClassification'));
 const PublicStats = lazy(() => import('../components/PublicStats'));
+const PublicHistoricalStats = lazy(() => import('../components/PublicHistoricalStats'));
 
 export default function Home() {
     return (
@@ -48,6 +49,9 @@ export default function Home() {
             <div className="bg-white py-16">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <Suspense fallback={<div className="text-center py-8">Cargando datos...</div>}>
+                        {/* Historical Stats */}
+                        <PublicHistoricalStats />
+
                         {/* Public Stats */}
                         <PublicStats />
 

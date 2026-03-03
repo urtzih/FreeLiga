@@ -32,6 +32,8 @@ export async function classificationRoutes(fastify: FastifyInstance) {
             // Build match filter
             const matchWhere: any = {
                 matchStatus: 'PLAYED', // Only count played matches
+                gamesP1: { not: null },
+                gamesP2: { not: null },
             };
 
             if (groupId) {

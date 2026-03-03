@@ -16,6 +16,7 @@ interface Group {
 interface ClassificationRow {
     playerId: string;
     playerName: string;
+    totalMatches: number;
     wins: number;
     losses: number;
     draws: number;
@@ -94,7 +95,9 @@ export default function GroupsSummary() {
                     const classification = classificationQueries[groupIndex]?.data ?? [];
                     const players = group.groupPlayers.length;
                     const possibleMatches = (players * (players - 1)) / 2;
-                    const played = group._count.matches;
+                    const played = Math.floor(
+                        classification.reduce((sum, row) => sum + (row.totalMatches || 0), 0) / 2
+                    );
                     const progress = possibleMatches > 0 ? Math.round((played / possibleMatches) * 100) : 0;
                     
                     // Determinar si es el primer o último grupo

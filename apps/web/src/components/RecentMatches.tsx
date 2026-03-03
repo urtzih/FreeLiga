@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import api from '../lib/api';
 
 interface Match {
     id: string;
@@ -34,12 +35,10 @@ export default function RecentMatches() {
     const fetchRecentMatches = async () => {
         try {
             setLoading(true);
-            const response = await fetch('/api/public/recent-matches');
-            if (response.ok) {
-                const data: RecentMatchesData = await response.json();
-                setMatches(data.data);
-                setCached(data.cached || false);
-            }
+            const { data } = await api.get('/public/recent-matches');
+            const payload = data as RecentMatchesData;
+            setMatches(payload.data);
+            setCached(payload.cached || false);
         } catch (err) {
             console.error('Error fetching recent matches:', err);
             setError('No se pudieron cargar los partidos recientes');

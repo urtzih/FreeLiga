@@ -4,6 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import api from '../../lib/api';
 
 interface PlayerRanking {
     id: string;
@@ -34,13 +35,8 @@ export default function PublicGroups() {
 
     const fetchData = async () => {
         try {
-            const response = await fetch('/api/public/groups-summary');
-            if (response.ok) {
-                const result = await response.json();
-                setData(result);
-            } else {
-                setError('No se pudieron cargar los datos');
-            }
+            const { data: result } = await api.get('/public/groups-summary');
+            setData(result);
         } catch (err) {
             console.error('Error:', err);
             setError('Error al cargar los grupos');

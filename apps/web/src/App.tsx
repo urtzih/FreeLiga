@@ -19,6 +19,7 @@ const ManageGroups = lazy(() => import('./pages/admin/ManageGroups'));
 const ManageSeasons = lazy(() => import('./pages/admin/ManageSeasons'));
 const ManageUsers = lazy(() => import('./pages/admin/ManageUsers'));
 const ManageBugs = lazy(() => import('./pages/admin/ManageBugs'));
+const ManagePublicCache = lazy(() => import('./pages/admin/ManagePublicCache'));
 const SeasonProposals = lazy(() => import('./pages/admin/SeasonProposals'));
 const BugReport = lazy(() => import('./pages/BugReport'));
 const PlayerProgress = lazy(() => import('./pages/PlayerProgress'));
@@ -298,6 +299,14 @@ function App() {
                                     element={
                                         <ProtectedRoute adminOnly>
                                             <AdminHelp />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/admin/cache"
+                                    element={
+                                        <ProtectedRoute adminOnly>
+                                            <ManagePublicCache />
                                         </ProtectedRoute>
                                     }
                                 />

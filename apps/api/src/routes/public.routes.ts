@@ -351,6 +351,8 @@ export async function publicRoutes(fastify: FastifyInstance) {
             const totalMatches = await prisma.match.count({
                 where: {
                     matchStatus: 'PLAYED',
+                    gamesP1: { not: null },
+                    gamesP2: { not: null },
                     group: { seasonId: activeSeason.id },
                 },
             });
@@ -379,6 +381,77 @@ export async function publicRoutes(fastify: FastifyInstance) {
     });
 
     /**
+     * GET /api/public/stats/historical
+     * Obtener estadísticas históricas globales (sin autenticación)
+     */
+    fastify.get('/stats/historical', async (request, reply) => {
+        try {
+            const cacheKey = 'public:stats:historical';
+
+            // Intentar obtener del caché
+            const cached = cacheService.get<any>(cacheKey);
+            if (cached) {
+                fastify.log.info('📦 Historical stats from cache');
+                return cached;
+            }
+
+            const [
+                totalSeasons,
+                totalPlayers,
+                activePlayers,
+                inactivePlayers,
+                totalGroups,
+                totalPlayedMatches,
+            ] = await Promise.all([
+                prisma.season.count(),
+                prisma.player.count(),
+                prisma.player.count({
+                    where: {
+                        user: {
+                            isActive: true,
+                        },
+                    },
+                }),
+                prisma.player.count({
+                    where: {
+                        user: {
+                            isActive: false,
+                        },
+                    },
+                }),
+                prisma.group.count(),
+                prisma.match.count({
+                    where: {
+                        matchStatus: 'PLAYED',
+                        gamesP1: { not: null },
+                        gamesP2: { not: null },
+                    },
+                }),
+            ]);
+
+            const response = {
+                totalSeasons,
+                totalPlayers,
+                activePlayers,
+                inactivePlayers,
+                totalGroups,
+                totalPlayedMatches,
+                cached: false,
+                updatedAt: new Date().toISOString(),
+            };
+
+            // Guardar en caché por 24h
+            cacheService.set(cacheKey, response, 24);
+            fastify.log.info('💾 Historical stats cached for 24h');
+
+            return response;
+        } catch (error) {
+            fastify.log.error(error, 'Error fetching historical stats');
+            return reply.status(500).send({ error: 'Failed to fetch historical stats' });
+        }
+    });
+
+    /**
      * Endpoint para invalidar caché (solo para admin, via webhook o interna)
      * Este endpoint se puede llamar cuando se registra un nuevo partido
      */
@@ -398,6 +471,34 @@ export async function publicRoutes(fastify: FastifyInstance) {
             return { success: true, message: 'Cache invalidated' };
         } catch (error) {
             fastify.log.error(error, 'Error invalidating cache');
+            return reply.status(500).send({ error: 'Failed to invalidate cache' });
+        }
+    });
+
+    /**
+     * POST /api/public/cache/invalidate/admin
+     * Invalidar caché público desde UI admin autenticada
+     */
+    fastify.post('/cache/invalidate/admin', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            cacheService.invalidatePattern('public:');
+            fastify.log.info({ userId: decoded.id }, '🔄 Public cache invalidated by admin UI');
+
+            return {
+                success: true,
+                message: 'Public cache invalidated',
+                invalidatedBy: decoded.id,
+                at: new Date().toISOString(),
+            };
+        } catch (error) {
+            fastify.log.error(error, 'Error invalidating cache from admin UI');
             return reply.status(500).send({ error: 'Failed to invalidate cache' });
         }
     });

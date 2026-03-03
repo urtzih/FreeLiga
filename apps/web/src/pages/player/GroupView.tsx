@@ -41,14 +41,18 @@ export default function GroupView() {
     const myMatches = group?.matches.filter((match: any) => {
         const isMyMatch = match.player1Id === user?.player?.id || match.player2Id === user?.player?.id;
         if (!isMyMatch) return false;
-        
-        // Si calendario deshabilitado, filtrar partidos programados sin resultado
-        if (!calendarEnabled) {
-            const isScheduled = match.scheduledDate && (!match.gamesP1 || !match.gamesP2);
-            if (isScheduled) return false;
-        }
-        
-        return true;
+
+        const hasResult = match.gamesP1 !== null && match.gamesP2 !== null;
+        const isScheduledPending = (match.isScheduled || !!match.scheduledDate) && !hasResult;
+
+        // Mostrar siempre partidos jugados
+        if (hasResult) return true;
+
+        // Mostrar pendientes solo si fueron programados y calendario está habilitado
+        if (isScheduledPending) return calendarEnabled;
+
+        // Ocultar pendientes internos no programados
+        return false;
     }) || [];
 
     if (isLoading || loadingClassification) {

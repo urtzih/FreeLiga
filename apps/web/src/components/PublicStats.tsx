@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import api from '../lib/api';
 
 interface PublicStatsData {
     seasonName: string;
@@ -23,11 +24,8 @@ export default function PublicStats() {
 
     const fetchStats = async () => {
         try {
-            const response = await fetch('/api/public/stats');
-            if (response.ok) {
-                const data: PublicStatsData = await response.json();
-                setStats(data);
-            }
+            const { data } = await api.get('/public/stats');
+            setStats(data as PublicStatsData);
         } catch (err) {
             console.error('Error fetching stats:', err);
         } finally {

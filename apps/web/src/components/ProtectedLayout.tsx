@@ -85,6 +85,12 @@ export default function ProtectedLayout() {
                                         Ayuda
                                     </Link>
                                     <Link
+                                        to="/admin/cache"
+                                        className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                                    >
+                                        Caché
+                                    </Link>
+                                    <Link
                                         to="/matches/history"
                                         className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                                     >
@@ -212,6 +218,9 @@ export default function ProtectedLayout() {
                                     </Link>
                                     <Link to="/admin/help" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                                         📚 Ayuda
+                                    </Link>
+                                    <Link to="/admin/cache" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                                        🧹 Caché pública
                                     </Link>
                                     <Link to="/matches/history" onClick={closeMobileMenu} className="block px-3 py-2 rounded-md text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                                         ⚽ Ver todos los partidos

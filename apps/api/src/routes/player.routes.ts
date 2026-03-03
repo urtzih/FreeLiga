@@ -96,17 +96,28 @@ export async function playerRoutes(fastify: FastifyInstance) {
         try {
             const { id } = request.params as { id: string };
 
-            // Get all matches for this player
+            // Get the player's current group (based on active season)
+            const currentGroup = await getPlayerCurrentGroup(id);
+            
+            // Build the where clause - filter by current group if player is in one
+            const matchWhere: any = {
+                OR: [
+                    { player1Id: id },
+                    { player2Id: id },
+                ],
+                matchStatus: 'PLAYED', // Only count played matches
+                gamesP1: { not: null }, // Only matches with results
+                gamesP2: { not: null }, // Only matches with results
+            };
+
+            // If player has a current group, filter only for that group's matches
+            if (currentGroup) {
+                matchWhere.groupId = currentGroup.id;
+            }
+
+            // Get all matches for this player in the active season
             const matches = await prisma.match.findMany({
-                where: {
-                    OR: [
-                        { player1Id: id },
-                        { player2Id: id },
-                    ],
-                    matchStatus: 'PLAYED', // Only count played matches
-                    gamesP1: { not: null }, // Only matches with results
-                    gamesP2: { not: null }, // Only matches with results
-                },
+                where: matchWhere,
                 include: {
                     player1: true,
                     player2: true,

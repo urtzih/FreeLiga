@@ -215,6 +215,19 @@ freesquash-league/
 ### Classification
 - `GET /api/classification` - Global rankings (with filters)
 
+### Public (No Auth)
+- `GET /api/public/stats` - Active season public stats (players, played matches with result, groups)
+- `GET /api/public/stats/historical` - Historical public stats (total seasons, total players, total groups, total played matches with result)
+- `GET /api/public/recent-matches` - Latest played matches
+- `GET /api/public/groups-summary` - Active season groups summary
+- `GET /api/public/group/:id/classification` - Public group classification
+
+### Public Cache Invalidation
+- `POST /api/public/cache/invalidate` - Invalidate public cache (`public:*`) via token (automation/webhook)
+- `POST /api/public/cache/invalidate/admin` - Invalidate public cache from authenticated admin UI
+- Required header for token endpoint: `x-cache-token: <CACHE_INVALIDATE_TOKEN>`
+- If `CACHE_INVALIDATE_TOKEN` is not configured, development fallback is `dev-token`
+
 ## 🧪 Testing the Ranking Algorithm
 
 1. Create a season
@@ -268,6 +281,7 @@ freesquash-league/
    ```
    VITE_API_URL=https://your-railway-backend-url.up.railway.app
    ```
+   > Required for public home widgets (`/api/public/*`). If missing, Vercel can return `index.html` and the browser throws `Unexpected token '<'` when parsing JSON.
 
 5. **Deploy**
    - Vercel auto-builds and deploys
