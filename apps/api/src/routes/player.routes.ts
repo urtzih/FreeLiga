@@ -582,6 +582,13 @@ export async function playerRoutes(fastify: FastifyInstance) {
                     groups: {
                         include: {
                             groupPlayers: {
+                                where: {
+                                    player: {
+                                        user: {
+                                            isActive: true,
+                                        },
+                                    },
+                                },
                                 include: {
                                     player: true,
                                 },
@@ -699,6 +706,13 @@ export async function playerRoutes(fastify: FastifyInstance) {
                     groups: {
                         include: {
                             groupPlayers: {
+                                where: {
+                                    player: {
+                                        user: {
+                                            isActive: true,
+                                        },
+                                    },
+                                },
                                 include: {
                                     player: true,
                                 },

@@ -169,7 +169,14 @@ export async function groupRoutes(fastify: FastifyInstance) {
             const { id } = request.params as { id: string };
 
             const groupPlayers = await prisma.groupPlayer.findMany({
-                where: { groupId: id },
+                where: {
+                    groupId: id,
+                    player: {
+                        user: {
+                            isActive: true,
+                        },
+                    },
+                },
                 include: {
                     player: true,
                 },

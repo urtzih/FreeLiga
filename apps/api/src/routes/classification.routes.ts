@@ -64,14 +64,27 @@ export async function classificationRoutes(fastify: FastifyInstance) {
             if (groupId) {
                 // If filtering by group, get only players in that group
                 const groupPlayers = await prisma.groupPlayer.findMany({
-                    where: { groupId },
+                    where: {
+                        groupId,
+                        player: {
+                            user: {
+                                isActive: true,
+                            },
+                        },
+                    },
                     include: { player: true }
                 });
                 players = groupPlayers.map(gp => gp.player);
                 fastify.log.info({ groupId, playerCount: players.length }, 'Players found in group');
             } else {
                 // Otherwise get all players
-                players = await prisma.player.findMany();
+                players = await prisma.player.findMany({
+                    where: {
+                        user: {
+                            isActive: true,
+                        },
+                    },
+                });
             }
 
             // Get all matches with filters

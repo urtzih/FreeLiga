@@ -70,6 +70,17 @@ export async function matchRoutes(fastify: FastifyInstance) {
 
             const where: any = {};
 
+            where.player1 = {
+                user: {
+                    isActive: true,
+                },
+            };
+            where.player2 = {
+                user: {
+                    isActive: true,
+                },
+            };
+
             if (groupId) {
                 where.groupId = groupId;
             }

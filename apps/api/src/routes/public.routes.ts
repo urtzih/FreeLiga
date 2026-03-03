@@ -190,6 +190,13 @@ export async function publicRoutes(fastify: FastifyInstance) {
                 where: { id: groupId },
                 include: {
                     groupPlayers: {
+                        where: {
+                            player: {
+                                user: {
+                                    isActive: true,
+                                },
+                            },
+                        },
                         include: {
                             player: {
                                 select: {
@@ -207,6 +214,16 @@ export async function publicRoutes(fastify: FastifyInstance) {
                             matchStatus: 'PLAYED',
                             gamesP1: { not: null },
                             gamesP2: { not: null },
+                            player1: {
+                                user: {
+                                    isActive: true,
+                                },
+                            },
+                            player2: {
+                                user: {
+                                    isActive: true,
+                                },
+                            },
                         },
                         include: {
                             player1: true,

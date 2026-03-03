@@ -39,11 +39,31 @@ export async function calculateGroupRankings(groupId: string): Promise<void> {
         // Single query to get all groupPlayers and all PLAYED matches at once
         const [groupPlayers, matches] = await Promise.all([
             prisma.groupPlayer.findMany({
-                where: { groupId },
+                where: {
+                    groupId,
+                    player: {
+                        user: {
+                            isActive: true,
+                        },
+                    },
+                },
                 include: { player: true },
             }),
             prisma.match.findMany({
-                where: { groupId, matchStatus: 'PLAYED' },
+                where: {
+                    groupId,
+                    matchStatus: 'PLAYED',
+                    player1: {
+                        user: {
+                            isActive: true,
+                        },
+                    },
+                    player2: {
+                        user: {
+                            isActive: true,
+                        },
+                    },
+                },
                 include: { player1: true, player2: true },
             })
         ]);
@@ -366,11 +386,31 @@ export async function getGroupRankings(groupId: string): Promise<RankingResult[]
     try {
         const [groupPlayers, matches] = await Promise.all([
             prisma.groupPlayer.findMany({
-                where: { groupId },
+                where: {
+                    groupId,
+                    player: {
+                        user: {
+                            isActive: true,
+                        },
+                    },
+                },
                 include: { player: true },
             }),
             prisma.match.findMany({
-                where: { groupId, matchStatus: 'PLAYED' },
+                where: {
+                    groupId,
+                    matchStatus: 'PLAYED',
+                    player1: {
+                        user: {
+                            isActive: true,
+                        },
+                    },
+                    player2: {
+                        user: {
+                            isActive: true,
+                        },
+                    },
+                },
                 include: { player1: true, player2: true },
             })
         ]);
