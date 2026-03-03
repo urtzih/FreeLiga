@@ -14,6 +14,46 @@ export default function SeasonProposals() {
     const [selectedGroupId, setSelectedGroupId] = useState('');
     const [selectedPlayerId, setSelectedPlayerId] = useState('');
 
+    const getPlayerStatsFromGroup = (groupDetail: any) => {
+        const expectedMatches = Math.max((groupDetail?.groupPlayers?.length || 0) - 1, 0);
+        const groupMatches = Array.isArray(groupDetail?.matches) ? groupDetail.matches : [];
+        const groupPlayers = Array.isArray(groupDetail?.groupPlayers) ? groupDetail.groupPlayers : [];
+
+        const statsByPlayer: Record<string, { losses: number; remaining: number; injuries: number; setAverage: number }> = {};
+
+        for (const gp of groupPlayers) {
+            const playerId = gp.playerId;
+            const playerMatches = groupMatches.filter((m: any) => m.player1Id === playerId || m.player2Id === playerId);
+            const playedMatches = playerMatches.filter((m: any) => m.gamesP1 !== null && m.gamesP2 !== null && m.matchStatus !== 'INJURY');
+            const injuredMatches = playerMatches.filter((m: any) => m.matchStatus === 'INJURY');
+            const losses = playedMatches.filter((m: any) => m.winnerId && m.winnerId !== playerId).length;
+            const remaining = Math.max(expectedMatches - playedMatches.length - injuredMatches.length, 0);
+
+            let setsWon = 0;
+            let setsLost = 0;
+            for (const match of playedMatches) {
+                if (match.player1Id === playerId) {
+                    setsWon += match.gamesP1 || 0;
+                    setsLost += match.gamesP2 || 0;
+                } else {
+                    setsWon += match.gamesP2 || 0;
+                    setsLost += match.gamesP1 || 0;
+                }
+            }
+
+            const setAverage = setsWon - setsLost;
+
+            statsByPlayer[playerId] = {
+                losses,
+                remaining,
+                injuries: injuredMatches.length,
+                setAverage,
+            };
+        }
+
+        return statsByPlayer;
+    };
+
     // Fetch season details and closure
     const { data: season, isLoading, refetch } = useAdminQuery({
         queryKey: ['season-proposal', seasonId],
@@ -29,14 +69,27 @@ export default function SeasonProposals() {
                 return numA - numB;
             });
 
+            const groupDetails = await Promise.all(
+                seasonGroups.map(async (group: any) => {
+                    const { data } = await api.get(`/groups/${group.id}`);
+                    return data;
+                })
+            );
+
+            const statsByPlayerId: Record<string, { losses: number; remaining: number; injuries: number; setAverage: number }> = {};
+            for (const groupDetail of groupDetails) {
+                const groupStats = getPlayerStatsFromGroup(groupDetail);
+                Object.assign(statsByPlayerId, groupStats);
+            }
+
             // Try to get existing closure
             try {
                 const { data: closure } = await api.get(`/seasons/${seasonId}/closure`);
-                return { ...seasonData, groups: seasonGroups, closure };
+                return { ...seasonData, groups: seasonGroups, closure, statsByPlayerId };
             } catch (e) {
                 // If not found, generate preview
                 const { data: closure } = await api.post(`/seasons/${seasonId}/closure/preview`);
-                return { ...seasonData, groups: seasonGroups, closure };
+                return { ...seasonData, groups: seasonGroups, closure, statsByPlayerId };
             }
         },
         enabled: !!seasonId
@@ -147,6 +200,33 @@ export default function SeasonProposals() {
 
     const handleSave = () => {
         saveMutation.mutate(localEntries);
+    };
+
+    const getWinsScaleClass = (wins: number, minWins: number, maxWins: number, tieOnWins: boolean) => {
+        if (maxWins === minWins) {
+            return tieOnWins
+                ? 'bg-amber-200 text-amber-900 dark:bg-amber-500/30 dark:text-amber-200 ring-2 ring-amber-400/70 dark:ring-amber-500/60'
+                : 'bg-slate-100 text-slate-700 dark:bg-slate-700/60 dark:text-slate-300';
+        }
+
+        const ratio = (wins - minWins) / (maxWins - minWins);
+
+        if (ratio >= 0.85) {
+            return `bg-amber-300 text-amber-900 dark:bg-amber-500/40 dark:text-amber-200 ${tieOnWins ? 'ring-2 ring-amber-400/70 dark:ring-amber-500/60' : ''}`;
+        }
+        if (ratio >= 0.6) {
+            return `bg-amber-200 text-amber-900 dark:bg-amber-600/30 dark:text-amber-200 ${tieOnWins ? 'ring-2 ring-amber-400/70 dark:ring-amber-500/60' : ''}`;
+        }
+        if (ratio >= 0.35) {
+            return `bg-amber-100 text-amber-800 dark:bg-amber-700/20 dark:text-amber-300 ${tieOnWins ? 'ring-2 ring-amber-400/70 dark:ring-amber-500/60' : ''}`;
+        }
+        if (ratio > 0) {
+            return `bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300 ${tieOnWins ? 'ring-2 ring-amber-400/70 dark:ring-amber-500/60' : ''}`;
+        }
+
+        return tieOnWins
+            ? 'bg-slate-100 text-slate-700 dark:bg-slate-700/60 dark:text-slate-300 ring-2 ring-amber-400/70 dark:ring-amber-500/60'
+            : 'bg-slate-100 text-slate-700 dark:bg-slate-700/60 dark:text-slate-300';
     };
 
     if (isLoading) {
@@ -266,27 +346,53 @@ export default function SeasonProposals() {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
                 {season.groups.map((group: any) => {
                     // Get entries for this group to have correct ranking
                     const groupEntries = localEntries.filter((e: any) => e.fromGroupId === group.id).sort((a: any, b: any) => a.finalRank - b.finalRank);
+                    const winsCountByValue = groupEntries.reduce((acc: Record<number, number>, entry: any) => {
+                        const wins = entry.matchesWon || 0;
+                        acc[wins] = (acc[wins] || 0) + 1;
+                        return acc;
+                    }, {});
+                    const winsValues = groupEntries.map((entry: any) => entry.matchesWon || 0);
+                    const minWins = winsValues.length ? Math.min(...winsValues) : 0;
+                    const maxWins = winsValues.length ? Math.max(...winsValues) : 0;
 
                     return (
                         <div key={group.id} className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                             <div className="bg-slate-50 dark:bg-slate-900/50 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
                                 <h3 className="font-bold text-lg text-slate-900 dark:text-white">{group.name}</h3>
-                                <button
-                                    disabled={!candidatePlayers.length || addPlayerMutation.isPending}
-                                    onClick={() => {
-                                        setSelectedGroupId(group.id);
-                                        setShowAddModal(true);
-                                        setSelectedPlayerId(candidatePlayers[0]?.player?.id || '');
-                                    }}
-                                    className="text-xs px-3 py-1 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
-                                    title={candidatePlayers.length ? 'Añadir jugador inactivo o sin grupo' : 'No hay jugadores disponibles'}
-                                >
-                                    + Player
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <Link
+                                        to={`/groups/${group.id}`}
+                                        className="text-xs px-3 py-1 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+                                        title="Ver clasificación del grupo"
+                                    >
+                                        Ver más
+                                    </Link>
+                                    <button
+                                        disabled={!candidatePlayers.length || addPlayerMutation.isPending}
+                                        onClick={() => {
+                                            setSelectedGroupId(group.id);
+                                            setShowAddModal(true);
+                                            setSelectedPlayerId(candidatePlayers[0]?.player?.id || '');
+                                        }}
+                                        className="text-xs px-3 py-1 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
+                                        title={candidatePlayers.length ? 'Añadir jugador inactivo o sin grupo' : 'No hay jugadores disponibles'}
+                                    >
+                                        + Player
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-[minmax(150px,1fr)_40px_34px_34px_34px_44px_minmax(120px,1fr)] px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70">
+                                <span className="pl-9">Jugador</span>
+                                <span className="text-center">🏆</span>
+                                <span className="text-center">D</span>
+                                <span className="text-center">R</span>
+                                <span className="text-center">Les</span>
+                                <span className="text-center">±</span>
+                                <span>Movimiento</span>
                             </div>
                             <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
                                 {groupEntries.map((entry: any) => {
@@ -298,59 +404,93 @@ export default function SeasonProposals() {
 
                                     const isActive = entry.player?.user?.isActive !== false;
                                     const userId = entry.player?.user?.id;
+                                    const playerStats = season?.statsByPlayerId?.[entry.playerId] || { losses: 0, remaining: 0, injuries: 0, setAverage: 0 };
+                                    const wins = entry.matchesWon || 0;
+                                    const tieOnWins = (winsCountByValue[wins] || 0) > 1;
+                                    const winsClass = getWinsScaleClass(wins, minWins, maxWins, tieOnWins);
 
                                     return (
                                         <div key={entry.playerId} className={`px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors ${!isActive ? 'opacity-50 bg-red-50 dark:bg-red-900/10' : ''}`}>
-                                            <div className="flex items-center justify-between gap-3">
-                                                <div className="flex items-center gap-3 flex-1">
-                                                    <span className="font-mono text-sm text-slate-400 w-6">#{entry.finalRank}</span>
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className={`font-medium ${isActive ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>
+                                            <div className="grid grid-cols-[minmax(150px,1fr)_40px_34px_34px_34px_44px_minmax(120px,1fr)] items-start gap-2">
+                                                <div className="flex items-center gap-3 min-w-0">
+                                                    <span className="font-mono text-sm text-slate-400 w-6 shrink-0">#{entry.finalRank}</span>
+                                                    <div className="min-w-0">
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <span className={`font-medium leading-tight whitespace-normal ${isActive ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>
                                                                 {entry.player.name}
                                                             </span>
                                                             {!isActive && (
-                                                                <span className="text-xs px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-full font-medium">
+                                                                <span className="text-xs px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-full font-medium shrink-0">
                                                                     Desactivado
                                                                 </span>
                                                             )}
                                                         </div>
                                                     </div>
-                                                    <span className="text-xs text-slate-500 dark:text-slate-400">🏆 {entry.matchesWon || 0}</span>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    {userId && (
-                                                        <button
-                                                            onClick={() => {
-                                                                if (window.confirm(`¿${isActive ? 'Desactivar' : 'Activar'} a ${entry.player.name}? ${!isActive ? 'Podrá participar en la siguiente temporada.' : 'NO participará en la siguiente temporada.'}`)) {
-                                                                    toggleActiveMutation.mutate(userId);
-                                                                }
-                                                            }}
-                                                            disabled={toggleActiveMutation.isPending}
-                                                            className={`text-xs px-2 py-1 rounded transition-colors ${isActive ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50' : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50'}`}
-                                                            title={isActive ? 'Desactivar jugador' : 'Activar jugador'}
-                                                        >
-                                                            {isActive ? '🚫' : '✅'}
-                                                        </button>
-                                                    )}
-                                                    {isApproved ? (
+
+                                                <span className={`text-xs inline-flex h-7 w-10 items-center justify-center rounded-full font-semibold ${winsClass}`} title={tieOnWins ? 'Empate en victorias dentro del grupo' : 'Victorias'}>
+                                                    {wins}
+                                                </span>
+                                                <span className="text-sm text-center font-semibold text-rose-600 dark:text-rose-300 pt-1">{playerStats.losses}</span>
+                                                <span className="text-sm text-center font-semibold text-sky-600 dark:text-sky-300 pt-1">{playerStats.remaining}</span>
+                                                <span className="text-sm text-center font-semibold text-orange-600 dark:text-orange-300 pt-1">{playerStats.injuries}</span>
+                                                <span className={`text-sm text-center font-semibold pt-1 ${playerStats.setAverage > 0 ? 'text-green-600 dark:text-green-300' : playerStats.setAverage < 0 ? 'text-red-600 dark:text-red-300' : 'text-slate-500 dark:text-slate-300'}`}>
+                                                    {playerStats.setAverage > 0 ? `+${playerStats.setAverage}` : playerStats.setAverage}
+                                                </span>
+
+                                                {isApproved ? (
+                                                    <div className="flex items-center gap-2 min-w-0">
                                                         <div className={`text-xs font-bold ${statusColor} whitespace-nowrap`}>
                                                             {movement === 'STAY' && 'Mantiene ➡️'}
                                                             {movement === 'PROMOTION' && 'Asciende 📈'}
                                                             {movement === 'RELEGATION' && 'Desciende 📉'}
                                                         </div>
-                                                    ) : (
-                                                        <select
-                                                            value={movement}
-                                                            onChange={(e) => handleMovementChange(entry.playerId, e.target.value)}
-                                                            className={`text-xs font-bold bg-transparent border-none focus:ring-0 cursor-pointer ${statusColor} whitespace-nowrap`}
-                                                        >
-                                                            <option value="STAY">Mantiene ➡️</option>
-                                                            <option value="PROMOTION">Asciende 📈</option>
-                                                            <option value="RELEGATION">Desciende 📉</option>
-                                                        </select>
-                                                    )}
-                                                </div>
+                                                        {userId && (
+                                                            <select
+                                                                value=""
+                                                                onChange={(e) => {
+                                                                    const selectedValue = e.target.value;
+                                                                    if (selectedValue !== 'TOGGLE') return;
+
+                                                                    if (window.confirm(`¿${isActive ? 'Desactivar' : 'Activar'} a ${entry.player.name}? ${!isActive ? 'Podrá participar en la siguiente temporada.' : 'NO participará en la siguiente temporada.'}`)) {
+                                                                        toggleActiveMutation.mutate(userId);
+                                                                    }
+                                                                }}
+                                                                className="text-xs bg-transparent border-none focus:ring-0 cursor-pointer text-slate-500 dark:text-slate-300 min-w-0"
+                                                            >
+                                                                <option value="">Acción ▾</option>
+                                                                <option value="TOGGLE">{isActive ? 'Desactivar 🚫' : 'Activar ✅'}</option>
+                                                            </select>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <select
+                                                        value={movement}
+                                                        onChange={(e) => {
+                                                            const selectedValue = e.target.value;
+
+                                                            if (selectedValue.startsWith('TOGGLE:')) {
+                                                                if (!userId) return;
+                                                                if (window.confirm(`¿${isActive ? 'Desactivar' : 'Activar'} a ${entry.player.name}? ${!isActive ? 'Podrá participar en la siguiente temporada.' : 'NO participará en la siguiente temporada.'}`)) {
+                                                                    toggleActiveMutation.mutate(userId);
+                                                                }
+                                                                return;
+                                                            }
+
+                                                            handleMovementChange(entry.playerId, selectedValue);
+                                                        }}
+                                                        className={`text-xs font-bold bg-transparent border-none focus:ring-0 cursor-pointer ${statusColor} whitespace-nowrap w-full min-w-0`}
+                                                    >
+                                                        <option value="STAY">Mantiene ➡️</option>
+                                                        <option value="PROMOTION">Asciende 📈</option>
+                                                        <option value="RELEGATION">Desciende 📉</option>
+                                                        {userId && (
+                                                            <option value={`TOGGLE:${userId}`}>
+                                                                {isActive ? 'Desactivar 🚫' : 'Activar ✅'}
+                                                            </option>
+                                                        )}
+                                                    </select>
+                                                )}
                                             </div>
                                         </div>
                                     );
