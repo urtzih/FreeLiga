@@ -386,6 +386,20 @@ export async function seasonRoutes(fastify: FastifyInstance) {
             }
 
             // Create new season and groups, then assign players
+            // Pre-fetch active players to avoid queries inside transaction
+            let activePlayers: Set<string> = new Set();
+            if (season.closure && season.closure.status === 'APPROVED' && season.closure.entries.length > 0) {
+                const playerIds = season.closure.entries.map(e => e.playerId);
+                const players = await prisma.player.findMany({
+                    where: { 
+                        id: { in: playerIds },
+                        user: { isActive: true }
+                    },
+                    select: { id: true }
+                });
+                activePlayers = new Set(players.map(p => p.id));
+            }
+
             const next = await prisma.$transaction(async (tx) => {
                 // Create season
                 const newSeason = await tx.season.create({
@@ -404,7 +418,7 @@ export async function seasonRoutes(fastify: FastifyInstance) {
                         data: { 
                             name: g.name, 
                             seasonId: newSeason.id,
-                            whatsappUrl: g.whatsappUrl // Copy WhatsApp link
+                            whatsappUrl: g.whatsappUrl
                         }
                     });
                     newGroups.push(newGroup);
@@ -412,16 +426,12 @@ export async function seasonRoutes(fastify: FastifyInstance) {
 
                 // Import players if closure is approved
                 if (season.closure && season.closure.status === 'APPROVED' && season.closure.entries.length > 0) {
+                    const groupPlayerData: any[] = [];
+                    
                     for (const entry of season.closure.entries) {
-                        // Verificar si el usuario del jugador está activo
-                        const player = await tx.player.findUnique({
-                            where: { id: entry.playerId },
-                            include: { user: { select: { isActive: true } } }
-                        });
-
-                        // Solo importar jugadores con usuario activo
-                        if (!player || !player.user.isActive) {
-                            continue; // Saltar jugadores desactivados
+                        // Verificar si el jugador está activo (ya pre-filtrado)
+                        if (!activePlayers.has(entry.playerId)) {
+                            continue;
                         }
 
                         // Find target group in new season
@@ -434,18 +444,26 @@ export async function seasonRoutes(fastify: FastifyInstance) {
                         if (targetGroupName) {
                             const newGroup = newGroups.find(g => g.name === targetGroupName);
                             if (newGroup) {
-                                await tx.groupPlayer.create({
-                                    data: {
-                                        playerId: entry.playerId,
-                                        groupId: newGroup.id
-                                    }
+                                groupPlayerData.push({
+                                    playerId: entry.playerId,
+                                    groupId: newGroup.id
                                 });
                             }
                         }
                     }
+
+                    // Batch insert all group players
+                    if (groupPlayerData.length > 0) {
+                        await tx.groupPlayer.createMany({
+                            data: groupPlayerData,
+                            skipDuplicates: true
+                        });
+                    }
                 }
 
                 return newSeason;
+            }, {
+                timeout: 20000 // Aumentar timeout a 20 segundos para el rollover
             });
 
             // Invalidate all caches to ensure fresh data
