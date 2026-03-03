@@ -410,7 +410,18 @@ export default function SeasonProposals() {
                                     const winsClass = getWinsScaleClass(wins, minWins, maxWins, tieOnWins);
 
                                     return (
-                                        <div key={entry.playerId} className={`px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors ${!isActive ? 'opacity-50 bg-red-50 dark:bg-red-900/10' : ''}`}>
+                                        <div 
+                                            key={entry.playerId} 
+                                            className={`px-4 py-2 hover:transition-colors ${
+                                                !isActive 
+                                                    ? 'bg-red-50 dark:bg-red-900/20 opacity-60' 
+                                                    : movement === 'PROMOTION'
+                                                    ? 'bg-green-50 dark:bg-green-900/20'
+                                                    : movement === 'RELEGATION'
+                                                    ? 'bg-red-50 dark:bg-red-900/20'
+                                                    : 'hover:bg-slate-50 dark:hover:bg-slate-700/30'
+                                            }`}
+                                        >
                                             <div className="grid grid-cols-[minmax(150px,1fr)_40px_34px_34px_34px_44px_minmax(120px,1fr)] items-start gap-2">
                                                 <div className="flex items-center gap-3 min-w-0">
                                                     <span className="font-mono text-sm text-slate-400 w-6 shrink-0">#{entry.finalRank}</span>
