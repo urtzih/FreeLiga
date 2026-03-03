@@ -13,6 +13,8 @@ export default function SeasonProposals() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [selectedGroupId, setSelectedGroupId] = useState('');
     const [selectedPlayerId, setSelectedPlayerId] = useState('');
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [groupDistribution, setGroupDistribution] = useState<Record<string, { name: string; count: number }>>({});
 
     const getPlayerStatsFromGroup = (groupDetail: any) => {
         const expectedMatches = Math.max((groupDetail?.groupPlayers?.length || 0) - 1, 0);
@@ -217,6 +219,31 @@ export default function SeasonProposals() {
     };
 
     const handleSave = () => {
+        // Calculate final player distribution
+        const distribution: Record<string, { name: string; count: number }> = {};
+        
+        // Initialize with all groups
+        season?.groups?.forEach((group: any) => {
+            distribution[group.id] = {
+                name: group.name,
+                count: 0
+            };
+        });
+
+        // Count players per group after movements
+        localEntries.forEach((entry: any) => {
+            const targetGroupId = entry.toGroupId || entry.fromGroupId;
+            if (targetGroupId && distribution[targetGroupId]) {
+                distribution[targetGroupId].count++;
+            }
+        });
+
+        setGroupDistribution(distribution);
+        setShowConfirmModal(true);
+    };
+
+    const confirmSave = () => {
+        setShowConfirmModal(false);
         saveMutation.mutate(localEntries);
     };
 
@@ -574,6 +601,65 @@ export default function SeasonProposals() {
                                     className="flex-1 px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
                                 >
                                     {addPlayerMutation.isPending ? 'Añadiendo...' : 'Añadir'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Confirmation Modal */}
+            {showConfirmModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                        <div className="p-6 space-y-4">
+                            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Confirmar Cambios</h2>
+                            <p className="text-slate-600 dark:text-slate-400">
+                                Revisa la distribución final de jugadores por grupo:
+                            </p>
+                            <div className="space-y-2">
+                                {Object.entries(groupDistribution).map(([groupId, { name, count }]) => (
+                                    <div
+                                        key={groupId}
+                                        className={`p-3 rounded-lg flex justify-between items-center ${
+                                            count !== 8
+                                                ? 'bg-red-50 dark:bg-red-900/20 border-2 border-red-400 dark:border-red-600'
+                                                : 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
+                                        }`}
+                                    >
+                                        <span className="font-semibold text-slate-900 dark:text-white">{name}</span>
+                                        <span
+                                            className={`px-3 py-1 rounded-full font-bold ${
+                                                count !== 8
+                                                    ? 'bg-red-200 dark:bg-red-800 text-red-900 dark:text-red-100'
+                                                    : 'bg-green-200 dark:bg-green-800 text-green-900 dark:text-green-100'
+                                            }`}
+                                        >
+                                            {count} jugadores
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                            {Object.values(groupDistribution).some(g => g.count !== 8) && (
+                                <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg">
+                                    <p className="text-sm text-amber-900 dark:text-amber-200 font-semibold">
+                                        ⚠️ Atención: Algunos grupos no tienen exactamente 8 jugadores
+                                    </p>
+                                </div>
+                            )}
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    onClick={() => setShowConfirmModal(false)}
+                                    className="flex-1 px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white hover:bg-slate-300 dark:hover:bg-slate-600"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={confirmSave}
+                                    disabled={saveMutation.isPending}
+                                    className="flex-1 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                                >
+                                    {saveMutation.isPending ? 'Guardando...' : 'Confirmar y Guardar'}
                                 </button>
                             </div>
                         </div>

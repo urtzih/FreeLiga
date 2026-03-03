@@ -305,22 +305,23 @@ export async function seasonRoutes(fastify: FastifyInstance) {
 
             // Aplicar movimientos y crear historiales
             await prisma.$transaction(async tx => {
-                for (const entry of closure.entries) {
-                    // Ya no es necesario actualizar currentGroupId - se calcula dinámicamente
-                    await tx.playerGroupHistory.create({
-                        data: {
-                            playerId: entry.playerId,
-                            seasonId: id,
-                            groupId: entry.toGroupId ?? entry.fromGroupId ?? null,
-                            finalRank: entry.finalRank,
-                            movementType: entry.movementType,
-                        }
-                    });
-                }
+                // Usar createMany en lugar de loop para mejor rendimiento
+                await tx.playerGroupHistory.createMany({
+                    data: closure.entries.map(entry => ({
+                        playerId: entry.playerId,
+                        seasonId: id,
+                        groupId: entry.toGroupId ?? entry.fromGroupId ?? null,
+                        finalRank: entry.finalRank,
+                        movementType: entry.movementType,
+                    }))
+                });
+                
                 await tx.seasonClosure.update({
                     where: { id: closure.id },
                     data: { status: 'APPROVED', approvedAt: new Date() }
                 });
+            }, {
+                timeout: 15000 // Aumentar timeout a 15 segundos para manejar muchos jugadores
             });
 
             const updated = await prisma.seasonClosure.findUnique({
