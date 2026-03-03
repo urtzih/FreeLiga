@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
 import Spinner from '../../components/Spinner';
 import { useToast } from '../../contexts/ToastContext';
+import { usePushNotification } from '../../hooks/usePushNotification';
 
 interface PlayerProfile {
   id: string;
@@ -19,6 +20,29 @@ export default function Profile() {
   const playerId = user?.player?.id;
   const [showBanner, setShowBanner] = useState(true);
   const { showToast } = useToast();
+  const pushNotification = usePushNotification();
+  const notificationPermission =
+    typeof Notification !== 'undefined' ? Notification.permission : 'default';
+
+  const withTimeout = async <T,>(promise: Promise<T>, timeoutMs = 10000): Promise<T> => {
+    console.log('[PushDebug] withTimeout:start', { timeoutMs });
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        console.error('[PushDebug] withTimeout:timeout');
+        reject(new Error('La operación ha tardado demasiado. Inténtalo de nuevo.'));
+      }, timeoutMs);
+    });
+
+    try {
+      return await Promise.race([promise, timeoutPromise]);
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    }
+  };
 
   // Función helper para procesar errores
   const getErrorMessage = (error: any): string => {
@@ -74,6 +98,7 @@ export default function Profile() {
   const [isEditingPassword, setIsEditingPassword] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isPushToggleBusy, setIsPushToggleBusy] = useState(false);
 
   // Inicializar formulario cuando carguen los datos
   useEffect(() => {
@@ -142,6 +167,86 @@ export default function Profile() {
       showToast(`Error: ${errorMessage}`, 'error');
     }
   });
+
+  const updatePushNotificationsMutation = useMutation({
+    mutationFn: async (enabled: boolean) => {
+      const { data: response } = await api.patch('/users/me/push-notifications', { enabled });
+      return response;
+    },
+    onSuccess: async () => {
+      await refreshUser();
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      showToast('✅ Preferencia de notificaciones actualizada', 'success');
+    },
+    onError: (error: any) => {
+      const errorMessage = getErrorMessage(error);
+      showToast(`Error: ${errorMessage}`, 'error');
+    }
+  });
+
+  const handlePushNotificationToggle = async () => {
+    console.log('[PushDebug] toggle:click', {
+      isPushToggleBusy,
+      isSupported: pushNotification.isSupported,
+      isSubscribed: pushNotification.isSubscribed,
+      userPreference: user?.pushNotificationsEnabled,
+    });
+
+    if (isPushToggleBusy) return;
+
+    const currentState = user?.pushNotificationsEnabled ?? true;
+    const newState = !currentState;
+    console.log('[PushDebug] toggle:state-change', { currentState, newState });
+    
+    try {
+      setIsPushToggleBusy(true);
+      console.log('[PushDebug] toggle:busy=true');
+
+      if (newState) {
+        if (!pushNotification.isSupported) {
+          showToast('❌ Tu navegador no soporta notificaciones push', 'error');
+          console.log('[PushDebug] toggle:abort:not-supported');
+          return;
+        }
+
+        console.log('[PushDebug] toggle:subscribe:start');
+        await withTimeout(pushNotification.subscribe(), 12000);
+        console.log('[PushDebug] toggle:subscribe:done');
+      } else {
+        if (pushNotification.isSubscribed) {
+          console.log('[PushDebug] toggle:unsubscribe:start');
+          await withTimeout(pushNotification.unsubscribe(), 12000);
+          console.log('[PushDebug] toggle:unsubscribe:done');
+        } else {
+          console.log('[PushDebug] toggle:unsubscribe:skip-no-active-subscription');
+        }
+      }
+
+      console.log('[PushDebug] toggle:update-preference:start', { newState });
+      await withTimeout(updatePushNotificationsMutation.mutateAsync(newState), 12000);
+      console.log('[PushDebug] toggle:update-preference:done');
+    } catch (error: any) {
+      const errorMessage = error?.message || pushNotification.error || 'Error al cambiar notificaciones push';
+      showToast(`❌ ${errorMessage}`, 'error');
+      console.error('[PushDebug] toggle:error', error);
+    } finally {
+      setIsPushToggleBusy(false);
+      console.log('[PushDebug] toggle:busy=false');
+    }
+  };
+
+  const handleOpenNotificationSettings = () => {
+    try {
+      const siteDetailsUrl = `chrome://settings/content/siteDetails?site=${encodeURIComponent(window.location.origin)}`;
+      const opened = window.open(siteDetailsUrl, '_blank');
+
+      if (!opened) {
+        showToast('Abre manualmente chrome://settings/content/notifications y permite este sitio', 'warning');
+      }
+    } catch {
+      showToast('Abre manualmente la configuración de notificaciones del navegador y permite este sitio', 'warning');
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -328,6 +433,74 @@ export default function Profile() {
                     ${formData.calendarEnabled ? 'before:translate-x-6' : ''}`}
                 />
               </label>
+            </div>
+
+            {/* Notificaciones Push */}
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+              <label className="flex items-center justify-between cursor-pointer">
+                <div>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                    🔔 Notificaciones Push
+                    {!pushNotification.isSupported && (
+                      <span className="text-xs bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 px-2 py-0.5 rounded">
+                        No soportado
+                      </span>
+                    )}
+                  </span>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    Recibe notificaciones sobre nuevas temporadas, partidos y actualizaciones
+                  </p>
+                  {notificationPermission === 'denied' && (
+                    <div className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                      <p className="text-xs text-red-700 dark:text-red-300">
+                        🚫 El navegador tiene las notificaciones bloqueadas para este sitio.
+                      </p>
+                      <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                        Debes permitirlas en la configuración del navegador y luego volver a activar el interruptor.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleOpenNotificationSettings}
+                        className="mt-2 text-xs px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded"
+                      >
+                        Abrir configuración de notificaciones
+                      </button>
+                    </div>
+                  )}
+                  {user?.pushNotificationsEnabled && !pushNotification.isSubscribed && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                      ⚠️ Las notificaciones están habilitadas en tu perfil, pero este navegador aún no está suscrito. Permite notificaciones en el navegador y desactiva/activa el interruptor para reintentar.
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={handlePushNotificationToggle}
+                  disabled={!pushNotification.isSupported || isPushToggleBusy}
+                  className={`w-12 h-6 rounded-full appearance-none relative transition-colors ${
+                    pushNotification.isSupported && !isPushToggleBusy
+                      ? 'cursor-pointer'
+                      : 'cursor-not-allowed opacity-60'
+                  } ${
+                    user?.pushNotificationsEnabled
+                      ? 'bg-green-500'
+                      : 'bg-slate-300 dark:bg-slate-600'
+                  }
+                    before:content-[''] before:absolute before:w-5 before:h-5 before:rounded-full before:bg-white before:top-0.5 before:left-0.5 before:transition-transform before:shadow-md
+                    ${user?.pushNotificationsEnabled ? 'before:translate-x-6' : ''}`}
+                >
+                  {isPushToggleBusy && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  )}
+                </button>
+              </label>
+              {pushNotification.error && (
+                <p className="text-xs text-red-600 dark:text-red-400 mt-2">
+                  Error: {pushNotification.error}
+                </p>
+              )}
             </div>
 
             {/* Email */}

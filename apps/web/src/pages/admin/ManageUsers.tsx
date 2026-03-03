@@ -680,6 +680,9 @@ export default function ManageUsers() {
                             <table className="w-full">
                                 <thead className="bg-slate-50 dark:bg-slate-900">
                                     <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                            <div className="flex items-center gap-1">ID</div>
+                                        </th>
                                         <th onClick={() => handleSort('email')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
                                             <div className="flex items-center gap-1">Email {sortField === 'email' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}</div>
                                         </th>
@@ -704,6 +707,23 @@ export default function ManageUsers() {
                                 <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                                     {filteredUsers.map(user => (
                                         <tr key={user.id} className={`hover:bg-slate-50 dark:hover:bg-slate-900 ${user.role === 'ADMIN' ? 'bg-amber-50 dark:bg-amber-950/20' : ''}`}>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-mono text-slate-500 dark:text-slate-400" title={user.id}>
+                                                        {user.id.slice(0, 2)}...{user.id.slice(-1)}
+                                                    </span>
+                                                    <button
+                                                        onClick={() => {
+                                                            navigator.clipboard.writeText(user.id);
+                                                            alert('ID copiado al portapapeles');
+                                                        }}
+                                                        className="text-xs px-2 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
+                                                        title="Copiar ID completo"
+                                                    >
+                                                        📋
+                                                    </button>
+                                                </div>
+                                            </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-sm font-medium text-slate-900 dark:text-white">{user.email}</span>

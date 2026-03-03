@@ -16,6 +16,7 @@ interface User {
     id: string;
     email: string;
     role: 'PLAYER' | 'ADMIN';
+    pushNotificationsEnabled?: boolean;
     player?: {
         id: string;
         name: string;

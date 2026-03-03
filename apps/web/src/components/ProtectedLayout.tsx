@@ -49,12 +49,6 @@ export default function ProtectedLayout() {
                                 // Admin Menu
                                 <>
                                     <Link
-                                        to="/admin"
-                                        className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                                    >
-                                        Dashboard
-                                    </Link>
-                                    <Link
                                         to="/admin/users"
                                         className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                                     >
@@ -73,35 +67,35 @@ export default function ProtectedLayout() {
                                         Grupos
                                     </Link>
                                     <Link
-                                        to="/admin/bugs"
-                                        className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                                    >
-                                        Bugs
-                                    </Link>
-                                    <Link
-                                        to="/admin/help"
-                                        className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                                    >
-                                        Ayuda
-                                    </Link>
-                                    <Link
-                                        to="/admin/cache"
-                                        className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                                    >
-                                        Caché
-                                    </Link>
-                                    <Link
                                         to="/matches/history"
                                         className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                                     >
                                         Ver todos los partidos
                                     </Link>
                                     <Link
-                                        to="/blacklist"
+                                        to="/admin/push-notifications"
                                         className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                                     >
-                                        Lista Negra
+                                        Notificaciones
                                     </Link>
+                                    {/* Submenú Más */}
+                                    <div className="relative group">
+                                        <button
+                                            type="button"
+                                            className="px-3 py-2 rounded-md text-sm font-medium flex items-center space-x-1 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                                        >
+                                            <span>Más</span>
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </button>
+                                        <div className="absolute left-0 w-48 rounded-lg shadow-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 py-2 hidden group-hover:block z-50">
+                                            <Link to="/blacklist" className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">⚠️ Lista Negra</Link>
+                                            <Link to="/admin/bugs" className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">Bugs</Link>
+                                            <Link to="/admin/help" className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">Ayuda</Link>
+                                            <Link to="/admin/cache" className="block px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">🧹 Caché</Link>
+                                        </div>
+                                    </div>
                                 </>
                             ) : (
                                 // Player Menu

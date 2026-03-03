@@ -28,6 +28,7 @@ const Profile = lazy(() => import('./pages/player/Profile'));
 const History = lazy(() => import('./pages/player/History'));
 const Help = lazy(() => import('./pages/player/Help'));
 const AdminHelp = lazy(() => import('./pages/admin/AdminHelp'));
+const SendPushNotifications = lazy(() => import('./pages/admin/SendPushNotifications'));
 const GroupsSummary = lazy(() => import('./pages/player/GroupsSummary'));
 const Welcome = lazy(() => import('./pages/public/Welcome'));
 const PublicMatches = lazy(() => import('./pages/public/PublicMatches'));
@@ -307,6 +308,14 @@ function App() {
                                     element={
                                         <ProtectedRoute adminOnly>
                                             <ManagePublicCache />
+                                        </ProtectedRoute>
+                                    }
+                                />
+                                <Route
+                                    path="/admin/push-notifications"
+                                    element={
+                                        <ProtectedRoute adminOnly>
+                                            <SendPushNotifications />
                                         </ProtectedRoute>
                                     }
                                 />

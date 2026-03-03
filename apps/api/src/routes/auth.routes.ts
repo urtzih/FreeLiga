@@ -75,6 +75,7 @@ export async function authRoutes(fastify: FastifyInstance) {
                     id: user.id,
                     email: user.email,
                     role: user.role,
+                    pushNotificationsEnabled: user.pushNotificationsEnabled,
                     player: user.player ? {
                         ...user.player,
                         annualFeesPaid: user.player.annualFeesPaid ? JSON.parse(user.player.annualFeesPaid) : [],
@@ -184,6 +185,7 @@ export async function authRoutes(fastify: FastifyInstance) {
                     id: user.id,
                     email: user.email,
                     role: user.role,
+                    pushNotificationsEnabled: user.pushNotificationsEnabled,
                     player: user.player ? {
                         ...user.player,
                         annualFeesPaid: user.player.annualFeesPaid ? JSON.parse(user.player.annualFeesPaid) : [],
@@ -247,6 +249,7 @@ export async function authRoutes(fastify: FastifyInstance) {
                 id: user.id,
                 email: user.email,
                 role: user.role,
+                pushNotificationsEnabled: user.pushNotificationsEnabled,
                 player: user.player ? {
                     ...user.player,
                     annualFeesPaid: user.player.annualFeesPaid ? JSON.parse(user.player.annualFeesPaid) : [],
