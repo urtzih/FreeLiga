@@ -72,18 +72,21 @@ export default function RecordMatch() {
     const availableOpponents = useMemo(() => {
         if (!group?.groupPlayers || !user?.player?.id) return [];
 
-        // Crear Set de oponentes jugados (más eficiente que filter múltiple)
+        // Crear Set de oponentes jugados (solo matches con resultado)
         const playedOpponentIds = new Set(
-            group.matches
-                ?.filter((match: any) => 
-                    match.player1Id === user.player?.id || match.player2Id === user.player?.id
-                )
+            (group.matches || [])
+                .filter((match: any) => {
+                    // Solo contar matches que tengan resultados registrados
+                    const hasResult = match.gamesP1 !== null && match.gamesP2 !== null;
+                    const isMyMatch = match.player1Id === user.player?.id || match.player2Id === user.player?.id;
+                    return hasResult && isMyMatch;
+                })
                 .map((match: any) => 
                     match.player1Id === user.player?.id ? match.player2Id : match.player1Id
-                ) || []
+                )
         );
 
-        // Filtrar una sola vez
+        // Filtrar jugadores disponibles (excluir a mí mismo y oponentes ya jugados)
         return group.groupPlayers.filter((gp: any) =>
             gp.playerId !== user.player?.id && !playedOpponentIds.has(gp.playerId)
         );

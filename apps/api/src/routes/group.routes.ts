@@ -103,6 +103,11 @@ export async function groupRoutes(fastify: FastifyInstance) {
                         },
                     },
                     matches: {
+                        where: {
+                            // Only include matches from the current group
+                            // This prevents showing historical matches from previous seasons
+                            groupId: id,
+                        },
                         include: {
                             player1: true,
                             player2: true,
