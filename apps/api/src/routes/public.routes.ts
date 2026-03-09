@@ -494,6 +494,7 @@ export async function publicRoutes(fastify: FastifyInstance) {
             return {
                 success: true,
                 message: 'Public cache invalidated',
+                scope: 'public',
                 invalidatedBy: decoded.id,
                 at: new Date().toISOString(),
             };
@@ -504,12 +505,113 @@ export async function publicRoutes(fastify: FastifyInstance) {
     });
 
     /**
-     * GET /api/public/cache/stats
-     * Información del caché (desarrollo)
+     * POST /api/public/cache/invalidate/private/admin
+     * Invalidar caché privado desde UI admin autenticada
      */
-    if (process.env.NODE_ENV === 'development') {
-        fastify.get('/cache/stats', async (request, reply) => {
+    fastify.post('/cache/invalidate/private/admin', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            cacheService.invalidatePattern('private:');
+            fastify.log.info({ userId: decoded.id }, '🔄 Private cache invalidated by admin UI');
+
+            return {
+                success: true,
+                message: 'Private cache invalidated',
+                scope: 'private',
+                invalidatedBy: decoded.id,
+                at: new Date().toISOString(),
+            };
+        } catch (error) {
+            fastify.log.error(error, 'Error invalidating private cache from admin UI');
+            return reply.status(500).send({ error: 'Failed to invalidate private cache' });
+        }
+    });
+
+    /**
+     * POST /api/public/cache/invalidate/all/admin
+     * Invalidar caché público y privado desde UI admin autenticada
+     */
+    fastify.post('/cache/invalidate/all/admin', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            cacheService.invalidatePattern('public:');
+            cacheService.invalidatePattern('private:');
+            fastify.log.info({ userId: decoded.id }, '🔄 All cache (public + private) invalidated by admin UI');
+
+            return {
+                success: true,
+                message: 'All cache invalidated (public + private)',
+                scope: 'all',
+                invalidatedBy: decoded.id,
+                at: new Date().toISOString(),
+            };
+        } catch (error) {
+            fastify.log.error(error, 'Error invalidating all cache from admin UI');
+            return reply.status(500).send({ error: 'Failed to invalidate all cache' });
+        }
+    });
+
+    /**
+     * POST /api/public/cache/invalidate/key/:key
+     * Invalidar una sola clave de caché
+     */
+    fastify.post('/cache/invalidate/key/:key', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            const { key } = request.params as { key: string };
+            const decodedKey = decodeURIComponent(key);
+
+            cacheService.invalidate(decodedKey);
+            fastify.log.info({ userId: decoded.id, key: decodedKey }, '🔄 Cache key invalidated by admin UI');
+
+            return {
+                success: true,
+                message: `Cache key invalidated: ${decodedKey}`,
+                invalidatedBy: decoded.id,
+                key: decodedKey,
+                at: new Date().toISOString(),
+            };
+        } catch (error) {
+            fastify.log.error(error, 'Error invalidating cache key from admin UI');
+            return reply.status(500).send({ error: 'Failed to invalidate cache key' });
+        }
+    });
+
+    /**
+     * GET /api/public/cache/stats
+     * Información del caché (solo admin)
+     */
+    fastify.get('/cache/stats', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
             return cacheService.getStats();
-        });
-    }
+        } catch (error) {
+            fastify.log.error(error, 'Error getting cache stats');
+            return reply.status(500).send({ error: 'Failed to get cache stats' });
+        }
+    });
 }

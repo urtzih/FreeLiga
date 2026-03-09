@@ -124,6 +124,15 @@ export default function Dashboard() {
                 />
             </div>
 
+            <div className="md:hidden">
+                <Link
+                    to="/matches/record"
+                    className="flex items-center justify-center w-full px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg border border-green-600 hover:from-green-600 hover:to-green-700 transition-colors font-semibold"
+                >
+                    🎾 Registrar partido
+                </Link>
+            </div>
+
             {/* Grupo Actual y Clasificación */}
             {currentGroup && (
                 <div className="bg-white dark:bg-slate-800 rounded-xl md:rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">

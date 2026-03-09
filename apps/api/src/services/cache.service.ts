@@ -102,15 +102,41 @@ class CacheService {
     }
 
     /**
-     * Obtener información del caché
+     * Obtener información del caché con detalles de cada entrada
      */
     getStats() {
         const totalReads = this.hits + this.misses;
         const hitRate = totalReads > 0 ? Number(((this.hits / totalReads) * 100).toFixed(2)) : 0;
+        const now = Date.now();
+
+        // Detalles de cada entrada de cache
+        const entries = Array.from(this.cache.entries()).map(([key, entry]) => {
+            const ageMs = now - entry.timestamp;
+            const ageSeconds = Math.floor(ageMs / 1000);
+            const expiresInMs = entry.ttl - ageMs;
+            const expiresInSeconds = Math.max(0, Math.floor(expiresInMs / 1000));
+            const isExpired = expiresInMs <= 0;
+
+            // Determinar tipo de cache por prefijo
+            let type = 'data';
+            if (key.startsWith('public:')) type = 'public';
+            if (key.startsWith('private:')) type = 'private';
+
+            return {
+                key,
+                type,
+                createdAt: new Date(entry.timestamp),
+                ageSeconds,
+                expiresInSeconds,
+                isExpired,
+                ttlHours: entry.ttl / 3600000,
+            };
+        });
 
         return {
             size: this.cache.size,
             keys: Array.from(this.cache.keys()),
+            entries: entries.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
             metrics: {
                 hits: this.hits,
                 misses: this.misses,
