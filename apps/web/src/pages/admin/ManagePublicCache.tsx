@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import api from '../../lib/api';
 
 interface CacheEntry {
@@ -11,9 +11,19 @@ interface CacheEntry {
     ttlHours: number;
 }
 
+interface CacheHistoryEntry {
+    scope: 'public' | 'private' | 'all' | 'data';
+    key?: string;
+    pattern?: string;
+    userId?: string;
+    reason?: string;
+    at: string;
+}
+
 interface CacheStats {
     size: number;
     entries: CacheEntry[];
+    history?: CacheHistoryEntry[];
     metrics: {
         hits: number;
         misses: number;
@@ -33,6 +43,13 @@ export default function ManagePublicCache() {
     const [stats, setStats] = useState<CacheStats | null>(null);
     const [invalidatingKey, setInvalidatingKey] = useState<string | null>(null);
     const [lastInvalidation, setLastInvalidation] = useState<{ scope: 'public' | 'private' | 'all'; at: string } | null>(null);
+
+    const [searchTerm, setSearchTerm] = useState('');
+    const [typeFilter, setTypeFilter] = useState<'all' | 'public' | 'private' | 'data'>('all');
+
+    const [groupId, setGroupId] = useState('');
+    const [playerId, setPlayerId] = useState('');
+    const [seasonId, setSeasonId] = useState('');
 
     useEffect(() => {
         loadStats();
@@ -59,9 +76,8 @@ export default function ManagePublicCache() {
             const { data } = await api.post('/public/cache/invalidate/admin');
             const when = data?.at ? new Date(data.at).toLocaleString('es-ES') : 'ahora';
             setLastInvalidation({ scope: 'public', at: data?.at || new Date().toISOString() });
-            setMessage(`Caché invalidada correctamente (${when}).`);
-            
-            // Recargar stats después de invalidar
+            setMessage(`Caché pública invalidada correctamente (${when}).`);
+
             setTimeout(() => loadStats(), 500);
         } catch (err: any) {
             const apiMessage = err?.response?.data?.error;
@@ -119,7 +135,7 @@ export default function ManagePublicCache() {
 
             const encodedKey = encodeURIComponent(key);
             await api.post(`/public/cache/invalidate/key/${encodedKey}`);
-            
+
             setMessage(`Caché "${key.substring(0, 40)}..." invalidada.`);
             setTimeout(() => loadStats(), 500);
         } catch (err: any) {
@@ -129,6 +145,49 @@ export default function ManagePublicCache() {
             setInvalidatingKey(null);
         }
     };
+
+    const invalidatePattern = async (pattern: string, successLabel: string) => {
+        try {
+            setLoading(true);
+            setMessage(null);
+            setError(null);
+
+            const encoded = encodeURIComponent(pattern);
+            await api.post(`/public/cache/invalidate/pattern/${encoded}`);
+            setMessage(successLabel);
+            setTimeout(() => loadStats(), 500);
+        } catch (err: any) {
+            const apiError = err?.response?.data?.error;
+            setError(apiError || 'Error al invalidar la caché');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const invalidateByGroup = async () => {
+        if (!groupId) return;
+        await invalidatePattern(`^private:group:${groupId}:detail`, `Caché privada del grupo ${groupId} invalidada.`);
+        await invalidatePattern(`^private:classification:[^:]*:${groupId}:`, `Clasificación privada del grupo ${groupId} invalidada.`);
+    };
+
+    const invalidateByPlayer = async () => {
+        if (!playerId) return;
+        await invalidatePattern(`^private:player:${playerId}:`, `Caché privada del jugador ${playerId} invalidada.`);
+    };
+
+    const invalidateBySeason = async () => {
+        if (!seasonId) return;
+        await invalidatePattern(`^private:classification:${seasonId}:`, `Clasificaciones privadas de la temporada ${seasonId} invalidadas.`);
+    };
+
+    const filteredEntries = useMemo(() => {
+        const entries = stats?.entries ?? [];
+        return entries.filter((entry) => {
+            const matchesType = typeFilter === 'all' || entry.type === typeFilter;
+            const matchesSearch = !searchTerm || entry.key.toLowerCase().includes(searchTerm.toLowerCase());
+            return matchesType && matchesSearch;
+        });
+    }, [stats, searchTerm, typeFilter]);
 
     const formatTime = (seconds: number): string => {
         if (seconds < 60) return `${seconds}s`;
@@ -142,36 +201,72 @@ export default function ManagePublicCache() {
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
     };
 
+    const copyToClipboard = async (text: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            setMessage('Clave copiada al portapapeles');
+        } catch {
+            setError('No se pudo copiar la clave');
+        }
+    };
+
     return (
         <div className="space-y-6">
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">⚡ Gestión de Caché</h1>
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">⚡ Gestión de caché</h1>
                         <p className="text-slate-600 dark:text-slate-400 mt-2">
-                            Monitorea y controla todas las entradas de caché del sistema. Cache de 24h para mejor rendimiento.
+                            Este panel muestra la caché en memoria del API. Se usa para reducir lecturas a BD y acelerar la app.
+                            La caché se limpia al reiniciar la API.
                         </p>
                     </div>
-                    <button
-                        onClick={loadStats}
-                        disabled={loadingStats}
-                        className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-medium transition-colors disabled:opacity-60"
-                    >
-                        🔄 Recargar
-                    </button>
+                    <div className="flex flex-col items-end gap-1">
+                        <button
+                            onClick={loadStats}
+                            disabled={loadingStats}
+                            className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-medium transition-colors disabled:opacity-60"
+                        >
+                            🔄 Recargar
+                        </button>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                            Actualiza métricas, historial y tabla de claves
+                        </span>
+                    </div>
                 </div>
             </div>
 
-            {/* Estadísticas Generales */}
+            <div className="bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 rounded-xl p-5 text-sm">
+                <h2 className="text-base font-semibold text-slate-900 dark:text-white">Resumen rápido</h2>
+                <ul className="mt-3 space-y-2">
+                    <li>Caché pública: TTL semanal. Caché privada: TTL 24h con invalidaciones por grupo activo.</li>
+                    <li>Si hay muchos misses, la caché aún no está caliente o se está invalidando con frecuencia.</li>
+                    <li>Si el hit rate es bajo de forma sostenida, revisa TTL e invalidaciones.</li>
+                </ul>
+            </div>
+
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Glosario de métricas</h2>
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-slate-600 dark:text-slate-300">
+                    <div><strong>Entradas:</strong> claves en caché actualmente.</div>
+                    <div><strong>Hit Rate:</strong> porcentaje de lecturas resueltas desde caché.</div>
+                    <div><strong>Hits:</strong> lecturas servidas desde caché.</div>
+                    <div><strong>Misses:</strong> lecturas que llegaron a BD/servicio.</div>
+                    <div><strong>Sets:</strong> escrituras en caché.</div>
+                    <div><strong>Invalidations:</strong> borrados manuales o automáticos.</div>
+                    <div><strong>Expirations:</strong> entradas caducadas por TTL.</div>
+                </div>
+            </div>
+
             {stats && (
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div className="bg-white dark:bg-slate-800 rounded-xl shadow border border-slate-200 dark:border-slate-700 p-4">
                         <div className="text-3xl font-bold text-blue-600">{stats.size}</div>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Entradas en Caché</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Entradas en caché</p>
                     </div>
                     <div className="bg-white dark:bg-slate-800 rounded-xl shadow border border-slate-200 dark:border-slate-700 p-4">
                         <div className="text-3xl font-bold text-green-600">{stats.metrics.hitRate.toFixed(1)}%</div>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Tasa de Aciertos</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Tasa de aciertos</p>
                     </div>
                     <div className="bg-white dark:bg-slate-800 rounded-xl shadow border border-slate-200 dark:border-slate-700 p-4">
                         <div className="text-3xl font-bold text-amber-600">{stats.metrics.hits}</div>
@@ -188,13 +283,12 @@ export default function ManagePublicCache() {
                 </div>
             )}
 
-            {/* Botón de Acción Global */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">🚀 Invalidar Toda la Caché Pública</h2>
+                        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Invalidación global</h2>
                         <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                            Borra todas las entradas de caché pública para forzar recálculo inmediato
+                            Borra entradas de caché para forzar recálculo inmediato.
                         </p>
                     </div>
                     <div className="flex flex-col items-start sm:items-end gap-2">
@@ -204,21 +298,21 @@ export default function ManagePublicCache() {
                                 disabled={loading}
                                 className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium transition-colors whitespace-nowrap"
                             >
-                                {loading ? '⏳ Invalidando...' : '🗑️ Pública'}
+                                {loading ? 'Invalidando...' : 'Pública'}
                             </button>
                             <button
                                 onClick={invalidatePrivateCache}
                                 disabled={loading}
                                 className="px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium transition-colors whitespace-nowrap"
                             >
-                                {loading ? '⏳ Invalidando...' : '🧹 Privada'}
+                                {loading ? 'Invalidando...' : 'Privada'}
                             </button>
                             <button
                                 onClick={invalidateAllScopesCache}
                                 disabled={loading}
                                 className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium transition-colors whitespace-nowrap"
                             >
-                                {loading ? '⏳ Invalidando...' : '💥 Todo'}
+                                {loading ? 'Invalidando...' : 'Todo'}
                             </button>
                         </div>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -232,23 +326,63 @@ export default function ManagePublicCache() {
 
                 {message && (
                     <div className="mt-4 rounded-lg border border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800 text-green-700 dark:text-green-300 px-4 py-3 text-sm">
-                        ✅ {message}
+                        {message}
                     </div>
                 )}
 
                 {error && (
                     <div className="mt-4 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 text-sm">
-                        ❌ {error}
+                        {error}
                     </div>
                 )}
             </div>
 
-            {/* Tabla de Entradas de Caché */}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Invalidación por entidad</h2>
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Grupo ID</label>
+                        <input value={groupId} onChange={e => setGroupId(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700" />
+                        <button onClick={invalidateByGroup} disabled={!groupId || loading} className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm">Invalidar grupo</button>
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Jugador ID</label>
+                        <input value={playerId} onChange={e => setPlayerId(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700" />
+                        <button onClick={invalidateByPlayer} disabled={!playerId || loading} className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm">Invalidar jugador</button>
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Temporada ID</label>
+                        <input value={seasonId} onChange={e => setSeasonId(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700" />
+                        <button onClick={invalidateBySeason} disabled={!seasonId || loading} className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm">Invalidar temporada</button>
+                    </div>
+                </div>
+            </div>
+
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="p-6 border-b border-slate-200 dark:border-slate-700">
-                    <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-                        📊 Entradas en Caché ({stats?.size || 0})
-                    </h2>
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                        <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
+                            Entradas en caché ({stats?.size || 0})
+                        </h2>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                            <input
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                                placeholder="Buscar por clave"
+                                className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm"
+                            />
+                            <select
+                                value={typeFilter}
+                                onChange={e => setTypeFilter(e.target.value as any)}
+                                className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm"
+                            >
+                                <option value="all">Todos</option>
+                                <option value="public">Público</option>
+                                <option value="private">Privado</option>
+                                <option value="data">Otros</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
                 {loadingStats ? (
@@ -256,7 +390,7 @@ export default function ManagePublicCache() {
                         <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
                         <p className="mt-2 text-slate-600 dark:text-slate-400">Cargando datos de caché...</p>
                     </div>
-                ) : stats && stats.entries.length > 0 ? (
+                ) : stats && filteredEntries.length > 0 ? (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
                             <thead className="bg-slate-50 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600">
@@ -270,12 +404,20 @@ export default function ManagePublicCache() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                                {stats.entries.map((entry) => (
+                                {filteredEntries.map((entry) => (
                                     <tr key={entry.key} className="hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
                                         <td className="px-6 py-4">
                                             <code className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-slate-900 dark:text-slate-200 font-mono truncate max-w-xs">
                                                 {entry.key}
                                             </code>
+                                            <div className="mt-1">
+                                                <button
+                                                    onClick={() => copyToClipboard(entry.key)}
+                                                    className="text-xs text-blue-600 hover:underline"
+                                                >
+                                                    Copiar
+                                                </button>
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getTypeColor(entry.type)}`}>
@@ -289,7 +431,7 @@ export default function ManagePublicCache() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`font-medium ${entry.isExpired ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
-                                                {entry.isExpired ? '❌ Expirado' : `✓ ${formatTime(entry.expiresInSeconds)}`}
+                                                {entry.isExpired ? 'Expirado' : `${formatTime(entry.expiresInSeconds)}`}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
@@ -306,7 +448,7 @@ export default function ManagePublicCache() {
                                                 disabled={invalidatingKey === entry.key}
                                                 className="px-3 py-1 text-xs rounded bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:hover:bg-slate-500 text-slate-900 dark:text-white font-medium transition-colors disabled:opacity-60"
                                             >
-                                                {invalidatingKey === entry.key ? '⏳' : '🗑️'}
+                                                {invalidatingKey === entry.key ? '...' : 'Borrar'}
                                             </button>
                                         </td>
                                     </tr>
@@ -316,18 +458,35 @@ export default function ManagePublicCache() {
                     </div>
                 ) : (
                     <div className="p-8 text-center text-slate-600 dark:text-slate-400">
-                        📭 No hay entradas en caché
+                        No hay entradas en caché
                     </div>
                 )}
             </div>
 
-            {/* Info de TTL */}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Historial de invalidaciones</h2>
+                <div className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                    {(stats?.history ?? []).length === 0 && (
+                        <div>No hay historial disponible.</div>
+                    )}
+                    {(stats?.history ?? []).map((entry, idx) => (
+                        <div key={`${entry.at}-${idx}`} className="flex flex-wrap gap-2 items-center">
+                            <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-700">{entry.scope}</span>
+                            <span>{new Date(entry.at).toLocaleString('es-ES')}</span>
+                            {entry.key && <span className="text-xs">key: {entry.key}</span>}
+                            {entry.pattern && <span className="text-xs">pattern: {entry.pattern}</span>}
+                            {entry.userId && <span className="text-xs">user: {entry.userId}</span>}
+                        </div>
+                    ))}
+                </div>
+            </div>
+
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 text-sm text-blue-800 dark:text-blue-300">
-                <p className="font-semibold">ℹ️ Información:</p>
-                <ul className="mt-2 space-y-1 list-disc list-inside">
-                    <li>Las cachés públicas se mantienen <strong>24 horas</strong> para rendimiento óptimo</li>
-                    <li>Al cambiar de temporada, el cache se invalida automáticamente</li>
-                    <li>Si los datos siguen siendo antiguos en el navegador, haz un hard-refresh (Ctrl+F5)</li>
+                <p className="font-semibold">Notas</p>
+                <ul className="mt-2 space-y-1">
+                    <li>Caché pública: TTL semanal. Caché privada: TTL 24h.</li>
+                    <li>La caché es en memoria y se pierde al reiniciar la API.</li>
+                    <li>Si ves datos antiguos en el navegador, haz un hard refresh.</li>
                 </ul>
             </div>
         </div>

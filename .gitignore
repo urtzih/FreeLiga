@@ -19,6 +19,7 @@ build/
 
 # Production builds
 dist-production-*/
+apps/web/dev-dist/
 
 # Logs
 logs

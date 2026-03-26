@@ -298,13 +298,34 @@ export default function ManageSeasons() {
                                         {season.name}
                                     </td>
                                     <td className="px-6 py-4">
-                                        {season.isActive ? (
-                                            <span className="px-2 py-1 rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 text-xs font-bold">
-                                                ✓ ACTIVA
-                                            </span>
-                                        ) : (
-                                            <span className="text-slate-400 text-xs">-</span>
-                                        )}
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            {season.isActive ? (
+                                                <span className="px-2 py-1 rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 text-xs font-bold">
+                                                    ✓ ACTIVA
+                                                </span>
+                                            ) : (
+                                                <span className="text-slate-400 text-xs">-</span>
+                                            )}
+                                            {new Date(season.endDate) < new Date() ? (
+                                                season.closure?.status === 'APPROVED' ? (
+                                                    <span className="px-2 py-1 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 text-xs font-bold">
+                                                        ✓ CERRADA
+                                                    </span>
+                                                ) : season.closure?.status === 'PENDING' ? (
+                                                    <span className="px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-100 text-xs font-bold">
+                                                        ⏳ CIERRE PEND.
+                                                    </span>
+                                                ) : (
+                                                    <span className="px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold">
+                                                        SIN CIERRE
+                                                    </span>
+                                                )
+                                            ) : (
+                                                <span className="px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold">
+                                                    {season.isActive ? 'EN CURSO' : 'PROGRAMADA'}
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
                                         {new Date(season.startDate).toLocaleDateString('es-ES')}

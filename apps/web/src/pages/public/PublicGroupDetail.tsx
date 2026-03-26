@@ -1,9 +1,10 @@
-/**
- * Página PúbIlica - Clasificación Completa de un Grupo
+﻿/**
+ * Página pública - Clasificación completa de un grupo
  */
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import api from '../../lib/api';
 
 interface PlayerRanking {
@@ -42,44 +43,44 @@ interface GroupData {
 export default function PublicGroupDetail() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const [data, setData] = useState<GroupData | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [visibleRemainingMatches, setVisibleRemainingMatches] = useState(6);
+    const publicCacheMs = 1000 * 60 * 60 * 24 * 7;
 
     useEffect(() => {
-        if (!id) return;
         setVisibleRemainingMatches(6);
-        fetchData();
     }, [id]);
 
-    const fetchData = async () => {
-        try {
-            const { data: result } = await api.get(`/public/group/${id}/classification`);
-            setData({
-                ...result,
-                recentMatches: Array.isArray(result.recentMatches) ? result.recentMatches : [],
-                remainingMatches: Array.isArray(result.remainingMatches) ? result.remainingMatches : [],
-                totalRemainingMatches:
-                    typeof result.totalRemainingMatches === 'number'
-                        ? result.totalRemainingMatches
-                        : (Array.isArray(result.remainingMatches) ? result.remainingMatches.length : 0),
-            });
-        } catch (err: any) {
-            if (err?.response?.status === 404) {
-                setError('Grupo no encontrado');
-            } else {
-                console.error('Error:', err);
-                setError('Error al cargar la clasificación');
+    const { data, isLoading, error } = useQuery<GroupData>({
+        queryKey: ['public', 'group', id, 'classification'],
+        enabled: !!id,
+        queryFn: async () => {
+            try {
+                const { data: result } = await api.get(`/public/group/${id}/classification`);
+                return {
+                    ...result,
+                    recentMatches: Array.isArray(result.recentMatches) ? result.recentMatches : [],
+                    remainingMatches: Array.isArray(result.remainingMatches) ? result.remainingMatches : [],
+                    totalRemainingMatches:
+                        typeof result.totalRemainingMatches === 'number'
+                            ? result.totalRemainingMatches
+                            : (Array.isArray(result.remainingMatches) ? result.remainingMatches.length : 0),
+                } as GroupData;
+            } catch (err: any) {
+                if (err?.response?.status === 404) {
+                    const notFound = new Error('GROUP_NOT_FOUND');
+                    throw notFound;
+                }
+                throw err;
             }
-        } finally {
-            setLoading(false);
-        }
-    };
+        },
+        staleTime: publicCacheMs,
+        gcTime: publicCacheMs,
+    });
+
+    const isNotFound = (error as Error | undefined)?.message === 'GROUP_NOT_FOUND';
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-            {/* Header */}
             <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-12">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between">
@@ -87,13 +88,13 @@ export default function PublicGroupDetail() {
                             {data && (
                                 <>
                                     <h1 className="text-4xl font-bold mb-2">{data.name}</h1>
-                                    <p className="text-purple-100">Clasificación Completa • Temporada {data.seasonName}</p>
+                                    <p className="text-purple-100">Clasificación completa · Temporada {data.seasonName}</p>
                                 </>
                             )}
-                            {!data && !loading && (
+                            {!data && !isLoading && (
                                 <h1 className="text-4xl font-bold mb-2">Grupo no encontrado</h1>
                             )}
-                            {loading && (
+                            {isLoading && (
                                 <h1 className="text-4xl font-bold mb-2">Cargando...</h1>
                             )}
                         </div>
@@ -101,15 +102,14 @@ export default function PublicGroupDetail() {
                             onClick={() => navigate('/public/groups')}
                             className="px-6 py-3 bg-white text-purple-600 font-semibold rounded-lg hover:bg-purple-50 transition-colors"
                         >
-                            ← Volver a Grupos
+                            ← Volver a grupos
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Content */}
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                {loading && (
+                {isLoading && (
                     <div className="flex justify-center py-12">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
                     </div>
@@ -117,13 +117,12 @@ export default function PublicGroupDetail() {
 
                 {error && (
                     <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center text-red-600">
-                        {error}
+                        {isNotFound ? 'Grupo no encontrado' : 'Error al cargar la clasificación'}
                     </div>
                 )}
 
-                {!loading && data && (
+                {!isLoading && data && (
                     <>
-                        {/* Estadísticas */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                             <div className="bg-white rounded-lg shadow p-4 text-center border-b-4 border-purple-500">
                                 <div className="text-3xl font-bold text-purple-600">{data.rankings.length}</div>
@@ -131,11 +130,10 @@ export default function PublicGroupDetail() {
                             </div>
                             <div className="bg-white rounded-lg shadow p-4 text-center border-b-4 border-indigo-500">
                                 <div className="text-3xl font-bold text-indigo-600">{data.totalMatches}</div>
-                                <p className="text-gray-600 text-sm mt-1">Partidos Jugados</p>
+                                <p className="text-gray-600 text-sm mt-1">Partidos jugados</p>
                             </div>
                         </div>
 
-                        {/* Tabla de clasificación */}
                         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="w-full">
@@ -175,26 +173,26 @@ export default function PublicGroupDetail() {
                                                             <span className="font-bold text-lg">{idx + 1}</span>
                                                         </div>
                                                     </td>
-                                                <td className="px-6 py-4">
-                                                    <p className="font-semibold text-gray-900">{player.name}</p>
-                                                </td>
-                                                <td className="px-6 py-4 text-center text-gray-700">{player.played}</td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <span className="font-semibold text-green-600">{player.won}</span>
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <span className="font-semibold text-red-600">{player.lost}</span>
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <div className="w-full bg-gray-200 rounded-full h-2">
-                                                        <div
-                                                            className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full transition-all duration-500"
-                                                            style={{ width: `${player.winPercentage}%` }}
-                                                        ></div>
-                                                    </div>
-                                                    <p className="text-sm text-gray-600 mt-1">{player.winPercentage.toFixed(1)}%</p>
-                                                </td>
-                                            </tr>
+                                                    <td className="px-6 py-4">
+                                                        <p className="font-semibold text-gray-900">{player.name}</p>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center text-gray-700">{player.played}</td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <span className="font-semibold text-green-600">{player.won}</span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <span className="font-semibold text-red-600">{player.lost}</span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <div className="w-full bg-gray-200 rounded-full h-2">
+                                                            <div
+                                                                className="bg-gradient-to-r from-green-400 to-green-600 h-2 rounded-full transition-all duration-500"
+                                                                style={{ width: `${player.winPercentage}%` }}
+                                                            ></div>
+                                                        </div>
+                                                        <p className="text-sm text-gray-600 mt-1">{player.winPercentage.toFixed(1)}%</p>
+                                                    </td>
+                                                </tr>
                                             );
                                         })}
                                     </tbody>
@@ -202,10 +200,9 @@ export default function PublicGroupDetail() {
                             </div>
                         </div>
 
-                        {/* Partidos Recientes */}
                         <div className="mt-8 bg-white rounded-xl shadow-lg p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-xl font-bold text-gray-900">Partidos Recientes</h2>
+                                <h2 className="text-xl font-bold text-gray-900">Partidos recientes</h2>
                                 <span className="text-sm text-gray-500">Últimos {Math.min(data.recentMatches.length, 6)}</span>
                             </div>
 
@@ -232,10 +229,9 @@ export default function PublicGroupDetail() {
                             )}
                         </div>
 
-                        {/* Partidos Restantes */}
                         <div className="mt-8 bg-white rounded-xl shadow-lg p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-xl font-bold text-gray-900">Partidos Restantes</h2>
+                                <h2 className="text-xl font-bold text-gray-900">Partidos restantes</h2>
                                 <span className="text-sm text-gray-500">Total: {data.totalRemainingMatches}</span>
                             </div>
 
@@ -268,7 +264,6 @@ export default function PublicGroupDetail() {
                             )}
                         </div>
 
-                        {/* Legend */}
                         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="bg-gradient-to-br from-green-50 to-transparent rounded-lg p-4 border border-green-200">
                                 <p className="text-sm text-gray-600">
@@ -282,12 +277,11 @@ export default function PublicGroupDetail() {
                             </div>
                             <div className="bg-gradient-to-br from-blue-50 to-transparent rounded-lg p-4 border border-blue-200">
                                 <p className="text-sm text-gray-600">
-                                    <span className="font-semibold">🔄 Actualización:</span> Cada 24 horas (caché optimizado)
+                                    <span className="font-semibold">🔄 Actualización:</span> Semanal (caché optimizada)
                                 </p>
                             </div>
                         </div>
 
-                        {/* CTA */}
                         <div className="mt-12 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-xl p-8 text-center border-2 border-purple-200">
                             <h3 className="text-2xl font-bold text-gray-900 mb-2">¿Quieres ver todos los detalles?</h3>
                             <p className="text-gray-700 mb-6">Inicia sesión para acceder a tu panel personal con estadísticas completas, historial de partidos y mucho más.</p>
@@ -295,7 +289,7 @@ export default function PublicGroupDetail() {
                                 to="/login"
                                 className="inline-block px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all duration-200 transform hover:scale-105"
                             >
-                                Iniciar Sesión
+                                Iniciar sesión
                             </Link>
                         </div>
                     </>

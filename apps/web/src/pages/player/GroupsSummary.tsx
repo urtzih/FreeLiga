@@ -13,6 +13,16 @@ interface Group {
     _count: { matches: number; groupPlayers: number };
 }
 
+interface GroupDetail extends Group {
+    matches: Array<{
+        player1Id: string;
+        player2Id: string;
+        gamesP1: number | null;
+        gamesP2: number | null;
+        matchStatus: string;
+    }>;
+}
+
 interface ClassificationRow {
     playerId: string;
     playerName: string;
@@ -58,7 +68,19 @@ export default function GroupsSummary() {
         })),
     });
 
-    const isLoading = loadingSeasons || loadingGroups || classificationQueries.some((q) => q.isLoading);
+    const groupDetailQueries = useQueries({
+        queries: (groups ?? []).map((group) => ({
+            queryKey: ['group', group.id],
+            enabled: Boolean(group?.id),
+            queryFn: async () => {
+                const { data } = await api.get(`/groups/${group.id}`);
+                return data as GroupDetail;
+            },
+            staleTime: 1000 * 60,
+        })),
+    });
+
+    const isLoading = loadingSeasons || loadingGroups || classificationQueries.some((q) => q.isLoading) || groupDetailQueries.some((q) => q.isLoading);
 
     if (isLoading) {
         return (
@@ -93,12 +115,23 @@ export default function GroupsSummary() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {groups.map((group, groupIndex) => {
                     const classification = classificationQueries[groupIndex]?.data ?? [];
+                    const groupDetail = groupDetailQueries[groupIndex]?.data;
+                    const groupMatches = groupDetail?.matches ?? [];
                     const players = group.groupPlayers.length;
                     const possibleMatches = (players * (players - 1)) / 2;
-                    const played = Math.floor(
-                        classification.reduce((sum, row) => sum + (row.totalMatches || 0), 0) / 2
-                    );
+                    const playedWithResult = groupMatches.filter((m) =>
+                        m.matchStatus === 'PLAYED' && m.gamesP1 !== null && m.gamesP2 !== null
+                    ).length;
+                    const injuryMatches = groupMatches.filter((m) => m.matchStatus === 'INJURY').length;
+                    const played = playedWithResult + injuryMatches;
                     const progress = possibleMatches > 0 ? Math.round((played / possibleMatches) * 100) : 0;
+
+                    const injuriesByPlayer = new Map<string, number>();
+                    for (const match of groupMatches) {
+                        if (match.matchStatus !== 'INJURY') continue;
+                        injuriesByPlayer.set(match.player1Id, (injuriesByPlayer.get(match.player1Id) || 0) + 1);
+                        injuriesByPlayer.set(match.player2Id, (injuriesByPlayer.get(match.player2Id) || 0) + 1);
+                    }
                     
                     // Determinar si es el primer o último grupo
                     const isFirstGroup = groupIndex === 0;
@@ -151,7 +184,8 @@ export default function GroupsSummary() {
                                                     const setsDiff = row.setsWon - row.setsLost;
                                                     const totalMatchesPerPlayer = players - 1;
                                                     const playedMatches = row.wins + row.losses + row.draws;
-                                                    const remainingMatches = totalMatchesPerPlayer - playedMatches;
+                                                    const injuryCount = injuriesByPlayer.get(row.playerId) || 0;
+                                                    const remainingMatches = totalMatchesPerPlayer - playedMatches - injuryCount;
                                                     
                                                     // Ascenso: top 2, pero solo si no es el primer grupo
                                                     const isPromotion = !isFirstGroup && idx < 2;

@@ -1,8 +1,8 @@
-/**
- * Página Pública - Últimos Partidos
+﻿/**
+ * Página pública - Últimos partidos
  */
 
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import api from '../../lib/api';
 
@@ -17,35 +17,33 @@ interface Match {
     group: { id: string; name: string };
 }
 
+interface RecentMatchesData {
+    data: Match[];
+    cached: boolean;
+    updatedAt: string;
+}
+
 export default function PublicMatches() {
-    const [matches, setMatches] = useState<Match[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        fetchMatches();
-    }, []);
-
-    const fetchMatches = async () => {
-        try {
+    const publicCacheMs = 1000 * 60 * 60 * 24 * 7;
+    const { data, isLoading, error } = useQuery<RecentMatchesData>({
+        queryKey: ['public', 'recent-matches', 'page'],
+        queryFn: async () => {
             const { data } = await api.get('/public/recent-matches');
-            setMatches(data?.data || []);
-        } catch (err) {
-            console.error('Error:', err);
-            setError('Error al cargar los partidos');
-        } finally {
-            setLoading(false);
-        }
-    };
+            return data as RecentMatchesData;
+        },
+        staleTime: publicCacheMs,
+        gcTime: publicCacheMs,
+    });
+
+    const matches = data?.data ?? [];
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-            {/* Header */}
             <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-12">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-4xl font-bold mb-2">🎾 Últimos Partidos</h1>
+                            <h1 className="text-4xl font-bold mb-2">🎾 Últimos partidos</h1>
                             <p className="text-blue-100">Resultados recientes de la liga</p>
                         </div>
                         <Link
@@ -58,9 +56,8 @@ export default function PublicMatches() {
                 </div>
             </div>
 
-            {/* Content */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                {loading && (
+                {isLoading && (
                     <div className="flex justify-center py-12">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                     </div>
@@ -68,17 +65,17 @@ export default function PublicMatches() {
 
                 {error && (
                     <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center text-red-600">
-                        {error}
+                        Error al cargar los partidos
                     </div>
                 )}
 
-                {!loading && matches.length === 0 && (
+                {!isLoading && matches.length === 0 && (
                     <div className="bg-white rounded-xl shadow-lg p-12 text-center">
                         <p className="text-gray-500 text-lg">No hay partidos registrados aún</p>
                     </div>
                 )}
 
-                {!loading && matches.length > 0 && (
+                {!isLoading && matches.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {matches.map((match) => (
                             <div
@@ -96,7 +93,6 @@ export default function PublicMatches() {
 
                                 <div className="p-6">
                                     <div className="flex items-center justify-between">
-                                        {/* Jugador 1 */}
                                         <div className="flex-1">
                                             <p className={`font-bold text-lg ${match.winner?.id === match.player1.id ? 'text-green-600' : 'text-gray-900'}`}>
                                                 {match.player1.name}
@@ -106,14 +102,12 @@ export default function PublicMatches() {
                                             )}
                                         </div>
 
-                                        {/* Resultado */}
                                         <div className="mx-4 text-center">
                                             <div className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg px-4 py-3 font-bold text-xl">
                                                 {match.gamesP1}-{match.gamesP2}
                                             </div>
                                         </div>
 
-                                        {/* Jugador 2 */}
                                         <div className="flex-1 text-right">
                                             <p className={`font-bold text-lg ${match.winner?.id === match.player2.id ? 'text-green-600' : 'text-gray-900'}`}>
                                                 {match.player2.name}
@@ -138,7 +132,6 @@ export default function PublicMatches() {
                     </div>
                 )}
 
-                {/* Info Footer */}
                 <div className="mt-12 bg-blue-50 border border-blue-200 rounded-xl p-6 text-center">
                     <p className="text-gray-700">
                         ¿Quieres ver más detalles? <Link to="/login" className="text-blue-600 font-semibold hover:underline">Inicia sesión</Link> para acceder al panel completo

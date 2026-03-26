@@ -43,10 +43,11 @@ export default function GroupView() {
         if (!isMyMatch) return false;
 
         const hasResult = match.gamesP1 !== null && match.gamesP2 !== null;
+        const isInjury = match.matchStatus === 'INJURY';
         const isScheduledPending = (match.isScheduled || !!match.scheduledDate) && !hasResult;
 
-        // Mostrar siempre partidos jugados
-        if (hasResult) return true;
+        // Mostrar siempre partidos jugados o por lesión
+        if (hasResult || isInjury) return true;
 
         // Mostrar pendientes solo si fueron programados y calendario está habilitado
         if (isScheduledPending) return calendarEnabled;
@@ -89,8 +90,11 @@ export default function GroupView() {
 
     const totalPlayers = group.groupPlayers.length;
     const totalPossibleMatches = (totalPlayers * (totalPlayers - 1)) / 2;
+    const completedMatches = group.matches.filter((m: any) =>
+        (m.matchStatus === 'PLAYED' && m.gamesP1 !== null && m.gamesP2 !== null) || m.matchStatus === 'INJURY'
+    );
     const playedMatches = group.matches.filter((m: any) => m.matchStatus === 'PLAYED' && m.gamesP1 !== null && m.gamesP2 !== null);
-    const matchesPlayed = playedMatches.length;
+    const matchesPlayed = completedMatches.length;
     const completionPercentage = totalPossibleMatches > 0
         ? Math.round((matchesPlayed / totalPossibleMatches) * 100)
         : 0;
@@ -99,7 +103,7 @@ export default function GroupView() {
         .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     const hasPlayedBetween = (playerAId: string, playerBId: string) => {
-        return playedMatches.some((match: any) => (
+        return completedMatches.some((match: any) => (
             (match.player1Id === playerAId && match.player2Id === playerBId) ||
             (match.player1Id === playerBId && match.player2Id === playerAId)
         ));
@@ -270,7 +274,8 @@ export default function GroupView() {
                                             // Calculate remaining matches
                                             const totalMatchesForPlayer = totalPlayers - 1;
                                             const played = row.wins + row.losses;
-                                            const remaining = totalMatchesForPlayer - played;
+                                            const remaining = totalMatchesForPlayer - played - playerInjuries;
+                                            const displayInjuries = remaining === 0 ? playerInjuries : 0;
                                             
                                             // Determinar ascenso/descenso
                                             const isPromotion = idx < 2; // Top 2: ascenso
@@ -289,7 +294,7 @@ export default function GroupView() {
                                                     <td className="px-3 py-2 text-center font-semibold text-green-600 dark:text-green-400">{row.wins}</td>
                                                     <td className="px-3 py-2 text-center font-semibold text-red-600 dark:text-red-400">{row.losses}</td>
                                                     <td className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-400">{remaining}</td>
-                                                    <td className="px-3 py-2 text-center font-semibold text-orange-600 dark:text-orange-400">{playerInjuries}</td>
+                                                    <td className="px-3 py-2 text-center font-semibold text-orange-600 dark:text-orange-400">{displayInjuries}</td>
                                                     <td className="px-3 py-2 text-center">{row.setsWon}</td>
                                                     <td className="px-3 py-2 text-center">{row.setsLost}</td>
                                                 </tr>
@@ -317,7 +322,11 @@ export default function GroupView() {
                                             // Calculate remaining matches
                                             const totalMatchesForPlayer = totalPlayers - 1;
                                             const played = row.wins + row.losses;
-                                            const remaining = totalMatchesForPlayer - played;
+                                            const playerInjuries = group.matches.filter((m: any) =>
+                                                (m.player1Id === row.playerId || m.player2Id === row.playerId) &&
+                                                m.matchStatus === 'INJURY'
+                                            ).length;
+                                            const remaining = totalMatchesForPlayer - played - playerInjuries;
                                             
                                             // Calculate set difference
                                             const setDifference = row.setsWon - row.setsLost;
@@ -607,7 +616,9 @@ export default function GroupView() {
                     <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
                         <h2 className="text-xl font-bold text-slate-900 dark:text-white">Mis Partidos</h2>
                         <span className="text-sm text-slate-500 dark:text-slate-400">
-                            {myMatches.filter((m: any) => m.matchStatus === 'PLAYED' && m.gamesP1 !== null && m.gamesP2 !== null).length} jugados de {myMatches.length} totales
+                            {myMatches.filter((m: any) =>
+                                (m.matchStatus === 'PLAYED' && m.gamesP1 !== null && m.gamesP2 !== null) || m.matchStatus === 'INJURY'
+                            ).length} cerrados de {myMatches.length} totales
                         </span>
                     </div>
                     <div className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -619,7 +630,7 @@ export default function GroupView() {
                                 const myScore = isPlayer1 ? match.gamesP1 : match.gamesP2;
                                 const opponentScore = isPlayer1 ? match.gamesP2 : match.gamesP1;
                                 const won = match.winnerId === user?.player?.id;
-                                const played = match.matchStatus === 'PLAYED' && match.gamesP1 !== null && match.gamesP2 !== null;
+                                const played = (match.matchStatus === 'PLAYED' && match.gamesP1 !== null && match.gamesP2 !== null) || match.matchStatus === 'INJURY';
 
                                 return (
                                     <div key={match.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
@@ -651,16 +662,15 @@ export default function GroupView() {
                                             </div>
                                             <div className="text-right">
                                                 {played ? (
-                                                    <>
+                                                    match.matchStatus === 'INJURY' ? (
+                                                        <p className="text-sm font-bold text-orange-600 dark:text-orange-400 uppercase">
+                                                            LESIÓN
+                                                        </p>
+                                                    ) : (
                                                         <p className={`text-2xl font-bold ${won ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                                                             {myScore} - {opponentScore}
                                                         </p>
-                                                        {match.matchStatus === 'INJURY' && (
-                                                            <p className="text-xs text-orange-600 dark:text-orange-400 uppercase mt-1">
-                                                                LESIÓN
-                                                            </p>
-                                                        )}
-                                                    </>
+                                                    )
                                                 ) : (
                                                     <p className="text-sm text-slate-500 dark:text-slate-400">
                                                         Pendiente

@@ -45,6 +45,8 @@ export default function ManageUsers() {
     const [showEditModal, setShowEditModal] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showFeesModal, setShowFeesModal] = useState(false);
+    const [showInjuryModal, setShowInjuryModal] = useState(false);
+    const [injuryTarget, setInjuryTarget] = useState<User | null>(null);
     const [newPassword, setNewPassword] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
@@ -344,6 +346,25 @@ export default function ManageUsers() {
         }
     });
 
+    const markInjuryMutation = useMutation({
+        mutationFn: async (playerId: string) => {
+            const { data } = await api.post('/matches/mark-injury', { playerId });
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['users'] });
+            queryClient.invalidateQueries({ queryKey: ['adminStatsForUsers'] });
+            queryClient.invalidateQueries({ queryKey: ['group'] });
+            queryClient.invalidateQueries({ queryKey: ['classification'] });
+            setShowInjuryModal(false);
+            setInjuryTarget(null);
+            alert('Jugador marcado como lesionado para la temporada activa');
+        },
+        onError: (error: any) => {
+            alert(`Error al marcar lesión: ${error.response?.data?.error || error.message}`);
+        }
+    });
+
     // Handlers for modals
     const handleOpenEditModal = (user: User) => {
         setSelectedUser(user);
@@ -400,6 +421,12 @@ export default function ManageUsers() {
         setSelectedUser(user);
         setEditingFees(Array.isArray(user.player.annualFeesPaid) ? [...user.player.annualFeesPaid] : []);
         setShowFeesModal(true);
+    };
+
+    const handleOpenInjuryModal = (user: User) => {
+        if (!user.player?.id || !user.player?.currentGroup?.id) return;
+        setInjuryTarget(user);
+        setShowInjuryModal(true);
     };
 
     const handleToggleFeeYear = (year: number) => {
@@ -750,7 +777,7 @@ export default function ManageUsers() {
                                                         {user.isActive ? '✓ Activo' : '✗ Inactivo'}
                                                     </button>
                                                     <button onClick={() => handleOpenEditModal(user)} className="text-sm px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Editar</button>
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleOpenFeesModal(user)} 
                                                         className={`text-xs px-2 py-1 rounded border font-medium transition-colors ${
                                                             user.player?.annualFeesPaid?.includes(2026)
@@ -761,6 +788,15 @@ export default function ManageUsers() {
                                                     >
                                                         {user.player?.annualFeesPaid?.includes(2026) ? '✓ 2026' : '✗ 2026'}
                                                     </button>
+                                                    {user.player?.currentGroup?.id && (
+                                                        <button
+                                                            onClick={() => handleOpenInjuryModal(user)}
+                                                            className="text-sm px-3 py-1 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                                                            title="Marcar lesión de temporada"
+                                                        >
+                                                            Lesionar
+                                                        </button>
+                                                    )}
                                                     <button onClick={() => { setSelectedUser(user); setShowResetPassword(true); }} className="text-sm px-3 py-1 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">Resetear</button>
                                                 </div>
                                             </td>
@@ -1155,6 +1191,36 @@ export default function ManageUsers() {
                                         className="flex-1 px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 font-medium transition-colors"
                                     >
                                         Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showInjuryModal && injuryTarget && injuryTarget.player && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-xl">
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Confirmar lesión</h3>
+                                <div className="space-y-3 text-slate-700 dark:text-slate-300 text-sm">
+                                    <p>Jugador: <strong>{injuryTarget.player.name}</strong></p>
+                                    <p>Si se marca como lesionado, todos los partidos restantes de la temporada activa se marcarán como lesión y no se podrán jugar.</p>
+                                    <p>Si NO ha jugado más de la mitad de los partidos esperados, también se marcarán como lesión los partidos ya jugados en la temporada activa.</p>
+                                    <p>Esto cerrará los partidos pendientes para sus rivales.</p>
+                                </div>
+                                <div className="flex space-x-3 mt-6">
+                                    <button
+                                        onClick={() => { setShowInjuryModal(false); setInjuryTarget(null); }}
+                                        className="flex-1 px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600"
+                                        disabled={markInjuryMutation.isPending}
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={() => markInjuryMutation.mutate(injuryTarget.player!.id)}
+                                        className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+                                        disabled={markInjuryMutation.isPending}
+                                    >
+                                        {markInjuryMutation.isPending ? 'Marcando...' : 'Confirmar lesión'}
                                     </button>
                                 </div>
                             </div>

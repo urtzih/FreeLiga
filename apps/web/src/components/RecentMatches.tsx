@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Componente RecentMatches - Muestra últimos partidos jugados
  */
 
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import api from '../lib/api';
 
 interface Match {
@@ -23,31 +23,18 @@ interface RecentMatchesData {
 }
 
 export default function RecentMatches() {
-    const [matches, setMatches] = useState<Match[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [cached, setCached] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        fetchRecentMatches();
-    }, []);
-
-    const fetchRecentMatches = async () => {
-        try {
-            setLoading(true);
+    const publicCacheMs = 1000 * 60 * 60 * 24 * 7;
+    const { data, isLoading, error } = useQuery<RecentMatchesData>({
+        queryKey: ['public', 'recent-matches'],
+        queryFn: async () => {
             const { data } = await api.get('/public/recent-matches');
-            const payload = data as RecentMatchesData;
-            setMatches(payload.data);
-            setCached(payload.cached || false);
-        } catch (err) {
-            console.error('Error fetching recent matches:', err);
-            setError('No se pudieron cargar los partidos recientes');
-        } finally {
-            setLoading(false);
-        }
-    };
+            return data as RecentMatchesData;
+        },
+        staleTime: publicCacheMs,
+        gcTime: publicCacheMs,
+    });
 
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -55,16 +42,19 @@ export default function RecentMatches() {
         );
     }
 
+    const matches = data?.data ?? [];
+    const cached = data?.cached ?? false;
+
     return (
         <div className="bg-white rounded-xl shadow-lg p-6">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2 mb-6">
-                🎾 Últimos Partidos
+                🎾 Últimos partidos
                 {cached && <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Caché</span>}
             </h2>
 
             {error && (
                 <div className="text-center py-4 text-gray-500">
-                    {error}
+                    No se pudieron cargar los partidos recientes
                 </div>
             )}
 
@@ -77,7 +67,7 @@ export default function RecentMatches() {
                     {matches.map((match) => {
                         const isPlayer1Winner = match.winner?.id === match.player1.id;
                         const isPlayer2Winner = match.winner?.id === match.player2.id;
-                        
+
                         return (
                             <div
                                 key={match.id}
@@ -86,7 +76,7 @@ export default function RecentMatches() {
                                 <div className="flex items-center justify-between">
                                     <div className="flex-1">
                                         <p className="text-sm text-gray-500 mb-2">
-                                            📍 {match.group.name} • {new Date(match.date).toLocaleDateString('es-ES')}
+                                            📍 {match.group.name} · {new Date(match.date).toLocaleDateString('es-ES')}
                                         </p>
                                         <div className="flex items-center justify-between">
                                             <div className="flex-1">
@@ -96,7 +86,7 @@ export default function RecentMatches() {
                                                     </p>
                                                     {isPlayer1Winner && (
                                                         <span className="bg-green-500 text-white px-2 py-0.5 rounded text-xs font-bold">
-                                                            🏆 Ganador
+                                                            Ganador
                                                         </span>
                                                     )}
                                                 </div>
@@ -110,7 +100,7 @@ export default function RecentMatches() {
                                                 <div className="flex items-center gap-2 justify-end">
                                                     {isPlayer2Winner && (
                                                         <span className="bg-green-500 text-white px-2 py-0.5 rounded text-xs font-bold">
-                                                            🏆 Ganador
+                                                            Ganador
                                                         </span>
                                                     )}
                                                     <p className={`font-semibold ${isPlayer2Winner ? 'text-green-700' : 'text-gray-900'}`}>

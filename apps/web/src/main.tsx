@@ -17,10 +17,10 @@ import './index.css';
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            refetchOnWindowFocus: true,
+            refetchOnWindowFocus: false,
             retry: 1,
-            staleTime: 0,
-            gcTime: 0,
+            staleTime: 5 * 60 * 1000, // 5 min
+            gcTime: 60 * 60 * 1000, // 60 min
         },
     },
 });

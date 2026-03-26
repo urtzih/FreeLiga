@@ -1,5 +1,5 @@
 import { prisma } from '@freesquash/database';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 async function checkAndResetPasswords() {
     try {

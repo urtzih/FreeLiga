@@ -31,7 +31,7 @@ export default function ManageGroups() {
             setFilterSeason(seasonParam);
             setPage(1);
         }
-    }, [searchParams]);
+    }, [searchParams, filterSeason]);
 
     // Actualizar URL cuando cambia el filtro
     const handleFilterChange = (seasonId: string) => {
