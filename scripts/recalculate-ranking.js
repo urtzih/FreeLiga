@@ -1,10 +1,7 @@
-#!/usr/bin/env ts-node
-/**
- * Script para recalcular el ranking de un grupo
- */
-
-import { calculateGroupRankings } from './apps/api/src/services/ranking.service.ts';
-import { prisma } from './packages/database/src/index.ts';
+require('dotenv').config();
+const path = require('path');
+const { prisma } = require(path.join(__dirname, '..', 'packages/database/dist/index.js'));
+const { calculateGroupRankings } = require(path.join(__dirname, '..', 'apps/api/dist/services/ranking.service.js'));
 
 async function main() {
     try {
@@ -23,14 +20,15 @@ async function main() {
             process.exit(1);
         }
         
-        console.log(`📌 Grupo: ${group.name} (Temporada: ${group.season.name})`);
+        console.log(`📌 Grupo: ${group.name} (Temporada: ${group.season.name})\n`);
         
         // Recalculate
+        console.log('Procesando ecuáculo de desempates...');
         await calculateGroupRankings(groupId);
         
         console.log('✅ Ranking recalculado exitosamente\n');
         
-        // Get and display new rankings
+        // Get and display new rankings with statistics
         const groupPlayers = await prisma.groupPlayer.findMany({
             where: { groupId },
             include: { player: true },
@@ -39,7 +37,7 @@ async function main() {
         
         console.log('🏆 Nueva Clasificación:\n');
         console.log('Pos | Jugador                      | Victorias | Derrotas | Avg');
-        console.log('----+---------+------+---------+--+--+--+--------+---');
+        console.log('----+------------------------------+-----------+----------+------');
         
         for (const gp of groupPlayers) {
             const matches = await prisma.match.findMany({
@@ -70,13 +68,20 @@ async function main() {
             });
             
             const avg = setsWon - setsLost;
-            console.log(`${gp.rankingPosition.toString().padStart(3)} | ${gp.player.name.padEnd(28)} | ${wins.toString().padStart(9)} | ${losses.toString().padStart(8)} | ${avg.toString().padStart(3)}`);
+            const pos = gp.rankingPosition.toString().padStart(3);
+            const name = gp.player.name.padEnd(28);
+            const victorias = wins.toString().padStart(9);
+            const derrotas = losses.toString().padStart(8);
+            const promedio = avg.toString().padStart(4);
+            
+            console.log(`${pos} | ${name} | ${victorias} | ${derrotas} | ${promedio}`);
         }
         
-        console.log('\n✨ Clasificación actualizada en la base de datos');
+        console.log('\n✨ Clasificación actualizada correctamente');
         process.exit(0);
     } catch (error) {
-        console.error('❌ Error:', error);
+        console.error('❌ Error:', error.message);
+        console.error(error);
         process.exit(1);
     }
 }

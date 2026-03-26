@@ -1,7 +1,7 @@
 require('dotenv').config();
 const path = require('path');
-const { prisma } = require(path.join(__dirname, 'packages/database/dist/index.js'));
-const { calculateGroupRankings } = require(path.join(__dirname, 'apps/api/dist/services/ranking.service.js'));
+const { prisma } = require(path.join(__dirname, '..', 'packages/database/dist/index.js'));
+const { calculateGroupRankings } = require(path.join(__dirname, '..', 'apps/api/dist/services/ranking.service.js'));
 
 async function main() {
     try {
