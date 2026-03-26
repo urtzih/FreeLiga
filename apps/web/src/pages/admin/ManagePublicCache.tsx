@@ -43,6 +43,7 @@ export default function ManagePublicCache() {
     const [stats, setStats] = useState<CacheStats | null>(null);
     const [invalidatingKey, setInvalidatingKey] = useState<string | null>(null);
     const [lastInvalidation, setLastInvalidation] = useState<{ scope: 'public' | 'private' | 'all'; at: string } | null>(null);
+    const [showRawJson, setShowRawJson] = useState(false);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [typeFilter, setTypeFilter] = useState<'all' | 'public' | 'private' | 'data'>('all');
@@ -210,6 +211,18 @@ export default function ManagePublicCache() {
         }
     };
 
+    const downloadJson = () => {
+        if (!stats) return;
+        const json = JSON.stringify(stats, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `cache-stats-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div className="space-y-6">
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
@@ -222,19 +235,44 @@ export default function ManagePublicCache() {
                         </p>
                     </div>
                     <div className="flex flex-col items-end gap-1">
-                        <button
-                            onClick={loadStats}
-                            disabled={loadingStats}
-                            className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-medium transition-colors disabled:opacity-60"
-                        >
-                            🔄 Recargar
-                        </button>
+                        <div className="flex flex-wrap gap-2 justify-end">
+                            <button
+                                onClick={loadStats}
+                                disabled={loadingStats}
+                                className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-medium transition-colors disabled:opacity-60"
+                            >
+                                🔄 Recargar
+                            </button>
+                            <button
+                                onClick={() => setShowRawJson((prev) => !prev)}
+                                disabled={!stats}
+                                className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-medium transition-colors disabled:opacity-60"
+                            >
+                                {showRawJson ? 'Ocultar JSON' : 'Ver JSON'}
+                            </button>
+                            <button
+                                onClick={downloadJson}
+                                disabled={!stats}
+                                className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-900 dark:text-white font-medium transition-colors disabled:opacity-60"
+                            >
+                                Descargar JSON
+                            </button>
+                        </div>
                         <span className="text-xs text-slate-500 dark:text-slate-400">
                             Actualiza métricas, historial y tabla de claves
                         </span>
                     </div>
                 </div>
             </div>
+
+            {showRawJson && stats && (
+                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-white">JSON actual</h2>
+                    <pre className="mt-4 max-h-96 overflow-auto text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+{JSON.stringify(stats, null, 2)}
+                    </pre>
+                </div>
+            )}
 
             <div className="bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700 rounded-xl p-5 text-sm">
                 <h2 className="text-base font-semibold text-slate-900 dark:text-white">Resumen rápido</h2>

@@ -1,29 +1,22 @@
 /**
  * FreeSQuash League - Web Application
- * 
+ *
  * @author Urtzi Diaz Arberas
- * @copyright © 2024-2026 Urtzi Diaz Arberas. All rights reserved.
+ * @copyright (c) 2024-2026 Urtzi Diaz Arberas. All rights reserved.
  * @license Proprietary - All intellectual property rights belong to Urtzi Diaz Arberas
  */
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
 import './index.css';
 
-// Register service worker for push notifications
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker
-        .register('/sw.js')
-        .then((registration) => {
-            console.log('✅ Service Worker registered:', registration);
-        })
-        .catch((error) => {
-            console.warn('⚠️ Service Worker registration failed:', error);
-        });
+    registerSW({ immediate: true });
 }
 
 const queryClient = new QueryClient({
@@ -31,8 +24,8 @@ const queryClient = new QueryClient({
         queries: {
             refetchOnWindowFocus: false,
             retry: 1,
-            staleTime: 5 * 60 * 1000, // 5 min
-            gcTime: 60 * 60 * 1000, // 60 min
+            staleTime: 5 * 60 * 1000,
+            gcTime: 60 * 60 * 1000,
         },
     },
 });

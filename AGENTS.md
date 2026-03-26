@@ -10,6 +10,13 @@ FreeLiga es una aplicacion full-stack para gestionar una liga de squash con grup
 - Frontend: React 18, Vite, TypeScript, TailwindCSS, React Query, React Router.
 - Infra: Docker/Docker Compose, Railway (API + DB), Vercel (web), scripts PowerShell/Bash para backups.
 
+## Entornos disponibles
+
+- No hay entorno de staging dedicado en este proyecto.
+- Validacion previa a produccion: siempre en local (build + pruebas manuales end-to-end).
+- Si un cambio toca BBDD, hacer validacion local completa y desplegar en produccion con backup previo y plan de rollback.
+- Para push/notificaciones, usar despliegue en 2 fases: primero con scheduler desactivado, luego activar tras smoke test en produccion.
+
 ## Estructura de carpetas
 
 - `apps/api`: API Fastify, rutas y servicios.
