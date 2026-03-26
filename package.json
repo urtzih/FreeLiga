@@ -16,6 +16,10 @@
     "dev:api": "npm run dev --workspace=apps/api",
     "dev:web": "npm run dev --workspace=apps/web",
     "build": "npm run build --workspaces",
+    "lint": "eslint . --ext .ts,.tsx,.js,.cjs,.mjs",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.cjs,.mjs --fix",
+    "format": "prettier --write README.md AGENTS.md docs/DOCUMENTATION_INDEX.md DOCUMENTATION_INDEX.md .eslintrc.cjs .prettierrc.json apps/web/vite.config.ts",
+    "format:check": "prettier --check README.md AGENTS.md docs/DOCUMENTATION_INDEX.md DOCUMENTATION_INDEX.md .eslintrc.cjs .prettierrc.json apps/web/vite.config.ts",
     "db:generate": "npm run db:generate --workspace=packages/database",
     "db:push": "npm run db:push --workspace=packages/database",
     "db:studio": "npm run db:studio --workspace=packages/database",
@@ -28,13 +32,42 @@
   "devDependencies": {
     "baseline-browser-mapping": "^2.10.0",
     "concurrently": "^8.2.2",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "prettier": "^3.3.3",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
     "typescript": "^5.3.3"
   },
   "dependencies": {
-    "@fastify/rate-limit": "^10.3.0",
-    "@types/bcryptjs": "^2.4.6",
-    "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.2.3"
+  },
+  "overrides": {
+    "serialize-javascript": "^7.0.3",
+    "@rollup/plugin-terser": "1.0.0",
+    "chokidar": {
+      "picomatch": "2.3.2"
+    },
+    "micromatch": {
+      "picomatch": "2.3.2"
+    },
+    "@rollup/pluginutils": {
+      "picomatch": "2.3.2"
+    },
+    "tinyglobby": {
+      "picomatch": "4.0.4"
+    },
+    "fdir": {
+      "picomatch": "4.0.4"
+    },
+    "workbox-build@7.4.0": {
+      "@rollup/plugin-terser": "npm:@rollup/plugin-terser@1.0.0"
+    },
+    "yaml": "2.8.3",
+    "yaml@2.8.1": "2.8.3",
+    "tar": "^7.5.11",
+    "esbuild": "^0.27.4"
   }
 }

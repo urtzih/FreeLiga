@@ -162,8 +162,14 @@ export async function classificationRoutes(fastify: FastifyInstance) {
                 };
             });
 
-            // Sort by wins (descending), then by win percentage, then by average, then alphabetically
+            // Sort by wins (desc), win percentage, average, then alphabetically.
+            // Players with 0 total matches always go last.
             const sorted = classification.sort((a, b) => {
+                const aHasPlayed = a.totalMatches > 0;
+                const bHasPlayed = b.totalMatches > 0;
+                if (aHasPlayed !== bHasPlayed) {
+                    return aHasPlayed ? -1 : 1;
+                }
                 if (b.wins !== a.wins) {
                     return b.wins - a.wins;
                 }
@@ -187,7 +193,7 @@ export async function classificationRoutes(fastify: FastifyInstance) {
                 afterFilter: filtered.length 
             }, 'Classification results');
 
-            cacheService.set(cacheKey, filtered, 5 / 60); // 5 minutos
+            cacheService.set(cacheKey, filtered, 24);
 
             return filtered;
         } catch (error) {

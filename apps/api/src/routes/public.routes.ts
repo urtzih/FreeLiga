@@ -1,6 +1,6 @@
-/**
+﻿/**
  * Public API Routes - Sin autenticación
- * Endpoints públicos para partidos recientes, grupos y clasificación con caché de 24h
+ * Endpoints públicos para partidos recientes, grupos y clasificación con caché de 7d
  */
 
 import { FastifyInstance } from 'fastify';
@@ -18,7 +18,7 @@ export async function publicRoutes(fastify: FastifyInstance) {
             // Intentar obtener del caché
             const cached = cacheService.get<any>('public:recent-matches');
             if (cached) {
-                fastify.log.info('📦 Recent matches from cache');
+                fastify.log.info('Recent matches from cache');
                 return cached;
             }
 
@@ -67,9 +67,9 @@ export async function publicRoutes(fastify: FastifyInstance) {
                 updatedAt: new Date().toISOString(),
             };
 
-            // Guardar en caché por 24h
-            cacheService.set('public:recent-matches', response, 24);
-            fastify.log.info('💾 Recent matches cached for 24h');
+            // Guardar en caché por 7d
+            cacheService.set('public:recent-matches', response, 24 * 7);
+            fastify.log.info('Recent matches cached for 7d');
 
             return response;
         } catch (error) {
@@ -87,7 +87,7 @@ export async function publicRoutes(fastify: FastifyInstance) {
             // Intentar obtener del caché
             const cached = cacheService.get<any>('public:groups-summary');
             if (cached) {
-                fastify.log.info('📦 Groups summary from cache');
+                fastify.log.info('Groups summary from cache');
                 return cached;
             }
 
@@ -158,9 +158,9 @@ export async function publicRoutes(fastify: FastifyInstance) {
                 updatedAt: new Date().toISOString(),
             };
 
-            // Guardar en caché por 24h
-            cacheService.set('public:groups-summary', response, 24);
-            fastify.log.info('💾 Groups summary cached for 24h');
+            // Guardar en caché por 7d
+            cacheService.set('public:groups-summary', response, 24 * 7);
+            fastify.log.info('Groups summary cached for 7d');
 
             return response;
         } catch (error) {
@@ -181,7 +181,7 @@ export async function publicRoutes(fastify: FastifyInstance) {
             const cacheKey = `public:group:${groupId}:classification:v2`;
             const cached = cacheService.get<any>(cacheKey);
             if (cached) {
-                fastify.log.info(`📦 Group ${groupId} classification from cache`);
+                fastify.log.info(`Group ${groupId} classification from cache`);
                 return cached;
             }
 
@@ -243,6 +243,27 @@ export async function publicRoutes(fastify: FastifyInstance) {
                 return reply.status(404).send({ error: 'Group not found' });
             }
 
+            const injuryMatches = await prisma.match.findMany({
+                where: {
+                    groupId,
+                    matchStatus: 'INJURY',
+                    player1: {
+                        user: {
+                            isActive: true,
+                        },
+                    },
+                    player2: {
+                        user: {
+                            isActive: true,
+                        },
+                    },
+                },
+                select: {
+                    player1Id: true,
+                    player2Id: true,
+                },
+            });
+
             // Calcular rankings
             const rankings = await getGroupRankings(groupId);
 
@@ -272,7 +293,12 @@ export async function publicRoutes(fastify: FastifyInstance) {
             }));
 
             const hasPlayedBetween = (playerAId: string, playerBId: string) => {
-                return playedMatches.some((match) => (
+                const played = playedMatches.some((match) => (
+                    (match.player1Id === playerAId && match.player2Id === playerBId) ||
+                    (match.player1Id === playerBId && match.player2Id === playerAId)
+                ));
+                if (played) return true;
+                return injuryMatches.some((match) => (
                     (match.player1Id === playerAId && match.player2Id === playerBId) ||
                     (match.player1Id === playerBId && match.player2Id === playerAId)
                 ));
@@ -312,9 +338,9 @@ export async function publicRoutes(fastify: FastifyInstance) {
                 updatedAt: new Date().toISOString(),
             };
 
-            // Guardar en caché por 24h
-            cacheService.set(cacheKey, response, 24);
-            fastify.log.info(`💾 Group ${groupId} classification cached for 24h`);
+            // Guardar en caché por 7d
+            cacheService.set(cacheKey, response, 24 * 7);
+            fastify.log.info(`Group ${groupId} classification cached for 7d`);
 
             return response;
         } catch (error) {
@@ -332,7 +358,7 @@ export async function publicRoutes(fastify: FastifyInstance) {
             // Intentar obtener del caché
             const cached = cacheService.get<any>('public:stats');
             if (cached) {
-                fastify.log.info('📦 Stats from cache');
+                fastify.log.info('Stats from cache');
                 return cached;
             }
 
@@ -369,9 +395,9 @@ export async function publicRoutes(fastify: FastifyInstance) {
                 updatedAt: new Date().toISOString(),
             };
 
-            // Guardar en caché por 24h
-            cacheService.set('public:stats', response, 24);
-            fastify.log.info('💾 Stats cached for 24h');
+            // Guardar en caché por 7d
+            cacheService.set('public:stats', response, 24 * 7);
+            fastify.log.info('Stats cached for 7d');
 
             return response;
         } catch (error) {
@@ -391,7 +417,7 @@ export async function publicRoutes(fastify: FastifyInstance) {
             // Intentar obtener del caché
             const cached = cacheService.get<any>(cacheKey);
             if (cached) {
-                fastify.log.info('📦 Historical stats from cache');
+                fastify.log.info('Historical stats from cache');
                 return cached;
             }
 
@@ -440,9 +466,9 @@ export async function publicRoutes(fastify: FastifyInstance) {
                 updatedAt: new Date().toISOString(),
             };
 
-            // Guardar en caché por 24h
-            cacheService.set(cacheKey, response, 24);
-            fastify.log.info('💾 Historical stats cached for 24h');
+            // Guardar en caché por 7d
+            cacheService.set(cacheKey, response, 24 * 7);
+            fastify.log.info('Historical stats cached for 7d');
 
             return response;
         } catch (error) {
@@ -465,8 +491,8 @@ export async function publicRoutes(fastify: FastifyInstance) {
             }
 
             // Invalidar caché público
-            cacheService.invalidatePattern('public:');
-            fastify.log.info('🔄 Public cache invalidated');
+            cacheService.invalidatePattern('public:', { scope: 'public', reason: 'token_invalidate' });
+            fastify.log.info('Public cache invalidated');
 
             return { success: true, message: 'Cache invalidated' };
         } catch (error) {
@@ -488,12 +514,13 @@ export async function publicRoutes(fastify: FastifyInstance) {
                 return reply.status(403).send({ error: 'Forbidden' });
             }
 
-            cacheService.invalidatePattern('public:');
-            fastify.log.info({ userId: decoded.id }, '🔄 Public cache invalidated by admin UI');
+            cacheService.invalidatePattern('public:', { scope: 'public', userId: decoded.id, reason: 'admin_ui' });
+            fastify.log.info({ userId: decoded.id }, 'Public cache invalidated by admin UI');
 
             return {
                 success: true,
                 message: 'Public cache invalidated',
+                scope: 'public',
                 invalidatedBy: decoded.id,
                 at: new Date().toISOString(),
             };
@@ -504,12 +531,146 @@ export async function publicRoutes(fastify: FastifyInstance) {
     });
 
     /**
-     * GET /api/public/cache/stats
-     * Información del caché (desarrollo)
+     * POST /api/public/cache/invalidate/private/admin
+     * Invalidar caché privado desde UI admin autenticada
      */
-    if (process.env.NODE_ENV === 'development') {
-        fastify.get('/cache/stats', async (request, reply) => {
+    fastify.post('/cache/invalidate/private/admin', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            cacheService.invalidatePattern('private:', { scope: 'private', userId: decoded.id, reason: 'admin_ui' });
+            fastify.log.info({ userId: decoded.id }, 'Private cache invalidated by admin UI');
+
+            return {
+                success: true,
+                message: 'Private cache invalidated',
+                scope: 'private',
+                invalidatedBy: decoded.id,
+                at: new Date().toISOString(),
+            };
+        } catch (error) {
+            fastify.log.error(error, 'Error invalidating private cache from admin UI');
+            return reply.status(500).send({ error: 'Failed to invalidate private cache' });
+        }
+    });
+
+    /**
+     * POST /api/public/cache/invalidate/all/admin
+     * Invalidar caché público y privado desde UI admin autenticada
+     */
+    fastify.post('/cache/invalidate/all/admin', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            cacheService.invalidatePattern('public:', { scope: 'public', userId: decoded.id, reason: 'admin_ui' });
+            cacheService.invalidatePattern('private:', { scope: 'private', userId: decoded.id, reason: 'admin_ui' });
+            fastify.log.info({ userId: decoded.id }, 'All cache (public + private) invalidated by admin UI');
+
+            return {
+                success: true,
+                message: 'All cache invalidated (public + private)',
+                scope: 'all',
+                invalidatedBy: decoded.id,
+                at: new Date().toISOString(),
+            };
+        } catch (error) {
+            fastify.log.error(error, 'Error invalidating all cache from admin UI');
+            return reply.status(500).send({ error: 'Failed to invalidate all cache' });
+        }
+    });
+
+    /**
+     * POST /api/public/cache/invalidate/key/:key
+     * Invalidar una sola clave de caché
+     */
+    fastify.post('/cache/invalidate/key/:key', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            const { key } = request.params as { key: string };
+            const decodedKey = decodeURIComponent(key);
+
+            cacheService.invalidate(decodedKey, { userId: decoded.id, reason: 'admin_ui' });
+            fastify.log.info({ userId: decoded.id, key: decodedKey }, 'Cache key invalidated by admin UI');
+
+            return {
+                success: true,
+                message: `Cache key invalidated: ${decodedKey}`,
+                invalidatedBy: decoded.id,
+                key: decodedKey,
+                at: new Date().toISOString(),
+            };
+        } catch (error) {
+            fastify.log.error(error, 'Error invalidating cache key from admin UI');
+            return reply.status(500).send({ error: 'Failed to invalidate cache key' });
+        }
+    });
+
+    /**
+     * POST /api/public/cache/invalidate/pattern/:pattern
+     * Invalidar por patron (admin)
+     */
+    fastify.post('/cache/invalidate/pattern/:pattern', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            const { pattern } = request.params as { pattern: string };
+            const decodedPattern = decodeURIComponent(pattern);
+
+            cacheService.invalidatePattern(decodedPattern, { userId: decoded.id, reason: 'admin_ui' });
+            fastify.log.info({ userId: decoded.id, pattern: decodedPattern }, 'Cache pattern invalidated by admin UI');
+
+            return {
+                success: true,
+                message: `Cache pattern invalidated: ${decodedPattern}`,
+                invalidatedBy: decoded.id,
+                pattern: decodedPattern,
+                at: new Date().toISOString(),
+            };
+        } catch (error) {
+            fastify.log.error(error, 'Error invalidating cache pattern from admin UI');
+            return reply.status(500).send({ error: 'Failed to invalidate cache pattern' });
+        }
+    });
+
+    /**
+     * GET /api/public/cache/stats
+     * Información del caché (solo admin)
+     */
+    fastify.get('/cache/stats', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            if (decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
             return cacheService.getStats();
-        });
-    }
+        } catch (error) {
+            fastify.log.error(error, 'Error getting cache stats');
+            return reply.status(500).send({ error: 'Failed to get cache stats' });
+        }
+    });
 }
+

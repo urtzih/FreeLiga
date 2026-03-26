@@ -92,6 +92,20 @@ export default function Dashboard() {
                 </div>
             )}
 
+            {playerStats?.isInjuredActiveSeason && (
+                <div className="rounded-xl md:rounded-2xl p-4 md:p-6 bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg">
+                    <div className="flex items-center justify-between gap-4">
+                        <div>
+                            <h3 className="text-lg md:text-2xl font-bold mb-1">🤕 Lesión activa</h3>
+                            <p className="text-white/90 text-sm md:text-base">
+                                Estás marcado como lesionado en la temporada activa. No tienes partidos pendientes.
+                            </p>
+                        </div>
+                        <div className="text-3xl md:text-5xl">🩹</div>
+                    </div>
+                </div>
+            )}
+
             {/* Tarjetas de Estadísticas */}
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
                 <StatCard
@@ -122,6 +136,15 @@ export default function Dashboard() {
                     color="from-purple-500 to-purple-600"
                     loading={statsLoading}
                 />
+            </div>
+
+            <div className="md:hidden">
+                <Link
+                    to="/matches/record"
+                    className="flex items-center justify-center w-full px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg border border-green-600 hover:from-green-600 hover:to-green-700 transition-colors font-semibold"
+                >
+                    🎾 Registrar partido
+                </Link>
             </div>
 
             {/* Grupo Actual y Clasificación */}

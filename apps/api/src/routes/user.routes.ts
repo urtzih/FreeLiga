@@ -1,9 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '@freesquash/database';
 import { z } from 'zod';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { getPlayerCurrentGroup } from '../utils/playerHelpers';
-import { logger, logBusinessEvent, logOperation } from '../utils/logger';
+import { logger, logBusinessEvent } from '../utils/logger';
 
 declare module 'fastify' {
     interface FastifyInstance {

@@ -16,7 +16,6 @@ export async function adminRoutes(fastify: FastifyInstance) {
             // Get counts
             // Consideramos "activos" todos los grupos cuya temporada aún no ha terminado (endDate >= hoy).
             // Si todavía no ha llegado startDate, los tratamos como próximos pero se cuentan igualmente.
-            const now = new Date();
             const [
                 totalPlayers,
                 totalGroups,

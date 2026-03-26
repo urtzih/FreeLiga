@@ -58,6 +58,7 @@ export default function RecordMatch() {
         matchStatus: 'PLAYED' as 'PLAYED' | 'INJURY',
     });
     const [error, setError] = useState('');
+    const [showInjuryConfirm, setShowInjuryConfirm] = useState(false);
 
     const { data: group, isLoading: isLoadingGroup } = useQuery({
         queryKey: ['group', formData.groupId],
@@ -72,18 +73,21 @@ export default function RecordMatch() {
     const availableOpponents = useMemo(() => {
         if (!group?.groupPlayers || !user?.player?.id) return [];
 
-        // Crear Set de oponentes jugados (más eficiente que filter múltiple)
+        // Crear Set de oponentes jugados (solo matches con resultado)
         const playedOpponentIds = new Set(
-            group.matches
-                ?.filter((match: any) => 
-                    match.player1Id === user.player?.id || match.player2Id === user.player?.id
-                )
+            (group.matches || [])
+                .filter((match: any) => {
+                    // Solo contar matches que tengan resultados registrados
+                    const hasResult = match.gamesP1 !== null && match.gamesP2 !== null;
+                    const isMyMatch = match.player1Id === user.player?.id || match.player2Id === user.player?.id;
+                    return (hasResult || match.matchStatus === 'INJURY') && isMyMatch;
+                })
                 .map((match: any) => 
                     match.player1Id === user.player?.id ? match.player2Id : match.player1Id
-                ) || []
+                )
         );
 
-        // Filtrar una sola vez
+        // Filtrar jugadores disponibles (excluir a mí mismo y oponentes ya jugados)
         return group.groupPlayers.filter((gp: any) =>
             gp.playerId !== user.player?.id && !playedOpponentIds.has(gp.playerId)
         );
@@ -112,6 +116,27 @@ export default function RecordMatch() {
         onError: (err: any) => {
             console.error('Error al registrar partido:', err);
             setError(getErrorMessage(err));
+        },
+    });
+
+    const injuryMutation = useMutation({
+        mutationFn: async () => {
+            const response = await api.post('/matches/mark-injury');
+            return response.data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['playerStats'] });
+            queryClient.invalidateQueries({ queryKey: ['group'] });
+            queryClient.invalidateQueries({ queryKey: ['classification'] });
+            queryClient.invalidateQueries({ queryKey: ['matches'] });
+            queryClient.invalidateQueries({ queryKey: ['upcomingMatches'] });
+            showToast('Te has marcado como lesionado para la temporada activa.', 'success');
+            setShowInjuryConfirm(false);
+            navigate('/dashboard');
+        },
+        onError: (err: any) => {
+            console.error('Error al marcar lesión:', err);
+            showToast(err.response?.data?.error || 'Error al marcar lesión', 'error');
         },
     });
 
@@ -339,8 +364,45 @@ export default function RecordMatch() {
                     >
                         {mutation.isPending ? 'Registrando...' : 'Registrar Partido'}
                     </button>
+
+                    <button
+                        type="button"
+                        onClick={() => setShowInjuryConfirm(true)}
+                        className="w-full px-6 py-3 text-orange-700 dark:text-orange-200 font-semibold rounded-lg border border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
+                    >
+                        🤕 Marcar lesión de temporada
+                    </button>
                 </form>
             </div>
+
+            {showInjuryConfirm && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-lg w-full shadow-xl">
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Confirmar lesión</h3>
+                        <div className="space-y-3 text-slate-700 dark:text-slate-300 text-sm">
+                            <p>Si te marcas como lesionado, todos los partidos restantes de la temporada activa se marcarán como lesión y no se podrán jugar.</p>
+                            <p>Si NO has jugado más de la mitad de los partidos esperados en tu grupo, también se marcarán como lesión los partidos ya jugados en la temporada activa.</p>
+                            <p>Esto cerrará los partidos pendientes para tus rivales.</p>
+                        </div>
+                        <div className="flex gap-3 mt-6">
+                            <button
+                                onClick={() => setShowInjuryConfirm(false)}
+                                className="flex-1 px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600"
+                                disabled={injuryMutation.isPending}
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => injuryMutation.mutate()}
+                                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+                                disabled={injuryMutation.isPending}
+                            >
+                                {injuryMutation.isPending ? 'Marcando...' : 'Confirmar lesión'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -1,8 +1,8 @@
-/**
- * Página Pública - Grupos y Clasificaciones
+﻿/**
+ * Página pública - Grupos y Clasificación
  */
 
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import api from '../../lib/api';
 
@@ -24,30 +24,27 @@ interface GroupSummary {
     rankings: PlayerRanking[];
 }
 
+interface GroupsSummaryData {
+    seasonName: string;
+    groups: GroupSummary[];
+    cached: boolean;
+    updatedAt: string;
+}
+
 export default function PublicGroups() {
-    const [data, setData] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        fetchData();
-    }, []);
-
-    const fetchData = async () => {
-        try {
-            const { data: result } = await api.get('/public/groups-summary');
-            setData(result);
-        } catch (err) {
-            console.error('Error:', err);
-            setError('Error al cargar los grupos');
-        } finally {
-            setLoading(false);
-        }
-    };
+    const publicCacheMs = 1000 * 60 * 60 * 24 * 7;
+    const { data, isLoading, error } = useQuery<GroupsSummaryData>({
+        queryKey: ['public', 'groups-summary', 'page'],
+        queryFn: async () => {
+            const { data } = await api.get('/public/groups-summary');
+            return data as GroupsSummaryData;
+        },
+        staleTime: publicCacheMs,
+        gcTime: publicCacheMs,
+    });
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-            {/* Header */}
             <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-12">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between">
@@ -65,9 +62,8 @@ export default function PublicGroups() {
                 </div>
             </div>
 
-            {/* Content */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                {loading && (
+                {isLoading && (
                     <div className="flex justify-center py-12">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
                     </div>
@@ -75,28 +71,26 @@ export default function PublicGroups() {
 
                 {error && (
                     <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center text-red-600">
-                        {error}
+                        Error al cargar los grupos
                     </div>
                 )}
 
-                {!loading && data && (
+                {!isLoading && data && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {data.groups?.map((group: GroupSummary) => (
                             <div
                                 key={group.id}
                                 className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow overflow-hidden border-l-4 border-indigo-500"
                             >
-                                {/* Header */}
                                 <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4">
                                     <h3 className="text-xl font-bold">{group.name}</h3>
                                     <p className="text-indigo-100 text-sm mt-1">
-                                        👥 {group.playerCount} jugadores • 🎾 {group.matchCount} partidos
+                                        👥 {group.playerCount} jugadores · 🎾 {group.matchCount} partidos
                                     </p>
                                 </div>
 
-                                {/* Tabla de clasificación */}
                                 <div className="p-4">
-                                    <h4 className="text-sm font-semibold text-gray-700 mb-3">🏆 Top Jugadores</h4>
+                                    <h4 className="text-sm font-semibold text-gray-700 mb-3">🏆 Top jugadores</h4>
                                     <div className="space-y-2">
                                         {group.rankings.slice(0, 5).map((player, idx) => (
                                             <div
@@ -118,7 +112,6 @@ export default function PublicGroups() {
                                         ))}
                                     </div>
 
-                                    {/* Bot6ón */}
                                     <Link
                                         to={`/public/group/${group.id}`}
                                         className="mt-4 block w-full text-center py-2 px-3 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded font-medium text-sm transition-colors"
@@ -131,7 +124,6 @@ export default function PublicGroups() {
                     </div>
                 )}
 
-                {/* Info Footer */}
                 <div className="mt-12 bg-indigo-50 border border-indigo-200 rounded-xl p-6 text-center">
                     <p className="text-gray-700">
                         ¿Quieres participar? <Link to="/login" className="text-indigo-600 font-semibold hover:underline">Inicia sesión</Link> para unirte a la liga

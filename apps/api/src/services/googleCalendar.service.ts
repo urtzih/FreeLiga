@@ -54,7 +54,7 @@ export class GoogleCalendarService {
     /**
      * Guardar integración de Google Calendar para un usuario
      */
-    static async saveIntegration(userId: string, tokens: any, calendarId: string = 'primary') {
+    static async saveIntegration(userId: string, tokens: any) {
         try {
             const expiresAt = tokens.expiry_date 
                 ? new Date(tokens.expiry_date) 

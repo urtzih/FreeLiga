@@ -1,8 +1,26 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '@freesquash/database';
 import { getPlayerCurrentGroup } from '../utils/playerHelpers';
+import { cacheService } from '../services/cache.service';
 
 export async function playerRoutes(fastify: FastifyInstance) {
+    const getPlayerCacheKeys = (playerId: string) => ({
+        profile: `private:player:${playerId}:profile`,
+        stats: `private:player:${playerId}:stats`,
+        progress: `private:player:${playerId}:progress`,
+        matchesByDate: `private:player:${playerId}:matches-by-date`,
+        movements: `private:player:${playerId}:movements`,
+    });
+
+    const invalidatePlayerCache = (playerId: string) => {
+        const keys = getPlayerCacheKeys(playerId);
+        cacheService.invalidate(keys.profile);
+        cacheService.invalidate(keys.stats);
+        cacheService.invalidate(keys.progress);
+        cacheService.invalidate(keys.matchesByDate);
+        cacheService.invalidate(keys.movements);
+    };
+
     // Get all players
     fastify.get('/', {
         onRequest: [fastify.authenticate],
@@ -53,6 +71,11 @@ export async function playerRoutes(fastify: FastifyInstance) {
     }, async (request, reply) => {
         try {
             const { id } = request.params as { id: string };
+            const cacheKey = getPlayerCacheKeys(id).profile;
+            const cached = cacheService.get<any>(cacheKey);
+            if (cached) {
+                return cached;
+            }
 
             const player = await prisma.player.findUnique({
                 where: { id },
@@ -78,11 +101,15 @@ export async function playerRoutes(fastify: FastifyInstance) {
             // Parse annualFeesPaid
             const fees = player.annualFeesPaid ? JSON.parse(player.annualFeesPaid) : [];
 
-            return { 
+            const response = { 
                 ...player, 
                 currentGroup,
                 annualFeesPaid: fees
             };
+
+            cacheService.set(cacheKey, response, 24);
+
+            return response;
         } catch (error) {
             fastify.log.error(error);
             return reply.status(500).send({ error: 'Internal server error' });
@@ -95,6 +122,11 @@ export async function playerRoutes(fastify: FastifyInstance) {
     }, async (request, reply) => {
         try {
             const { id } = request.params as { id: string };
+            const cacheKey = getPlayerCacheKeys(id).stats;
+            const cached = cacheService.get<any>(cacheKey);
+            if (cached) {
+                return cached;
+            }
 
             // Get the player's current group (based on active season)
             const currentGroup = await getPlayerCurrentGroup(id);
@@ -171,7 +203,26 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 }
             }
 
-            return {
+            let injuryMatchesActiveSeason = 0;
+            let remainingMatchesActiveSeason = 0;
+            let isInjuredActiveSeason = false;
+            if (currentGroup) {
+                const expectedMatches = Math.max(currentGroup.groupPlayers.length - 1, 0);
+                injuryMatchesActiveSeason = await prisma.match.count({
+                    where: {
+                        groupId: currentGroup.id,
+                        OR: [
+                            { player1Id: id },
+                            { player2Id: id },
+                        ],
+                        matchStatus: 'INJURY',
+                    },
+                });
+                remainingMatchesActiveSeason = Math.max(expectedMatches - wins - losses - injuryMatchesActiveSeason, 0);
+                isInjuredActiveSeason = injuryMatchesActiveSeason > 0 && remainingMatchesActiveSeason === 0;
+            }
+
+            const response = {
                 playerId: id,
                 totalMatches,
                 wins,
@@ -182,7 +233,12 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 average,
                 currentStreak: lastResult === 'W' ? currentStreak : -currentStreak,
                 recentMatches: sortedMatches.slice(0, 5),
+                injuryMatchesActiveSeason,
+                remainingMatchesActiveSeason,
+                isInjuredActiveSeason,
             };
+            cacheService.set(cacheKey, response, 24);
+            return response;
         } catch (error) {
             fastify.log.error(error);
             return reply.status(500).send({ error: 'Internal server error' });
@@ -221,6 +277,8 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 where: { id },
                 data: updateData,
             });
+
+            invalidatePlayerCache(id);
 
             // Parse annualFeesPaid back to array for response
             return {
@@ -268,6 +326,8 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 data: updateData,
             });
 
+            invalidatePlayerCache(id);
+
             // Parse annualFeesPaid - handle null case
             const fees = player.annualFeesPaid ? JSON.parse(player.annualFeesPaid) : [];
             return {
@@ -284,6 +344,11 @@ export async function playerRoutes(fastify: FastifyInstance) {
     fastify.get('/:id/progress', { onRequest: [fastify.authenticate] }, async (request, reply) => {
         try {
             const { id } = request.params as { id: string };
+            const cacheKey = getPlayerCacheKeys(id).progress;
+            const cached = cacheService.get<any>(cacheKey);
+            if (cached) {
+                return cached;
+            }
             const player = await prisma.player.findUnique({ where: { id } });
             if (!player) return reply.status(404).send({ error: 'Player not found' });
 
@@ -336,7 +401,9 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 average: v.setsWon - v.setsLost
             }));
 
-            return { playerId: id, points, monthly: monthlyPoints };
+            const response = { playerId: id, points, monthly: monthlyPoints };
+            cacheService.set(cacheKey, response, 24);
+            return response;
         } catch (error) {
             fastify.log.error(error); return reply.status(500).send({ error: 'Internal server error' });
         }
@@ -346,6 +413,11 @@ export async function playerRoutes(fastify: FastifyInstance) {
     fastify.get('/:id/matches-by-date', { onRequest: [fastify.authenticate] }, async (request, reply) => {
         try {
             const { id } = request.params as { id: string };
+            const cacheKey = getPlayerCacheKeys(id).matchesByDate;
+            const cached = cacheService.get<any>(cacheKey);
+            if (cached) {
+                return cached;
+            }
             const matches = await prisma.match.findMany({
                 where: {
                     OR: [ { player1Id: id }, { player2Id: id } ],
@@ -357,7 +429,7 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 orderBy: { date: 'asc' }
             });
 
-            return matches.map(m => {
+            const response = matches.map(m => {
                 const isPlayer1 = m.player1Id === id;
                 const won = m.winnerId === id;
                 return {
@@ -367,6 +439,8 @@ export async function playerRoutes(fastify: FastifyInstance) {
                     score: isPlayer1 ? `${m.gamesP1}-${m.gamesP2}` : `${m.gamesP2}-${m.gamesP1}`
                 };
             });
+            cacheService.set(cacheKey, response, 24);
+            return response;
         } catch (error) {
             fastify.log.error(error);
             return reply.status(500).send({ error: 'Internal server error' });
@@ -377,19 +451,172 @@ export async function playerRoutes(fastify: FastifyInstance) {
     fastify.get('/:id/movements', { onRequest: [fastify.authenticate] }, async (request, reply) => {
         try {
             const { id } = request.params as { id: string };
+            const cacheKey = getPlayerCacheKeys(id).movements;
+            const cached = cacheService.get<any>(cacheKey);
+            if (cached) {
+                return cached;
+            }
             const history = await prisma.playerGroupHistory.findMany({
                 where: { playerId: id },
                 include: { season: true, group: true },
                 orderBy: { season: { startDate: 'asc' } }
             });
 
-            return history.map(h => ({
+            const historyBySeason = new Map(history.map(h => [h.seasonId, h]));
+
+            const groupMemberships = await prisma.groupPlayer.findMany({
+                where: { playerId: id },
+                include: { group: { include: { season: true } } }
+            });
+
+            const mappedHistory = history.map(h => ({
+                seasonId: h.seasonId,
                 seasonName: h.season.name,
                 seasonEndDate: h.season.endDate,
+                seasonStartDate: h.season.startDate,
                 groupName: h.group?.name || 'Sin grupo',
                 movement: h.movementType || 'STAY',
-                finalRank: h.finalRank || 0
+                finalRank: h.finalRank || 0,
+                isFallback: false
             }));
+
+            const fallbackBySeason = new Map<string, {
+                seasonId: string;
+                seasonName: string;
+                seasonEndDate: Date;
+                seasonStartDate: Date;
+                groupName: string;
+                movement: 'STAY';
+                finalRank: number;
+                isFallback: true;
+                createdAt: Date;
+            }>();
+
+            for (const gp of groupMemberships) {
+                if (!gp.group?.season) continue;
+                const seasonId = gp.group.season.id;
+                if (historyBySeason.has(seasonId)) continue;
+                const existing = fallbackBySeason.get(seasonId);
+                if (existing && existing.createdAt >= gp.createdAt) continue;
+
+                fallbackBySeason.set(seasonId, {
+                    seasonId,
+                    seasonName: gp.group.season.name,
+                    seasonEndDate: gp.group.season.endDate,
+                    seasonStartDate: gp.group.season.startDate,
+                    groupName: gp.group?.name || 'Sin grupo',
+                    movement: 'STAY',
+                    finalRank: 0,
+                    isFallback: true,
+                    createdAt: gp.createdAt
+                });
+            }
+
+            const fallbackSeasons = Array.from(fallbackBySeason.values()).map(({ createdAt: _createdAt, ...rest }) => rest);
+
+            const combined = [...mappedHistory, ...fallbackSeasons]
+                .sort((a, b) => a.seasonStartDate.getTime() - b.seasonStartDate.getTime())
+                .map(({ seasonId: _seasonId, seasonStartDate: _seasonStartDate, ...rest }) => rest);
+
+            cacheService.set(cacheKey, combined, 24);
+            return combined;
+        } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // Get player season summary (wins/losses + final ranking per season)
+    fastify.get('/:id/season-summary', { onRequest: [fastify.authenticate] }, async (request, reply) => {
+        try {
+            const { id } = request.params as { id: string };
+
+            const history = await prisma.playerGroupHistory.findMany({
+                where: { playerId: id },
+                include: { season: true, group: true },
+                orderBy: { season: { startDate: 'asc' } }
+            });
+
+            const historyBySeason = new Map(history.map(h => [h.seasonId, h]));
+
+            const groupMemberships = await prisma.groupPlayer.findMany({
+                where: { playerId: id },
+                include: { group: { include: { season: true } } }
+            });
+
+            const seasonById = new Map<string, {
+                seasonId: string;
+                seasonName: string;
+                seasonStartDate: Date;
+                seasonEndDate: Date;
+                groupName: string;
+                finalRank: number | null;
+                movement: string;
+                isFallback: boolean;
+                createdAt: Date;
+            }>();
+
+            for (const h of history) {
+                seasonById.set(h.seasonId, {
+                    seasonId: h.seasonId,
+                    seasonName: h.season.name,
+                    seasonStartDate: h.season.startDate,
+                    seasonEndDate: h.season.endDate,
+                    groupName: h.group?.name || 'Sin grupo',
+                    finalRank: h.finalRank ?? null,
+                    movement: h.movementType || 'STAY',
+                    isFallback: false,
+                    createdAt: h.createdAt
+                });
+            }
+
+            for (const gp of groupMemberships) {
+                if (!gp.group?.season) continue;
+                const seasonId = gp.group.season.id;
+                if (historyBySeason.has(seasonId)) continue;
+                const existing = seasonById.get(seasonId);
+                if (existing && existing.createdAt >= gp.createdAt) continue;
+                seasonById.set(seasonId, {
+                    seasonId,
+                    seasonName: gp.group.season.name,
+                    seasonStartDate: gp.group.season.startDate,
+                    seasonEndDate: gp.group.season.endDate,
+                    groupName: gp.group?.name || 'Sin grupo',
+                    finalRank: null,
+                    movement: 'STAY',
+                    isFallback: true,
+                    createdAt: gp.createdAt
+                });
+            }
+
+            const matches = await prisma.match.findMany({
+                where: {
+                    OR: [ { player1Id: id }, { player2Id: id } ],
+                    matchStatus: 'PLAYED',
+                    gamesP1: { not: null },
+                    gamesP2: { not: null }
+                },
+                include: { group: { include: { season: true } } }
+            });
+
+            const statsBySeason = new Map<string, { wins: number; losses: number }>();
+            for (const m of matches) {
+                const seasonId = m.group?.season?.id;
+                if (!seasonId) continue;
+                const entry = statsBySeason.get(seasonId) || { wins: 0, losses: 0 };
+                if (m.winnerId === id) entry.wins += 1;
+                else if (m.winnerId) entry.losses += 1;
+                statsBySeason.set(seasonId, entry);
+            }
+
+            const combined = Array.from(seasonById.values())
+                .sort((a, b) => a.seasonStartDate.getTime() - b.seasonStartDate.getTime())
+                .map(({ createdAt: _createdAt, ...rest }) => {
+                    const stats = statsBySeason.get(rest.seasonId) || { wins: 0, losses: 0 };
+                    return { ...rest, wins: stats.wins, losses: stats.losses };
+                });
+
+            return combined;
         } catch (error) {
             fastify.log.error(error);
             return reply.status(500).send({ error: 'Internal server error' });
@@ -427,6 +654,8 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 where: { id },
                 data: { annualFeesPaid: annualFeesString },
             });
+
+            invalidatePlayerCache(id);
 
             // Parse annualFeesPaid - handle null case
             const fees = player.annualFeesPaid ? JSON.parse(player.annualFeesPaid) : [];
@@ -491,6 +720,8 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 where: { id },
                 data: { annualFeesPaid: feesString },
             });
+
+            invalidatePlayerCache(id);
 
             // Parse annualFeesPaid - handle null case
             const updatedFees = updated.annualFeesPaid ? JSON.parse(updated.annualFeesPaid) : [];
@@ -562,6 +793,8 @@ export async function playerRoutes(fastify: FastifyInstance) {
                     data: userUpdateData
                 })
             ]);
+
+            invalidatePlayerCache(playerId);
 
             const updatedFees = updatedPlayer.annualFeesPaid ? JSON.parse(updatedPlayer.annualFeesPaid) : [];
             return {

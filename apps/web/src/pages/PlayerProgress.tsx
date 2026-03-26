@@ -2,15 +2,28 @@ import { useQuery } from '@tanstack/react-query';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, LineElement, PointElement, CategoryScale, LinearScale, BarElement, Tooltip, Legend, Title, Filler } from 'chart.js';
 ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, BarElement, Tooltip, Legend, Title, Filler);
 
 interface MatchByDate { date: string; result: 'WIN' | 'LOSS'; opponent: string; score: string; }
-interface MovementRecord { seasonName: string; seasonEndDate: string; groupName: string; movement: 'PROMOTION' | 'RELEGATION' | 'STAY'; finalRank: number; }
+interface MovementRecord { seasonName: string; seasonEndDate: string; groupName: string; movement: 'PROMOTION' | 'RELEGATION' | 'STAY'; finalRank: number; isFallback?: boolean; }
+interface SeasonSummaryRecord {
+  seasonId: string;
+  seasonName: string;
+  seasonStartDate: string;
+  seasonEndDate: string;
+  groupName: string;
+  finalRank: number | null;
+  movement: 'PROMOTION' | 'RELEGATION' | 'STAY' | string;
+  isFallback: boolean;
+  wins: number;
+  losses: number;
+}
 
 export default function PlayerProgress() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const playerId = user?.player?.id;
 
   // Selector de fechas
@@ -30,6 +43,15 @@ export default function PlayerProgress() {
     enabled: !!playerId,
     queryFn: async () => {
       const { data } = await api.get(`/players/${playerId}/movements`);
+      return data;
+    }
+  });
+
+  const { data: seasonSummary, isLoading: summaryLoading, error: summaryError } = useQuery<SeasonSummaryRecord[]>({
+    queryKey: ['playerSeasonSummary', playerId],
+    enabled: !!playerId,
+    queryFn: async () => {
+      const { data } = await api.get(`/players/${playerId}/season-summary`);
       return data;
     }
   });
@@ -90,9 +112,9 @@ export default function PlayerProgress() {
 
   // NOW check conditions AFTER all hooks
   if (!playerId) return <div className="text-slate-500">No hay jugador asociado.</div>;
-  if (matchLoading || movementsLoading) return <div className="text-slate-500">Cargando progreso...</div>;
-  if (matchError || movementsError) return <div className="text-red-600 dark:text-red-400 text-sm">Error cargando datos de progreso.</div>;
-  if (!matchData || !movements) return <div className="text-slate-500">Sin datos</div>;
+  if (matchLoading || movementsLoading || summaryLoading) return <div className="text-slate-500">Cargando progreso...</div>;
+  if (matchError || movementsError || summaryError) return <div className="text-red-600 dark:text-red-400 text-sm">Error cargando datos de progreso.</div>;
+  if (!matchData || !movements || !seasonSummary) return <div className="text-slate-500">Sin datos</div>;
 
   // Gráfico: Victorias/Derrotas por fecha
   const matchChartData = {
@@ -174,6 +196,17 @@ export default function PlayerProgress() {
     ]
   };
 
+  const fallbackSeasons = useMemo(() => {
+    const seasons = movements.filter(m => m.isFallback).map(m => m.seasonName);
+    return Array.from(new Set(seasons));
+  }, [movements]);
+
+  const fallbackSeasonLinks = useMemo(() => {
+    return seasonSummary
+      .filter(s => s.isFallback)
+      .map(s => ({ id: s.seasonId, name: s.seasonName }));
+  }, [seasonSummary]);
+
   return (
     <div className="space-y-8">
       <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-4 md:p-8 text-white shadow-lg">
@@ -251,6 +284,27 @@ export default function PlayerProgress() {
       {/* Gráfico: Evolución de Grupo por Temporada */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
         <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Evolución de Grupo por Temporada</h2>
+        {isAdmin && fallbackSeasons.length > 0 && (
+          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-100">
+            <p className="text-sm font-semibold">Aviso para administradores</p>
+            <p className="text-sm mt-1">
+              Algunas temporadas se muestran sin cierre aprobado. La evolución se ha inferido desde la inscripción en grupos y no incluye ascensos/descensos reales.
+            </p>
+            <p className="text-sm mt-1">Temporadas afectadas: {fallbackSeasons.join(', ')}</p>
+            {fallbackSeasonLinks.length > 0 && (
+              <p className="text-sm mt-1">
+                Revisa el estado en{' '}
+                <Link
+                  to="/admin/seasons"
+                  className="underline text-amber-900 dark:text-amber-100 hover:text-amber-700 dark:hover:text-amber-200"
+                >
+                  Gestionar temporadas
+                </Link>
+                . Temporadas afectadas: {fallbackSeasonLinks.map(s => s.name).join(', ')}.
+              </p>
+            )}
+          </div>
+        )}
         {movements.length === 0 ? (
           <p className="text-slate-500 dark:text-slate-400">No hay historial de movimientos entre grupos</p>
         ) : (
@@ -309,6 +363,49 @@ export default function PlayerProgress() {
                 <div className="w-4 h-4 rounded-full bg-slate-400 border-2 border-white"></div>
                 <span className="text-slate-700 dark:text-slate-300">Se mantiene</span>
               </div>
+            </div>
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Resumen por temporada</h3>
+              {seasonSummary.length === 0 ? (
+                <p className="text-slate-500 dark:text-slate-400 text-sm">No hay datos por temporada</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+                        <th className="py-2 pr-4">Temporada</th>
+                        <th className="py-2 pr-4">Clasificación</th>
+                        <th className="py-2 pr-4">Ganados</th>
+                        <th className="py-2 pr-4">Perdidos</th>
+                        <th className="py-2 pr-4">Variación</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {seasonSummary.map((row, idx) => {
+                        const prev = idx > 0 ? seasonSummary[idx - 1] : null;
+                        const currRank = row.finalRank;
+                        const prevRank = prev?.finalRank ?? null;
+                        let trend = '—';
+                        let trendClass = 'text-slate-500 dark:text-slate-400';
+                        if (currRank && prevRank) {
+                          if (currRank < prevRank) { trend = '↑ Mejora'; trendClass = 'text-green-600 dark:text-green-400'; }
+                          else if (currRank > prevRank) { trend = '↓ Empeora'; trendClass = 'text-red-600 dark:text-red-400'; }
+                          else { trend = '→ Igual'; trendClass = 'text-slate-600 dark:text-slate-300'; }
+                        }
+                        return (
+                          <tr key={row.seasonId} className="border-b border-slate-100 dark:border-slate-800">
+                            <td className="py-2 pr-4 text-slate-900 dark:text-white">{row.seasonName}</td>
+                            <td className="py-2 pr-4 text-slate-700 dark:text-slate-300">{row.finalRank ?? '—'}</td>
+                            <td className="py-2 pr-4 text-slate-700 dark:text-slate-300">{row.wins}</td>
+                            <td className="py-2 pr-4 text-slate-700 dark:text-slate-300">{row.losses}</td>
+                            <td className={`py-2 pr-4 ${trendClass}`}>{trend}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </>
         )}

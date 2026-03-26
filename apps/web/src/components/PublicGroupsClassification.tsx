@@ -1,8 +1,8 @@
-/**
+﻿/**
  * Componente PublicGroupsClassification - Muestra resumen de grupos y clasificación
  */
 
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import api from '../lib/api';
 
@@ -32,28 +32,18 @@ interface GroupsSummaryData {
 }
 
 export default function PublicGroupsClassification() {
-    const [data, setData] = useState<GroupsSummaryData | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        fetchGroupsSummary();
-    }, []);
-
-    const fetchGroupsSummary = async () => {
-        try {
-            setLoading(true);
+    const publicCacheMs = 1000 * 60 * 60 * 24 * 7;
+    const { data, isLoading, error } = useQuery<GroupsSummaryData>({
+        queryKey: ['public', 'groups-summary'],
+        queryFn: async () => {
             const { data } = await api.get('/public/groups-summary');
-            setData(data as GroupsSummaryData);
-        } catch (err) {
-            console.error('Error fetching groups:', err);
-            setError('Error al cargar los grupos');
-        } finally {
-            setLoading(false);
-        }
-    };
+            return data as GroupsSummaryData;
+        },
+        staleTime: publicCacheMs,
+        gcTime: publicCacheMs,
+    });
 
-    if (loading) {
+    if (isLoading) {
         return (
             <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
@@ -65,7 +55,7 @@ export default function PublicGroupsClassification() {
         return (
             <div className="bg-white rounded-xl shadow-lg p-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">📊 Grupos</h2>
-                <p className="text-gray-500 text-center py-8">{error || 'Sin datos'}</p>
+                <p className="text-gray-500 text-center py-8">Error al cargar los grupos</p>
             </div>
         );
     }
@@ -79,7 +69,9 @@ export default function PublicGroupsClassification() {
                         <span className="text-sm bg-indigo-100 text-indigo-700 px-2 py-1 rounded">
                             {data.seasonName}
                         </span>
-                        {data.cached && <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Caché</span>}
+                        {data.cached && (
+                            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Caché</span>
+                        )}
                     </h2>
                 </div>
 
@@ -89,15 +81,13 @@ export default function PublicGroupsClassification() {
                             key={group.id}
                             className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow border-l-4 border-indigo-500"
                         >
-                            {/* Header del grupo */}
                             <div className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white p-4">
                                 <h3 className="text-xl font-bold">{group.name}</h3>
                                 <p className="text-indigo-100 text-sm mt-1">
-                                    👥 {group.playerCount} jugadores • 🎾 {group.matchCount} partidos
+                                    👥 {group.playerCount} jugadores · 🎾 {group.matchCount} partidos
                                 </p>
                             </div>
 
-                            {/* Clasificación Top 8 */}
                             <div className="p-4">
                                 <div className="space-y-2">
                                     {group.rankings.slice(0, 8).map((player, index) => {

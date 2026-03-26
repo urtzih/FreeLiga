@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
@@ -233,7 +233,7 @@ export default function MatchHistory() {
         });
     }, [allGroups, matches]);
 
-    const hasPlayedResultBetween = (playerAId: string, playerBId: string) => {
+    const hasPlayedResultBetween = useCallback((playerAId: string, playerBId: string) => {
         return selectedGroupMatches.some((match: any) => {
             const samePair =
                 (match.player1Id === playerAId && match.player2Id === playerBId) ||
@@ -243,7 +243,7 @@ export default function MatchHistory() {
 
             return match.gamesP1 !== null && match.gamesP2 !== null;
         });
-    };
+    }, [selectedGroupMatches]);
 
     const playersWithRemainingMatches = useMemo(() => {
         if (!createPendingForm.groupId || !groupPlayers.length) return [] as any[];
@@ -254,7 +254,7 @@ export default function MatchHistory() {
                 return !hasPlayedResultBetween(playerA.id, playerB.id);
             });
         });
-    }, [groupPlayers, createPendingForm.groupId, selectedGroupMatches]);
+    }, [groupPlayers, createPendingForm.groupId, hasPlayedResultBetween]);
 
     const remainingOpponentsForPlayer1 = useMemo(() => {
         if (!createPendingForm.player1Id) return [] as any[];
@@ -263,7 +263,7 @@ export default function MatchHistory() {
             if (player.id === createPendingForm.player1Id) return false;
             return !hasPlayedResultBetween(createPendingForm.player1Id, player.id);
         });
-    }, [groupPlayers, createPendingForm.player1Id, selectedGroupMatches]);
+    }, [groupPlayers, createPendingForm.player1Id, hasPlayedResultBetween]);
 
     const handleCreatePendingMatch = async (e: React.FormEvent) => {
         e.preventDefault();

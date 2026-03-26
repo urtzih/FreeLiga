@@ -21,11 +21,18 @@ const swapPlayersSchema = z.object({
 });
 
 export async function groupRoutes(fastify: FastifyInstance) {
+    const invalidatePlayerCache = (playerId: string) => {
+        cacheService.invalidate(`private:player:${playerId}:profile`);
+        cacheService.invalidate(`private:player:${playerId}:stats`);
+        cacheService.invalidate(`private:player:${playerId}:progress`);
+        cacheService.invalidate(`private:player:${playerId}:matches-by-date`);
+        cacheService.invalidate(`private:player:${playerId}:movements`);
+    };
+
     const invalidateGroupRelatedCache = (groupId: string) => {
         cacheService.invalidate(`private:group:${groupId}:detail`);
-        cacheService.invalidatePattern('^private:classification:');
-        cacheService.invalidate('public:groups-summary');
-        cacheService.invalidatePattern(`^public:group:${groupId}:classification`);
+        cacheService.invalidatePattern(`^private:classification:[^:]*:${groupId}:`);
+        cacheService.invalidatePattern('^private:classification:[^:]*:all:');
     };
 
     // Get all groups
@@ -103,6 +110,11 @@ export async function groupRoutes(fastify: FastifyInstance) {
                         },
                     },
                     matches: {
+                        where: {
+                            // Only include matches from the current group
+                            // This prevents showing historical matches from previous seasons
+                            groupId: id,
+                        },
                         include: {
                             player1: true,
                             player2: true,
@@ -119,7 +131,7 @@ export async function groupRoutes(fastify: FastifyInstance) {
                 return reply.status(404).send({ error: 'Group not found' });
             }
 
-            cacheService.set(cacheKey, group, 5 / 60); // 5 minutos
+            cacheService.set(cacheKey, group, 24);
 
             return group;
         } catch (error) {
@@ -148,8 +160,7 @@ export async function groupRoutes(fastify: FastifyInstance) {
                 },
             });
 
-            cacheService.invalidatePattern('^private:classification:');
-            cacheService.invalidate('public:groups-summary');
+            cacheService.invalidatePattern('^private:classification:[^:]*:all:');
 
             return group;
         } catch (error) {
@@ -304,6 +315,7 @@ export async function groupRoutes(fastify: FastifyInstance) {
             }
 
             invalidateGroupRelatedCache(id);
+            invalidatePlayerCache(body.playerId);
 
             return groupPlayer;
         } catch (error) {
@@ -337,6 +349,7 @@ export async function groupRoutes(fastify: FastifyInstance) {
             });
 
             invalidateGroupRelatedCache(id);
+            invalidatePlayerCache(playerId);
 
             return { success: true };
         } catch (error) {
@@ -380,10 +393,8 @@ export async function groupRoutes(fastify: FastifyInstance) {
                 return reply.status(403).send({ error: 'Forbidden' });
             }
 
-            cacheService.invalidatePattern('^private:classification:');
-            cacheService.invalidate('public:groups-summary');
+            cacheService.invalidatePattern('^private:classification:[^:]*:all:');
             cacheService.invalidate(`private:group:${id}:detail`);
-            cacheService.invalidatePattern(`^public:group:${id}:classification`);
             await prisma.group.delete({ where: { id } });
 
             return { success: true };
@@ -470,6 +481,11 @@ export async function groupRoutes(fastify: FastifyInstance) {
                     },
                 }),
             ]);
+
+            invalidateGroupRelatedCache(group1Id);
+            invalidateGroupRelatedCache(group2Id);
+            invalidatePlayerCache(player1Id);
+            invalidatePlayerCache(player2Id);
 
             return { success: true, message: 'Players swapped successfully' };
         } catch (error) {

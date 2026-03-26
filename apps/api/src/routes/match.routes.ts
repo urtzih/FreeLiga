@@ -1,4 +1,4 @@
-import { FastifyInstance } from 'fastify';
+﻿import { FastifyInstance } from 'fastify';
 import { prisma } from '@freesquash/database';
 import { z } from 'zod';
 import { calculateGroupRankings } from '../services/ranking.service';
@@ -33,14 +33,23 @@ const updateMatchSchema = z.object({
     matchStatus: z.enum(['PLAYED', 'INJURY', 'CANCELLED']).optional(),
 });
 
+const markInjurySchema = z.object({
+    playerId: z.string().optional(),
+});
+
 export async function matchRoutes(fastify: FastifyInstance) {
-    const invalidateMatchRelatedCache = (groupId: string) => {
-        cacheService.invalidate('public:recent-matches');
-        cacheService.invalidate('public:groups-summary');
-        cacheService.invalidate('public:stats');
-        cacheService.invalidatePattern(`^public:group:${groupId}:classification`);
+    const invalidatePlayerCache = (playerId: string) => {
+        cacheService.invalidate(`private:player:${playerId}:profile`);
+        cacheService.invalidate(`private:player:${playerId}:stats`);
+        cacheService.invalidate(`private:player:${playerId}:progress`);
+        cacheService.invalidate(`private:player:${playerId}:matches-by-date`);
+        cacheService.invalidate(`private:player:${playerId}:movements`);
+    };
+
+    const invalidateMatchRelatedCache = async (groupId: string) => {
         cacheService.invalidate(`private:group:${groupId}:detail`);
-        cacheService.invalidatePattern('^private:classification:');
+        cacheService.invalidatePattern(`^private:classification:[^:]*:${groupId}:`);
+        cacheService.invalidatePattern('^private:classification:[^:]*:all:');
     };
 
     const runDetachedTask = (
@@ -128,18 +137,13 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 ],
             });
 
-            console.log('📊 GET /matches query:', { groupId, playerId, scheduled, matchStatus });
-            console.log('📊 Matches found:', matches.length);
-            console.log('📊 First 3 matches:', matches.slice(0, 3).map(m => ({
-                id: m.id,
-                player1: m.player1.name,
-                player2: m.player2.name,
-                scheduledDate: m.scheduledDate,
-                isScheduled: m.isScheduled,
-                gamesP1: m.gamesP1,
-                gamesP2: m.gamesP2,
-                matchStatus: m.matchStatus
-            })));
+            logger.debug({
+                groupId,
+                playerId,
+                scheduled,
+                matchStatus,
+                resultCount: matches.length
+            }, 'Matches fetched');
 
             return matches;
         } catch (error) {
@@ -355,9 +359,11 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 scheduledDate: body.scheduledDate,
             });
 
-            // Invalidate only match-related public cache keys
-            invalidateMatchRelatedCache(body.groupId);
-            fastify.log.info({ matchId: match.id }, '🔄 Public cache invalidated after match creation');
+            // Invalidate only match-related cache keys
+            await invalidateMatchRelatedCache(body.groupId);
+            invalidatePlayerCache(body.player1Id);
+            invalidatePlayerCache(body.player2Id);
+            fastify.log.info({ matchId: match.id }, 'Cache invalidated after match creation');
 
             // Sincronizar con Google Calendar solo para partidos programados (nunca al registrar resultado)
             if (match.isScheduled && !isRecordingResult) {
@@ -492,9 +498,11 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 locationChanged,
             });
 
-            // Invalidate only match-related public cache keys
-            invalidateMatchRelatedCache(existingMatch.groupId);
-            fastify.log.info({ matchId: id }, '🔄 Public cache invalidated after match update');
+            // Invalidate only match-related cache keys
+            await invalidateMatchRelatedCache(existingMatch.groupId);
+            invalidatePlayerCache(existingMatch.player1Id);
+            invalidatePlayerCache(existingMatch.player2Id);
+            fastify.log.info({ matchId: id }, 'Cache invalidated after match update');
 
             return match;
         } catch (error) {
@@ -503,6 +511,166 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 return reply.status(400).send({ error: error.errors });
             }
             fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    // Mark player as injured for active season (self or admin)
+    fastify.post('/mark-injury', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            const body = markInjurySchema.parse(request.body || {});
+
+            const targetPlayerId = body.playerId ?? decoded.playerId;
+            if (!targetPlayerId) {
+                return reply.status(400).send({ error: 'PlayerId is required' });
+            }
+
+            if (body.playerId && decoded.role !== 'ADMIN') {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            const currentGroup = await getPlayerCurrentGroupId(targetPlayerId);
+            if (!currentGroup) {
+                return reply.status(404).send({ error: 'Player has no active group' });
+            }
+
+            const group = await prisma.group.findUnique({
+                where: { id: currentGroup },
+                include: {
+                    groupPlayers: true,
+                },
+            });
+
+            if (!group) {
+                return reply.status(404).send({ error: 'Group not found' });
+            }
+
+            const expectedMatches = Math.max(group.groupPlayers.length - 1, 0);
+
+            const playerMatches = await prisma.match.findMany({
+                where: {
+                    groupId: group.id,
+                    OR: [
+                        { player1Id: targetPlayerId },
+                        { player2Id: targetPlayerId },
+                    ],
+                },
+                include: {
+                    player1: { select: { id: true, userId: true } },
+                    player2: { select: { id: true, userId: true } },
+                },
+            });
+
+            const playedMatches = playerMatches.filter((m) =>
+                m.matchStatus === 'PLAYED' && m.gamesP1 !== null && m.gamesP2 !== null
+            ).length;
+
+            const isPartialMode = playedMatches > expectedMatches / 2;
+
+            const matchesToUpdate = isPartialMode
+                ? playerMatches.filter((m) =>
+                    m.gamesP1 === null ||
+                    m.gamesP2 === null ||
+                    m.isScheduled ||
+                    !!m.scheduledDate ||
+                    !!m.googleEventId
+                )
+                : playerMatches;
+
+            let updatedCount = 0;
+            for (const match of matchesToUpdate) {
+                if (match.googleEventId) {
+                    const candidateUserIds = [
+                        decoded.id,
+                        match.player1?.userId,
+                        match.player2?.userId,
+                    ].filter(Boolean) as string[];
+
+                    for (const userId of candidateUserIds) {
+                        try {
+                            await MatchSyncService.deleteMatchFromGoogleCalendar(match.id, userId);
+                            break;
+                        } catch (error) {
+                            logger.warn({ error, matchId: match.id, userId }, 'Failed to delete match from Google Calendar');
+                        }
+                    }
+                }
+
+                await prisma.match.update({
+                    where: { id: match.id },
+                    data: {
+                        matchStatus: 'INJURY',
+                        gamesP1: null,
+                        gamesP2: null,
+                        winnerId: null,
+                        isScheduled: false,
+                        scheduledDate: null,
+                        location: null,
+                        notes: null,
+                        googleEventId: null,
+                        googleCalendarSyncStatus: null,
+                    },
+                });
+                updatedCount += 1;
+            }
+
+            const opponentIds = group.groupPlayers
+                .map((gp) => gp.playerId)
+                .filter((id) => id !== targetPlayerId);
+
+            const missingOpponentIds = opponentIds.filter((opponentId) => {
+                return !playerMatches.some((m) =>
+                    (m.player1Id === targetPlayerId && m.player2Id === opponentId) ||
+                    (m.player1Id === opponentId && m.player2Id === targetPlayerId)
+                );
+            });
+
+            let createdCount = 0;
+            if (missingOpponentIds.length > 0) {
+                const createData = missingOpponentIds.map((opponentId) => ({
+                    groupId: group.id,
+                    player1Id: targetPlayerId,
+                    player2Id: opponentId,
+                    matchStatus: 'INJURY' as const,
+                    gamesP1: null,
+                    gamesP2: null,
+                    winnerId: null,
+                    isScheduled: false,
+                    date: new Date(),
+                }));
+
+                await prisma.match.createMany({ data: createData });
+                createdCount = createData.length;
+            }
+
+            await calculateGroupRankings(group.id);
+            await invalidateMatchRelatedCache(group.id);
+
+            logger.info({
+                playerId: targetPlayerId,
+                groupId: group.id,
+                expectedMatches,
+                playedMatches,
+                mode: isPartialMode ? 'partial' : 'total',
+                updatedCount,
+                createdCount,
+            }, 'Player marked as injured');
+
+            return {
+                mode: isPartialMode ? 'partial' : 'total',
+                expectedMatches,
+                playedMatches,
+                updatedCount,
+                createdCount,
+            };
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                return reply.status(400).send({ error: error.errors });
+            }
+            logger.error({ error }, 'Failed to mark player as injured');
             return reply.status(500).send({ error: 'Internal server error' });
         }
     });
@@ -565,8 +733,10 @@ export async function matchRoutes(fastify: FastifyInstance) {
 
             await calculateGroupRankings(groupId);
 
-            invalidateMatchRelatedCache(groupId);
-            fastify.log.info({ matchId: id }, '🔄 Public cache invalidated after match delete');
+            await invalidateMatchRelatedCache(groupId);
+            invalidatePlayerCache(match.player1Id);
+            invalidatePlayerCache(match.player2Id);
+            fastify.log.info({ matchId: id }, 'Cache invalidated after match delete');
 
             return { success: true };
         } catch (error) {
@@ -575,3 +745,4 @@ export async function matchRoutes(fastify: FastifyInstance) {
         }
     });
 }
+

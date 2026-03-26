@@ -12,7 +12,7 @@ export interface HttpLogContext {
   url: string;
   userAgent?: string;
   ip: string;
-  userId?: number;
+  userId?: string | number;
   userRole?: string;
   statusCode?: number;
   responseTime?: number;
@@ -24,11 +24,11 @@ export interface HttpLogContext {
  */
 export async function registerHttpLogging(fastify: FastifyInstance) {
   // Hook para capturar inicio de request
-  fastify.addHook('onRequest', async (request, reply) => {
+  fastify.addHook('onRequest', async (request, _reply) => {
     (request as any).startTime = Date.now();
     
     // Obtener información del usuario si está autenticado
-    let userId: number | undefined;
+    let userId: string | number | undefined;
     let userRole: string | undefined;
     
     try {
@@ -60,7 +60,7 @@ export async function registerHttpLogging(fastify: FastifyInstance) {
     const duration = Date.now() - startTime;
     const statusCode = reply.statusCode;
 
-    let userId: number | undefined;
+    let userId: string | number | undefined;
     let userRole: string | undefined;
     
     try {
@@ -112,7 +112,7 @@ export async function registerHttpLogging(fastify: FastifyInstance) {
  */
 export async function httpLoggingMiddleware(
   request: FastifyRequest,
-  reply: FastifyReply
+  _reply: FastifyReply
 ) {
   (request as any).startTime = Date.now();
 }
@@ -170,7 +170,7 @@ export function logProtectedAccess(
 export function logAuthentication(
   success: boolean,
   email: string,
-  userId?: number,
+  userId?: string | number,
   ip?: string,
   reason?: string
 ) {

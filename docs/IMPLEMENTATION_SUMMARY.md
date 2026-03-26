@@ -1,5 +1,56 @@
 # ✅ RESUMEN DE IMPLEMENTACIÓN COMPLETA
 
+## 🤕 IMPLEMENTACIÓN: MARCAR LESIÓN DE TEMPORADA (JUGADOR Y ADMIN)
+
+**Estado**: ✅ **COMPLETADA Y LISTA PARA USAR**
+
+**Fecha**: 26 de marzo de 2026
+
+---
+
+## 🎯 QUÉ SE IMPLEMENTÓ
+
+Flujo completo para **marcar lesión en la temporada activa**, disponible para:
+
+1. **Jugadores** desde la página de registrar partidos
+2. **Administradores** desde la lista de usuarios
+
+El sistema aplica la regla de “mitad” y marca los partidos pendientes (y si corresponde los ya jugados) como **LESIÓN**, cerrando los pendientes del resto de jugadores.
+
+---
+
+## 🔧 CAMBIOS PRINCIPALES
+
+### **Backend**
+```
+✅ apps/api/src/routes/match.routes.ts (MODIFICADO)
+   - Nuevo endpoint POST /matches/mark-injury
+   - Lógica de “mitad”, cierre de pendientes y limpieza de calendario
+
+✅ apps/api/src/routes/player.routes.ts (MODIFICADO)
+   - Stats incluyen: injuryMatchesActiveSeason, remainingMatchesActiveSeason, isInjuredActiveSeason
+
+✅ apps/api/src/routes/public.routes.ts (MODIFICADO)
+   - Partidos por lesión cuentan como “cerrados” para pendientes públicos
+```
+
+### **Frontend**
+```
+✅ apps/web/src/pages/player/RecordMatch.tsx (MODIFICADO)
+   - Botón + confirmación para marcar lesión
+
+✅ apps/web/src/pages/player/Dashboard.tsx (MODIFICADO)
+   - Banner de lesión activa (solo temporada activa)
+
+✅ apps/web/src/pages/player/GroupView.tsx (MODIFICADO)
+   - Pendientes y progreso consideran lesiones como partidos cerrados
+
+✅ apps/web/src/pages/admin/ManageUsers.tsx (MODIFICADO)
+   - Botón “Lesionar” para admins con confirmación
+```
+
+---
+
 ## 📦 IMPLEMENTACIÓN: PROGRAMACIÓN DE PARTIDOS CON GOOGLE CALENDAR
 
 **Estado**: ✅ **COMPLETADA Y LISTA PARA USAR**

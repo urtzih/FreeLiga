@@ -58,7 +58,7 @@ async function demonstrateLogging() {
   // 5. Operaciones con duración
   console.log('\n5️⃣ Operaciones con seguimiento de duración:');
   
-  const result1 = await logOperation(
+  const _result1 = await logOperation(
     'calculate_rankings',
     async () => {
       // Simular operación lenta
@@ -68,7 +68,7 @@ async function demonstrateLogging() {
     { groupId: 'group-A' }
   );
 
-  const result2 = await logOperation(
+  const _result2 = await logOperation(
     'send_notifications',
     async () => {
       await new Promise(resolve => setTimeout(resolve, 80));
