@@ -639,7 +639,7 @@ export default function GroupView() {
                                                 <div className="flex items-center space-x-3">
                                                     {played && (
                                                         <span className="text-2xl">
-                                                            {won ? '✅' : '❌'}
+                                                            {match.matchStatus === 'INJURY' ? String.fromCodePoint(0x1F915) : won ? String.fromCodePoint(0x2705) : String.fromCodePoint(0x274C)}
                                                         </span>
                                                     )}
                                                     {!played && (
