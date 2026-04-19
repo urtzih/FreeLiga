@@ -7,24 +7,37 @@
  */
 
 import { defineConfig } from 'vite';
+import { loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { VitePWA } from 'vite-plugin-pwa';
 import pkg from './package.json';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const rootDir = path.resolve(__dirname, '../..');
+  const env = loadEnv(mode, rootDir, '');
+  const apiTarget = env.VITE_API_URL || 'http://localhost:3001';
+
+  return {
+  envDir: rootDir,
   plugins: [
     react(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
       registerType: 'autoUpdate',
-      includeAssets: ['logo.jpg', 'euskadiLogo.png'],
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,jpg,svg}'],
-        navigateFallback: '/index.html',
-      },
+      includeAssets: [
+        'logo.jpg',
+        'icon-192.png',
+        'icon-512.png',
+        'icon-maskable-192.png',
+        'icon-maskable-512.png',
+      ],
+      injectRegister: 'auto',
       manifest: {
-        name: 'FreeLiga',
-        short_name: 'FreeLiga',
+        name: 'FreeLiga Gasteiz',
+        short_name: 'FreeLiga Gasteiz',
         description: 'Liga de squash con grupos, rankings y gestion de partidos.',
         start_url: '/',
         scope: '/',
@@ -35,14 +48,28 @@ export default defineConfig({
         background_color: '#ffffff',
         icons: [
           {
-            src: '/euskadiLogo.png',
+            src: '/icon-192.png',
             sizes: '192x192',
             type: 'image/png',
+            purpose: 'any',
           },
           {
-            src: '/logo.jpg',
+            src: '/icon-512.png',
             sizes: '512x512',
-            type: 'image/jpeg',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: '/icon-maskable-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+          {
+            src: '/icon-maskable-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
           },
         ],
       },
@@ -59,9 +86,22 @@ export default defineConfig({
   server: {
     port: 4173,
     host: '0.0.0.0',
+    allowedHosts: ['.trycloudflare.com', 'localhost', '127.0.0.1'],
     proxy: {
       '/api': {
-        target: process.env.VITE_API_URL || 'http://localhost:3001',
+        target: apiTarget,
+        changeOrigin: true,
+      },
+    },
+  },
+  preview: {
+    port: 4173,
+    strictPort: true,
+    host: '0.0.0.0',
+    allowedHosts: ['.trycloudflare.com', 'localhost', '127.0.0.1'],
+    proxy: {
+      '/api': {
+        target: apiTarget,
         changeOrigin: true,
       },
     },
@@ -80,4 +120,5 @@ export default defineConfig({
       },
     },
   },
+};
 });

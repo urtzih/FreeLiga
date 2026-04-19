@@ -22,6 +22,8 @@
     "format:check": "prettier --check README.md AGENTS.md docs/DOCUMENTATION_INDEX.md DOCUMENTATION_INDEX.md .eslintrc.cjs .prettierrc.json apps/web/vite.config.ts",
     "db:generate": "npm run db:generate --workspace=packages/database",
     "db:push": "npm run db:push --workspace=packages/database",
+    "db:reset-local": "node scripts/reset-local-db.js",
+    "db:reset-push-local": "node scripts/reset-push-local.js",
     "db:studio": "npm run db:studio --workspace=packages/database",
     "backup": "powershell -File scripts/backup-database.ps1",
     "backup:quick": "powershell -File scripts/quick-backup.ps1",

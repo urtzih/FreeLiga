@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+﻿import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import { lazy, Suspense } from 'react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
@@ -6,6 +6,8 @@ import { Analytics } from '@vercel/analytics/react';
 import Loader from './components/Loader';
 import ErrorBoundary from './components/ErrorBoundary';
 import ToastContainer from './components/ToastContainer';
+import InstallAppBanner from './components/InstallAppBanner';
+import { useLanguage } from './contexts/LanguageContext';
 const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/auth/Login'));
 const Dashboard = lazy(() => import('./pages/player/Dashboard'));
@@ -76,6 +78,7 @@ function ProtectedRoute({
 
 function App() {
     const { isAuthenticated, isAdmin, loading, user } = useAuth();
+    const { t } = useLanguage();
 
     if (loading) {
         return <div className="flex items-center justify-center min-h-screen">
@@ -91,7 +94,8 @@ function App() {
                 <SpeedInsights />
                 <Analytics />
                 <ToastContainer />
-                    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader label="Cargando módulo..." /></div>}>
+                <InstallAppBanner />
+                    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader label={t('app.loadingModule')} /></div>}>
                         <Routes>
                             {/* Login - Full screen, no layout */}
                             <Route
@@ -331,3 +335,4 @@ function App() {
 }
 
 export default App;
+

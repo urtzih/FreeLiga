@@ -168,33 +168,16 @@ export default function Profile() {
     }
   });
 
-  const updatePushNotificationsMutation = useMutation({
-    mutationFn: async (enabled: boolean) => {
-      const { data: response } = await api.patch('/users/me/push-notifications', { enabled });
-      return response;
-    },
-    onSuccess: async () => {
-      await refreshUser();
-      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
-      showToast('✅ Preferencia de notificaciones actualizada', 'success');
-    },
-    onError: (error: any) => {
-      const errorMessage = getErrorMessage(error);
-      showToast(`Error: ${errorMessage}`, 'error');
-    }
-  });
-
   const handlePushNotificationToggle = async () => {
     console.log('[PushDebug] toggle:click', {
       isPushToggleBusy,
       isSupported: pushNotification.isSupported,
       isSubscribed: pushNotification.isSubscribed,
-      userPreference: user?.pushNotificationsEnabled,
     });
 
     if (isPushToggleBusy) return;
 
-    const currentState = user?.pushNotificationsEnabled ?? true;
+    const currentState = pushNotification.isSubscribed;
     const newState = !currentState;
     console.log('[PushDebug] toggle:state-change', { currentState, newState });
     
@@ -221,10 +204,10 @@ export default function Profile() {
           console.log('[PushDebug] toggle:unsubscribe:skip-no-active-subscription');
         }
       }
-
-      console.log('[PushDebug] toggle:update-preference:start', { newState });
-      await withTimeout(updatePushNotificationsMutation.mutateAsync(newState), 12000);
-      console.log('[PushDebug] toggle:update-preference:done');
+      showToast(
+        newState ? '✅ Notificaciones activadas en este dispositivo' : '✅ Notificaciones desactivadas en este dispositivo',
+        'success'
+      );
     } catch (error: any) {
       const errorMessage = error?.message || pushNotification.error || 'Error al cambiar notificaciones push';
       showToast(`❌ ${errorMessage}`, 'error');
@@ -467,11 +450,6 @@ export default function Profile() {
                       </button>
                     </div>
                   )}
-                  {user?.pushNotificationsEnabled && !pushNotification.isSubscribed && (
-                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                      ⚠️ Las notificaciones están habilitadas en tu perfil, pero este navegador aún no está suscrito. Permite notificaciones en el navegador y desactiva/activa el interruptor para reintentar.
-                    </p>
-                  )}
                 </div>
                 <button
                   type="button"
@@ -482,12 +460,12 @@ export default function Profile() {
                       ? 'cursor-pointer'
                       : 'cursor-not-allowed opacity-60'
                   } ${
-                    user?.pushNotificationsEnabled
+                    pushNotification.isSubscribed
                       ? 'bg-green-500'
                       : 'bg-slate-300 dark:bg-slate-600'
                   }
                     before:content-[''] before:absolute before:w-5 before:h-5 before:rounded-full before:bg-white before:top-0.5 before:left-0.5 before:transition-transform before:shadow-md
-                    ${user?.pushNotificationsEnabled ? 'before:translate-x-6' : ''}`}
+                    ${pushNotification.isSubscribed ? 'before:translate-x-6' : ''}`}
                 >
                   {isPushToggleBusy && (
                     <div className="absolute inset-0 flex items-center justify-center">

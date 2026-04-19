@@ -13,10 +13,21 @@ import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 import './index.css';
 
 if ('serviceWorker' in navigator) {
-    registerSW({ immediate: true });
+    if (import.meta.env.DEV) {
+        // In dev+tunnel, dev SW script is ESM and must be registered as module.
+        navigator.serviceWorker
+            .register('/dev-sw.js?dev-sw', { scope: '/', type: 'module' })
+            .catch(() => navigator.serviceWorker.register('/sw.js', { scope: '/' }))
+            .catch((error) => {
+                console.warn('[PushDebug] initial SW registration failed', error);
+            });
+    } else {
+        registerSW({ immediate: true });
+    }
 }
 
 const queryClient = new QueryClient({
@@ -33,11 +44,13 @@ const queryClient = new QueryClient({
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <QueryClientProvider client={queryClient}>
-            <ToastProvider>
-                <AuthProvider>
-                    <App />
-                </AuthProvider>
-            </ToastProvider>
+            <LanguageProvider>
+                <ToastProvider>
+                    <AuthProvider>
+                        <App />
+                    </AuthProvider>
+                </ToastProvider>
+            </LanguageProvider>
         </QueryClientProvider>
     </React.StrictMode>
 );

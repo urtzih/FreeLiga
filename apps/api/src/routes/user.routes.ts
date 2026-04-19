@@ -38,10 +38,6 @@ const changePasswordSchema = z.object({
     newPassword: z.string().min(6),
 });
 
-const updatePushNotificationsSchema = z.object({
-    enabled: z.boolean(),
-});
-
 const createUserSchema = z.object({
     email: z.string().email(),
     password: z.string().min(6),
@@ -670,50 +666,4 @@ export async function userRoutes(fastify: FastifyInstance) {
         }
     });
 
-    // Update push notifications preference
-    fastify.patch('/me/push-notifications', {
-        onRequest: [fastify.authenticate],
-    }, async (request, reply) => {
-        try {
-            const decoded = request.user as any;
-            const userId = decoded.id;
-
-            const body = updatePushNotificationsSchema.parse(request.body);
-
-            // Update user preference
-            const user = await prisma.user.update({
-                where: { id: userId },
-                data: {
-                    pushNotificationsEnabled: body.enabled,
-                },
-                include: {
-                    player: true,
-                },
-            });
-
-            logBusinessEvent('push_notifications_preference_updated', {
-                userId,
-                userEmail: user.email,
-                enabled: body.enabled,
-            });
-
-            return {
-                success: true,
-                message: 'Preferencia de notificaciones actualizada',
-                user: {
-                    id: user.id,
-                    email: user.email,
-                    role: user.role,
-                    pushNotificationsEnabled: user.pushNotificationsEnabled,
-                    player: user.player,
-                },
-            };
-        } catch (error) {
-            if (error instanceof z.ZodError) {
-                return reply.status(400).send({ error: error.errors });
-            }
-            fastify.log.error(error);
-            return reply.status(500).send({ error: 'Internal server error' });
-        }
-    });
 }
