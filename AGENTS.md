@@ -48,6 +48,25 @@ FreeLiga es una aplicacion full-stack para gestionar una liga de squash con grup
 - Web standalone: `npm run dev:web`.
 - Prisma: `npm run db:generate`, `npm run db:push`, `npm run db:studio`.
 
+## Comandos operativos frecuentes
+
+- Instalar dependencias: `npm install --workspaces`.
+- Arrancar proyecto en local (API + Web): `npm run dev`.
+- Arrancar por separado:
+  - API: `npm run dev:api`.
+  - Web: `npm run dev:web`.
+- Validacion antes de dar por bueno:
+  - Build: `npm run build --workspaces`.
+  - Lint: `npm run lint`.
+- Traer copia de produccion a local (sync completo): `npm run sync`.
+- Backup local completo: `npm run backup`.
+- Backup rapido antes de cambios sensibles: `npm run backup:quick`.
+- Restaurar backup en local: `npm run restore`.
+
+Notas:
+- `npm run sync` ejecuta `scripts/sync-prod-to-local.ps1` (descarga de Railway + restore en MySQL local + backup en `backups/`).
+- Para `sync` se requiere `.env` con `DATABASE_URL_PROD` y `DATABASE_URL` validas, y Docker/MySQL local operativo.
+
 ## Ejecutar, testear, lint y build
 
 - Build: `npm run build --workspaces`.

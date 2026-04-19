@@ -55,3 +55,4 @@ backups/
 docs/freesquash_liga.sql
 .vercel
 .env.production.bak
+.tmp_groupview_head.tsx

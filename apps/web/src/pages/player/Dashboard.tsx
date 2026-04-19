@@ -52,6 +52,24 @@ export default function Dashboard() {
     const myRanking = currentGroup?.groupPlayers?.find(
         (gp: any) => gp.playerId === user?.player?.id
     );
+    const rankingPosition = myRanking?.rankingPosition;
+    const rankingHighlightClasses = rankingPosition && rankingPosition <= 2
+        ? {
+            number: 'text-green-600 dark:text-green-400',
+            label: 'text-green-700 dark:text-green-400',
+            box: 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800',
+        }
+        : rankingPosition && rankingPosition > 6
+            ? {
+                number: 'text-red-600 dark:text-red-400',
+                label: 'text-red-700 dark:text-red-400',
+                box: 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800',
+            }
+            : {
+                number: 'text-amber-600 dark:text-amber-400',
+                label: 'text-slate-600 dark:text-slate-400',
+                box: 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800',
+            };
 
     if (loading) {
         return (
@@ -156,7 +174,7 @@ export default function Dashboard() {
                     <div className="px-3 md:px-6 py-3 md:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
                         <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white">{t('dashboard.currentGroup')}</h2>
                     </div>
-                    <div className="p-3 md:p-6 flex justify-between items-center min-h-[140px] md:min-h-auto">
+                    <div className="p-3 md:p-6 flex justify-between items-center gap-3 md:gap-6 min-h-[140px] md:min-h-auto">
                         <div className="flex-1 flex flex-col justify-center">
                             <div className="flex flex-wrap items-baseline gap-x-2 md:gap-x-4 mb-3 md:mb-4">
                                 <h3 className="text-lg md:text-2xl font-bold text-slate-900 dark:text-white">{currentGroup.name}</h3>
@@ -181,28 +199,20 @@ export default function Dashboard() {
                                 {t('dashboard.viewDetails')} →
                             </Link>
                         </div>
-                        <div className="text-right pl-4">
-                            <div className={`text-2xl md:text-4xl font-bold ${myRanking?.rankingPosition && myRanking.rankingPosition <= 2
-                                ? 'text-green-600 dark:text-green-400'
-                                : myRanking?.rankingPosition && myRanking.rankingPosition > 6
-                                    ? 'text-red-600 dark:text-red-400'
-                                    : 'text-amber-600 dark:text-amber-400'
-                                }`}>
-                                #{myRanking?.rankingPosition || '-'}
+                        <div className="shrink-0">
+                            <div className={`text-left rounded-xl md:rounded-2xl border px-3 md:px-5 py-2 md:py-3 shadow-sm ${rankingHighlightClasses.box}`}>
+                                <div className={`text-3xl md:text-5xl font-extrabold leading-none ${rankingHighlightClasses.number}`}>
+                                    #{rankingPosition || '-'}
+                                </div>
+                                <p className={`text-xs md:text-sm font-semibold mt-1 ${rankingHighlightClasses.label}`}>
+                                    {rankingPosition && rankingPosition <= 2
+                                        ? `⬆️ ${t('dashboard.promotion')}`
+                                        : rankingPosition && rankingPosition > 6
+                                            ? `⚠️ ${t('dashboard.relegation')}`
+                                            : t('dashboard.position')
+                                    }
+                                </p>
                             </div>
-                            <p className={`text-xs md:text-sm ${myRanking?.rankingPosition && myRanking.rankingPosition <= 2
-                                ? 'text-green-600 dark:text-green-400'
-                                : myRanking?.rankingPosition && myRanking.rankingPosition > 6
-                                    ? 'text-red-600 dark:text-red-400'
-                                    : 'text-slate-600 dark:text-slate-400'
-                                }`}>
-                                {myRanking?.rankingPosition && myRanking.rankingPosition <= 2
-                                    ? `⬆️ ${t('dashboard.promotion')}`
-                                    : myRanking?.rankingPosition && myRanking.rankingPosition > 6
-                                        ? `⚠️ ${t('dashboard.relegation')}`
-                                        : t('dashboard.position')
-                                }
-                            </p>
                         </div>
                     </div>
                 </div>
@@ -446,10 +456,6 @@ function GlobalStatsVisual({
             : 'conic-gradient(#94a3b8 0% 100%)',
     };
 
-    const averageTone = average >= 0
-        ? 'text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30'
-        : 'text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/30';
-
     return (
         <div className="relative overflow-hidden rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg">
             <div className="absolute inset-0 opacity-40 pointer-events-none bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.16),transparent_40%),radial-gradient(circle_at_80%_20%,rgba(245,158,11,0.18),transparent_35%),radial-gradient(circle_at_50%_100%,rgba(59,130,246,0.12),transparent_40%)]" />
@@ -463,13 +469,13 @@ function GlobalStatsVisual({
                         {historyLabel} →
                     </Link>
                 </div>
-                <div className="h-full flex flex-col items-center justify-center gap-3 py-2">
-                    <div className="relative h-24 w-24 md:h-32 md:w-32 rounded-full p-2 shadow-inner ring-1 ring-slate-300 dark:ring-slate-600" style={ringStyle}>
+                <div className="h-full flex flex-col items-center justify-center gap-2 py-2 md:py-3">
+                    <div className="relative w-full max-w-[220px] md:max-w-[260px] aspect-square rounded-full p-2.5 md:p-3 shadow-inner ring-1 ring-slate-300 dark:ring-slate-600" style={ringStyle}>
                         <div className="h-full w-full rounded-full bg-white dark:bg-slate-900 flex flex-col items-center justify-center text-center">
-                            <p className="text-xl md:text-2xl font-black text-slate-900 dark:text-white">
+                            <p className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white leading-none">
                                 {hasMatchData ? `${winRate.toFixed(0)}%` : '0%'}
                             </p>
-                            <p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400">
+                            <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-1.5">
                                 {winLossLabel}
                             </p>
                         </div>
@@ -496,12 +502,12 @@ function GlobalStatsVisual({
                     </div>
                     <MetricBar label={`${winsLabel} (${wins})`} value={winRate} color="from-green-500 to-green-600" />
                     <MetricBar label={`${lossesLabel} (${losses})`} value={lossRate} color="from-red-500 to-red-600" />
-                    <MetricBar label={`${setsWonLabel} (${setsWon})`} value={setsWonRate} color="from-emerald-500 to-teal-500" />
-                    <MetricBar label={`${setsLostLabel} (${setsLost})`} value={setsLostRate} color="from-rose-500 to-orange-500" />
+                    <MetricBar label={`${setsWonLabel} (${setsWon})`} value={setsWonRate} color="from-sky-500 to-indigo-500" />
+                    <MetricBar label={`${setsLostLabel} (${setsLost})`} value={setsLostRate} color="from-fuchsia-500 to-violet-500" />
 
                     <div className="pt-1 flex items-center justify-between">
                         <p className="text-xs md:text-sm font-medium text-slate-600 dark:text-slate-400">{averageLabel}</p>
-                        <span className={`px-2.5 py-1 rounded-full text-xs md:text-sm font-bold ${averageTone}`}>
+                        <span className="px-2.5 py-1 rounded-full text-xs md:text-sm font-semibold text-slate-600 dark:text-slate-300 bg-slate-100/80 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-600">
                             {average > 0 ? '+' : ''}{average}
                         </span>
                     </div>

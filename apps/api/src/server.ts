@@ -1,5 +1,5 @@
 /**
- * FreeSQuash League - API Server
+ * FreeSQuash Liga - API Server
  * 
  * @author Urtzi Diaz Arberas
  * @copyright © 2024-2026 Urtzi Diaz Arberas. All rights reserved.
