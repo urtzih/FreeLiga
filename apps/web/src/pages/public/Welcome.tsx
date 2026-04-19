@@ -1,6 +1,9 @@
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function Welcome() {
+    const { language } = useLanguage();
+    const tr = (es: string, eu: string) => (language === 'eu' ? eu : es);
     const emails = [
     'ahmad.hamam@ejemplo.com',
     'aitor.alonso@ejemplo.com',
@@ -91,7 +94,7 @@ export default function Welcome() {
     ];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800">
+        <div className="min-h-screen bg-gradient-to-br from-amber-50 to-amber-100 dark:from-slate-900 dark:to-slate-800">
             <div className="max-w-4xl mx-auto px-4 py-6 sm:py-12">
                 {/* Header */}
                 <div className="text-center mb-8 sm:mb-12">
@@ -103,28 +106,29 @@ export default function Welcome() {
                         />
                     </div>
                     <h1 className="text-3xl sm:text-5xl font-bold text-slate-900 dark:text-white mb-3 sm:mb-4 px-2">
-                        Bienvenido a FreeSquash League
+                        {tr('Bienvenido a FreeSquash Liga', 'Ongi etorri FreeSquash Ligara')}
                     </h1>
                     <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 px-2">
-                        Temporada Enero-Febrero 2026
+                        {tr('Temporada Enero-Febrero 2026', '2026ko Urtarrila-Otsaila denboraldia')}
                     </p>
                 </div>
 
                 {/* Mensaje Motivador */}
-                <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-2xl shadow-xl p-4 sm:p-8 mb-6 sm:mb-8 border-2 border-green-200 dark:border-green-700">
+                <div className="bg-gradient-to-r from-green-50 to-amber-50 dark:from-green-900/20 dark:to-amber-900/20 rounded-2xl shadow-xl p-4 sm:p-8 mb-6 sm:mb-8 border-2 border-green-200 dark:border-green-700">
                     <div className="flex items-start gap-3 sm:gap-4">
                         <div className="text-3xl sm:text-5xl">🚀</div>
                         <div className="flex-1">
                             <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-3 sm:mb-4">
-                                ¡Adiós Excel, hola a la era digital!
+                                {tr('¡Adiós Excel, hola a la era digital!', 'Agur Excel, kaixo aro digitala!')}
                             </h2>
                             <div className="space-y-2 sm:space-y-3 text-slate-700 dark:text-slate-300">
                                 <p className="text-base sm:text-lg leading-relaxed">
-                                    Antes gestionábamos la liga con hojas de cálculo compartidas. <strong>Era un caos:</strong> resultados perdidos, 
-                                    clasificaciones desactualizadas, dificultad para contactar rivales...
+                                    {tr('Antes gestionábamos la liga con hojas de cálculo compartidas.', 'Lehen liga kalkulu-orri partekatuekin kudeatzen genuen.')}{' '}
+                                    <strong>{tr('Era un caos:', 'Kaosa zen:')}</strong>{' '}
+                                    {tr('resultados perdidos, clasificaciones desactualizadas, dificultad para contactar rivales...', 'emaitzak galduta, sailkapen zaharkituak eta aurkariekin harremanetan jartzeko zailtasunak...')}
                                 </p>
                                 <p className="text-base sm:text-lg leading-relaxed">
-                                    <strong>Ahora todo cambia.</strong> Con FreeSquash League puedes:
+                                    <strong>{tr('Ahora todo cambia.', 'Orain dena aldatzen da.')}</strong> {tr('Con FreeSquash Liga puedes:', 'FreeSquash Ligarekin honako hau egin dezakezu:')}
                                 </p>
                                 <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 my-3 sm:my-4">
                                     <li className="flex items-center gap-2 bg-white dark:bg-slate-800 p-2 sm:p-3 rounded-lg">
@@ -133,27 +137,27 @@ export default function Welcome() {
                                     </li>
                                     <li className="flex items-center gap-2 bg-white dark:bg-slate-800 p-3 rounded-lg">
                                         <span className="text-green-500 text-xl">✓</span>
-                                        <span>Registrar partidos en segundos</span>
+                                        <span>{tr('Registrar partidos en segundos', 'Partidak segundotan erregistratu')}</span>
                                     </li>
                                     <li className="flex items-center gap-2 bg-white dark:bg-slate-800 p-3 rounded-lg">
                                         <span className="text-green-500 text-xl">✓</span>
-                                        <span>Contactar fácilmente a tus rivales</span>
+                                        <span>{tr('Contactar fácilmente a tus rivales', 'Zure aurkariekin erraz harremanetan jarri')}</span>
                                     </li>
                                     <li className="flex items-center gap-2 bg-white dark:bg-slate-800 p-3 rounded-lg">
                                         <span className="text-green-500 text-xl">✓</span>
-                                        <span>Ver tu progreso y estadísticas</span>
+                                        <span>{tr('Ver tu progreso y estadísticas', 'Zure aurrerapena eta estatistikak ikusi')}</span>
                                     </li>
                                     <li className="flex items-center gap-2 bg-white dark:bg-slate-800 p-3 rounded-lg">
                                         <span className="text-green-500 text-xl">✓</span>
-                                        <span>Acceder desde cualquier dispositivo</span>
+                                        <span>{tr('Acceder desde cualquier dispositivo', 'Edozein gailutatik sartu')}</span>
                                     </li>
                                     <li className="flex items-center gap-2 bg-white dark:bg-slate-800 p-3 rounded-lg">
                                         <span className="text-green-500 text-xl">✓</span>
-                                        <span>Recibir notificaciones de nuevos partidos</span>
+                                        <span>{tr('Recibir notificaciones de nuevos partidos', 'Partida berrien jakinarazpenak jaso')}</span>
                                     </li>
                                 </ul>
                                 <p className="text-base sm:text-lg font-semibold text-green-700 dark:text-green-400 mt-3 sm:mt-4">
-                                    💪 ¡Es hora de llevar tu juego al siguiente nivel! Entra, juega, compite y mejora.
+                                    {tr('💪 ¡Es hora de llevar tu juego al siguiente nivel! Entra, juega, compite y mejora.', '💪 Zure jokoa hurrengo mailara eramateko ordua da! Sartu, jokatu, lehiatu eta hobetu.')}
                                 </p>
                             </div>
                         </div>
@@ -163,22 +167,22 @@ export default function Welcome() {
                 {/* Instrucciones de Primer Acceso */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-4 sm:p-8 mb-6 sm:mb-8">
                     <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
-                        🔑 Primer Acceso
+                        {tr('🔑 Primer acceso', '🔑 Lehen sarbidea')}
                     </h2>
                     
                     <div className="space-y-4 sm:space-y-6">
-                        <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 sm:p-6 rounded-r-lg">
+                        <div className="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 p-4 sm:p-6 rounded-r-lg">
                             <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white mb-2">
-                                1️⃣ Encuentra tu email en la lista
+                                {tr('1. Encuentra tu email en la lista', '1. Aurkitu zure emaila zerrendan')}
                             </h3>
                             <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300">
-                                Busca tu email en la lista de jugadores registrados más abajo.
+                                {tr('Busca tu email en la lista de jugadores registrados más abajo.', 'Bilatu zure emaila beheko jokalari erregistratuen zerrendan.')}
                             </p>
                         </div>
 
                         <div className="bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500 p-4 sm:p-6 rounded-r-lg">
                             <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white mb-2">
-                                2️⃣ Inicia sesión con tu contraseña temporal
+                                {tr('2. Inicia sesión con tu contraseña temporal', '2. Hasi saioa behin-behineko pasahitzarekin')}
                             </h3>
                             <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300 mb-3">
                                 Tu contraseña inicial es:
@@ -190,23 +194,23 @@ export default function Welcome() {
 
                         <div className="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 p-6 rounded-r-lg">
                             <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">
-                                3️⃣ Cambia tu contraseña (recomendado)
+                                {tr('3. Cambia tu contraseña (recomendado)', '3. Aldatu pasahitza (gomendatua)')}
                             </h3>
                             <p className="text-slate-700 dark:text-slate-300">
                                 Una vez dentro, ve a tu perfil y cambia la contraseña por una que solo tú conozcas.
                             </p>
                         </div>
 
-                        <div className="bg-purple-50 dark:bg-purple-900/20 border-l-4 border-purple-500 p-6 rounded-r-lg">
+                        <div className="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 p-6 rounded-r-lg">
                             <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">
-                                4️⃣ Añade tu teléfono (importante)
+                                {tr('4. Añade tu teléfono (importante)', '4. Gehitu zure telefonoa (garrantzitsua)')}
                             </h3>
                             <p className="text-slate-700 dark:text-slate-300">
-                                En tu perfil, añade tu número de teléfono. Esto permite que tus rivales puedan contactarte fácilmente para coordinar partidos por WhatsApp o llamada.
+                                {tr('En tu perfil, añade tu número de teléfono. Esto permite que tus rivales puedan contactarte fácilmente para coordinar partidos por WhatsApp o llamada.', 'Zure profilean, gehitu telefono zenbakia. Horrela aurkariek errazago jar daitezke zurekin harremanetan partidak koordinatzeko WhatsApp edo deien bidez.')}
                             </p>
                         </div>
 
-                        <div className="bg-indigo-50 dark:bg-indigo-900/20 border-l-4 border-indigo-500 p-6 rounded-r-lg">
+                        <div className="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 p-6 rounded-r-lg">
                             <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">
                                 📱 Instala la app en tu móvil (recomendado)
                             </h3>
@@ -215,20 +219,20 @@ export default function Welcome() {
                                     Para una mejor experiencia, te recomendamos instalar FreeSquash como aplicación en tu móvil:
                                 </p>
                                 <div className="bg-white dark:bg-slate-900 p-4 rounded-lg">
-                                    <p className="font-semibold mb-2">📲 En Android:</p>
+                                    <p className="font-semibold mb-2">{tr('📲 En Android:', '📲 Androiden:')}</p>
                                     <ol className="list-decimal list-inside space-y-1 text-sm ml-2">
                                         <li>Abre esta página en Chrome</li>
                                         <li>Toca el menú (⋮) y selecciona "Añadir a pantalla de inicio"</li>
-                                        <li>Confirma y la app aparecerá en tu pantalla de inicio</li>
+                                        <li>{tr('Confirma y la app aparecerá en tu pantalla de inicio', 'Berretsi eta app-a hasierako pantailan agertuko da')}</li>
                                     </ol>
                                 </div>
                                 <div className="bg-white dark:bg-slate-900 p-4 rounded-lg">
-                                    <p className="font-semibold mb-2">🍎 En iPhone:</p>
+                                    <p className="font-semibold mb-2">{tr('🍎 En iPhone:', '🍎 iPhone-n:')}</p>
                                     <ol className="list-decimal list-inside space-y-1 text-sm ml-2">
                                         <li>Abre esta página en Safari</li>
                                         <li>Toca el botón de compartir (□↑)</li>
                                         <li>Selecciona "Añadir a pantalla de inicio"</li>
-                                        <li>Confirma y busca el icono de FreeSquash en tu pantalla</li>
+                                        <li>{tr('Confirma y busca el icono de FreeSquash en tu pantalla', 'Berretsi eta bilatu FreeSquash ikonoa pantailan')}</li>
                                     </ol>
                                 </div>
                                 <p className="text-sm italic">
@@ -240,9 +244,9 @@ export default function Welcome() {
                         <div className="text-center mt-8">
                             <Link 
                                 to="/login" 
-                                className="inline-block px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg rounded-xl shadow-lg transition-colors"
+                                className="inline-block px-8 py-4 bg-amber-600 hover:bg-amber-700 text-white font-bold text-lg rounded-xl shadow-lg transition-colors"
                             >
-                                Iniciar Sesión →
+                                {tr('Iniciar sesión →', 'Hasi saioa →')}
                             </Link>
                         </div>
                     </div>
@@ -251,20 +255,20 @@ export default function Welcome() {
                 {/* Lista de Jugadores */}
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-4 sm:p-8">
                     <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-4 sm:mb-6 flex items-center gap-2 sm:gap-3">
-                        👥 Jugadores Registrados ({emails.length})
+                        {tr(`👥 Jugadores registrados (${emails.length})`, `👥 Jokalari erregistratuak (${emails.length})`)}
                     </h2>
                     
                     <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mb-4 sm:mb-6">
-                        Busca tu email en esta lista para confirmar que estás registrado:
+                        {tr('Busca tu email en esta lista para confirmar que estás registrado:', 'Bilatu zure emaila zerrenda honetan erregistratuta zaudela baieztatzeko:')}
                     </p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-3 max-h-64 sm:max-h-96 overflow-y-auto p-3 sm:p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
                         {emails.map((email, index) => (
                             <div 
                                 key={index}
-                                className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
+                                className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-amber-400 dark:hover:border-amber-500 transition-colors"
                             >
-                                <span className="text-blue-500 dark:text-blue-400">✓</span>
+                                <span className="text-amber-500 dark:text-amber-400">✓</span>
                                 <span className="text-sm font-mono text-slate-700 dark:text-slate-300">
                                     {email}
                                 </span>
@@ -277,10 +281,10 @@ export default function Welcome() {
                 <div className="mt-6 sm:mt-8 text-center">
                     <div className="bg-slate-100 dark:bg-slate-800 rounded-xl p-4 sm:p-6 inline-block">
                         <p className="text-slate-700 dark:text-slate-300 mb-2">
-                            ¿Problemas para acceder?
+                            {tr('¿Problemas para acceder?', 'Sartzeko arazoak?')}
                         </p>
                         <p className="text-sm text-slate-600 dark:text-slate-400">
-                            Contacta con el administrador de la liga
+                            {tr('Contacta con el administrador de la liga', 'Jarri ligako administratzailearekin harremanetan')}
                         </p>
                     </div>
                 </div>
@@ -288,3 +292,4 @@ export default function Welcome() {
         </div>
     );
 }
+

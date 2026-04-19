@@ -1,11 +1,12 @@
 ﻿/**
- * Página pública - Clasificación completa de un grupo
+ * Pagina publica - Clasificacion completa de un grupo
  */
 
 import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../lib/api';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface PlayerRanking {
     id: string;
@@ -43,6 +44,7 @@ interface GroupData {
 export default function PublicGroupDetail() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const { t, formatDate } = useLanguage();
     const [visibleRemainingMatches, setVisibleRemainingMatches] = useState(6);
     const publicCacheMs = 1000 * 60 * 60 * 24 * 7;
 
@@ -80,29 +82,29 @@ export default function PublicGroupDetail() {
     const isNotFound = (error as Error | undefined)?.message === 'GROUP_NOT_FOUND';
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-12">
+        <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-amber-50">
+            <div className="bg-gradient-to-r from-amber-600 to-amber-600 text-white py-12">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between">
                         <div>
                             {data && (
                                 <>
                                     <h1 className="text-4xl font-bold mb-2">{data.name}</h1>
-                                    <p className="text-purple-100">Clasificación completa · Temporada {data.seasonName}</p>
+                                    <p className="text-amber-100">{t('publicGroupDetail.fullClassificationSeason', { seasonName: data.seasonName })}</p>
                                 </>
                             )}
                             {!data && !isLoading && (
-                                <h1 className="text-4xl font-bold mb-2">Grupo no encontrado</h1>
+                                <h1 className="text-4xl font-bold mb-2">{t('publicGroupDetail.notFound')}</h1>
                             )}
                             {isLoading && (
-                                <h1 className="text-4xl font-bold mb-2">Cargando...</h1>
+                                <h1 className="text-4xl font-bold mb-2">{t('publicGroupDetail.loading')}</h1>
                             )}
                         </div>
                         <button
                             onClick={() => navigate('/public/groups')}
-                            className="px-6 py-3 bg-white text-purple-600 font-semibold rounded-lg hover:bg-purple-50 transition-colors"
+                            className="px-6 py-3 bg-white text-amber-600 font-semibold rounded-lg hover:bg-amber-50 transition-colors"
                         >
-                            ← Volver a grupos
+                            ← {t('publicGroupDetail.backToGroups')}
                         </button>
                     </div>
                 </div>
@@ -111,40 +113,40 @@ export default function PublicGroupDetail() {
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 {isLoading && (
                     <div className="flex justify-center py-12">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
                     </div>
                 )}
 
                 {error && (
                     <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center text-red-600">
-                        {isNotFound ? 'Grupo no encontrado' : 'Error al cargar la clasificación'}
+                        {isNotFound ? t('publicGroupDetail.notFound') : t('publicGroupDetail.loadError')}
                     </div>
                 )}
 
                 {!isLoading && data && (
                     <>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                            <div className="bg-white rounded-lg shadow p-4 text-center border-b-4 border-purple-500">
-                                <div className="text-3xl font-bold text-purple-600">{data.rankings.length}</div>
-                                <p className="text-gray-600 text-sm mt-1">Jugadores</p>
+                            <div className="bg-white rounded-lg shadow p-4 text-center border-b-4 border-amber-500">
+                                <div className="text-3xl font-bold text-amber-600">{data.rankings.length}</div>
+                                <p className="text-gray-600 text-sm mt-1">{t('publicGroupDetail.players')}</p>
                             </div>
-                            <div className="bg-white rounded-lg shadow p-4 text-center border-b-4 border-indigo-500">
-                                <div className="text-3xl font-bold text-indigo-600">{data.totalMatches}</div>
-                                <p className="text-gray-600 text-sm mt-1">Partidos jugados</p>
+                            <div className="bg-white rounded-lg shadow p-4 text-center border-b-4 border-amber-500">
+                                <div className="text-3xl font-bold text-amber-600">{data.totalMatches}</div>
+                                <p className="text-gray-600 text-sm mt-1">{t('publicGroupDetail.playedMatches')}</p>
                             </div>
                         </div>
 
                         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="w-full">
-                                    <thead className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white">
+                                    <thead className="bg-gradient-to-r from-amber-500 to-amber-500 text-white">
                                         <tr>
-                                            <th className="px-6 py-4 text-left font-semibold">Posición</th>
-                                            <th className="px-6 py-4 text-left font-semibold">Jugador</th>
-                                            <th className="px-6 py-4 text-center font-semibold">Partidos</th>
-                                            <th className="px-6 py-4 text-center font-semibold">Victorias</th>
-                                            <th className="px-6 py-4 text-center font-semibold">Derrotas</th>
-                                            <th className="px-6 py-4 text-center font-semibold">% Victorias</th>
+                                            <th className="px-6 py-4 text-left font-semibold">{t('publicGroupDetail.position')}</th>
+                                            <th className="px-6 py-4 text-left font-semibold">{t('publicGroupDetail.player')}</th>
+                                            <th className="px-6 py-4 text-center font-semibold">{t('publicGroupDetail.matches')}</th>
+                                            <th className="px-6 py-4 text-center font-semibold">{t('publicGroupDetail.wins')}</th>
+                                            <th className="px-6 py-4 text-center font-semibold">{t('publicGroupDetail.losses')}</th>
+                                            <th className="px-6 py-4 text-center font-semibold">{t('publicGroupDetail.winRate')}</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200">
@@ -202,12 +204,12 @@ export default function PublicGroupDetail() {
 
                         <div className="mt-8 bg-white rounded-xl shadow-lg p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-xl font-bold text-gray-900">Partidos recientes</h2>
-                                <span className="text-sm text-gray-500">Últimos {Math.min(data.recentMatches.length, 6)}</span>
+                                <h2 className="text-xl font-bold text-gray-900">{t('publicGroupDetail.recentMatches')}</h2>
+                                <span className="text-sm text-gray-500">{t('publicGroupDetail.lastN', { count: Math.min(data.recentMatches.length, 6) })}</span>
                             </div>
 
                             {data.recentMatches.length === 0 ? (
-                                <p className="text-gray-600">Aún no hay partidos jugados en este grupo.</p>
+                                <p className="text-gray-600">{t('publicGroupDetail.noRecentMatches')}</p>
                             ) : (
                                 <div className="space-y-3">
                                     {data.recentMatches.map((match) => (
@@ -217,7 +219,7 @@ export default function PublicGroupDetail() {
                                                     {match.player1.name} <span className="text-gray-400">vs</span> {match.player2.name}
                                                 </p>
                                                 <p className="text-sm text-gray-500 mt-1">
-                                                    {new Date(match.date).toLocaleDateString('es-ES')}
+                                                    {formatDate(match.date)}
                                                 </p>
                                             </div>
                                             <div className="text-right">
@@ -231,12 +233,12 @@ export default function PublicGroupDetail() {
 
                         <div className="mt-8 bg-white rounded-xl shadow-lg p-6">
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-xl font-bold text-gray-900">Partidos restantes</h2>
-                                <span className="text-sm text-gray-500">Total: {data.totalRemainingMatches}</span>
+                                <h2 className="text-xl font-bold text-gray-900">{t('publicGroupDetail.remainingMatches')}</h2>
+                                <span className="text-sm text-gray-500">{t('publicGroupDetail.total', { count: data.totalRemainingMatches })}</span>
                             </div>
 
                             {data.remainingMatches.length === 0 ? (
-                                <p className="text-gray-600">No quedan partidos pendientes en este grupo.</p>
+                                <p className="text-gray-600">{t('publicGroupDetail.noRemaining')}</p>
                             ) : (
                                 <>
                                     <div className="space-y-3">
@@ -245,7 +247,7 @@ export default function PublicGroupDetail() {
                                                 <p className="font-semibold text-gray-900">
                                                     {match.player1.name} <span className="text-gray-400">vs</span> {match.player2.name}
                                                 </p>
-                                                <span className="text-xs font-medium text-amber-700 uppercase">Pendiente</span>
+                                                <span className="text-xs font-medium text-amber-700 uppercase">{t('publicGroupDetail.pending')}</span>
                                             </div>
                                         ))}
                                     </div>
@@ -254,9 +256,9 @@ export default function PublicGroupDetail() {
                                         <div className="mt-4 text-center">
                                             <button
                                                 onClick={() => setVisibleRemainingMatches((prev) => prev + 6)}
-                                                className="px-5 py-2 rounded-lg bg-indigo-100 text-indigo-700 font-semibold hover:bg-indigo-200 transition-colors"
+                                                className="px-5 py-2 rounded-lg bg-amber-100 text-amber-700 font-semibold hover:bg-amber-200 transition-colors"
                                             >
-                                                Ver más
+                                                {t('publicGroupDetail.seeMore')}
                                             </button>
                                         </div>
                                     )}
@@ -267,29 +269,29 @@ export default function PublicGroupDetail() {
                         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="bg-gradient-to-br from-green-50 to-transparent rounded-lg p-4 border border-green-200">
                                 <p className="text-sm text-gray-600">
-                                    <span className="font-semibold">🥇 Ascensos:</span> Los 2 primeros clasificados ascienden de grupo
+                                    <span className="font-semibold">🥇 </span>{t('publicGroupDetail.promotionNote')}
                                 </p>
                             </div>
                             <div className="bg-gradient-to-br from-red-50 to-transparent rounded-lg p-4 border border-red-200">
                                 <p className="text-sm text-gray-600">
-                                    <span className="font-semibold">⬇️ Descensos:</span> Los 2 últimos clasificados descienden de grupo
+                                    <span className="font-semibold">⬇️ </span>{t('publicGroupDetail.relegationNote')}
                                 </p>
                             </div>
-                            <div className="bg-gradient-to-br from-blue-50 to-transparent rounded-lg p-4 border border-blue-200">
+                            <div className="bg-gradient-to-br from-amber-50 to-transparent rounded-lg p-4 border border-amber-200">
                                 <p className="text-sm text-gray-600">
-                                    <span className="font-semibold">🔄 Actualización:</span> Semanal (caché optimizada)
+                                    <span className="font-semibold">🔄 </span>{t('publicGroupDetail.updateNote')}
                                 </p>
                             </div>
                         </div>
 
-                        <div className="mt-12 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-xl p-8 text-center border-2 border-purple-200">
-                            <h3 className="text-2xl font-bold text-gray-900 mb-2">¿Quieres ver todos los detalles?</h3>
-                            <p className="text-gray-700 mb-6">Inicia sesión para acceder a tu panel personal con estadísticas completas, historial de partidos y mucho más.</p>
+                        <div className="mt-12 bg-gradient-to-r from-amber-100 to-amber-100 rounded-xl p-8 text-center border-2 border-amber-200">
+                            <h3 className="text-2xl font-bold text-gray-900 mb-2">{t('publicGroupDetail.wantDetails')}</h3>
+                            <p className="text-gray-700 mb-6">{t('publicGroupDetail.signInDetails')}</p>
                             <Link
                                 to="/login"
-                                className="inline-block px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+                                className="inline-block px-8 py-3 bg-gradient-to-r from-amber-600 to-amber-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all duration-200 transform hover:scale-105"
                             >
-                                Iniciar sesión
+                                {t('public.page.signIn')}
                             </Link>
                         </div>
                     </>

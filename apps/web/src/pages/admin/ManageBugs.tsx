@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
 import Loader from '../../components/Loader';
@@ -149,19 +149,19 @@ export default function ManageBugs() {
                       <div className="flex items-center space-x-2 mb-1">
                         <span className={`text-xs px-2 py-1 rounded-full font-medium ${
                           bug.status === 'OPEN' ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300' :
-                          bug.status === 'ACK' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' :
+                          bug.status === 'ACK' ? 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300' :
                           'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300'
                         }`}>
                           {bug.status}
                         </span>
                         {bug.appVersion && (
-                          <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-medium">
+                          <span className="text-xs px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-medium">
                             v{bug.appVersion}
                           </span>
                         )}
                         {hasComments && (
                           <span className="text-xs px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-medium">
-                            💬 {bug.comments?.length || 0}
+                            �x� {bug.comments?.length || 0}
                           </span>
                         )}
                       </div>
@@ -173,7 +173,7 @@ export default function ManageBugs() {
                           {bug.attachments.split(':::').map((att, i) => {
                             const [name, data] = att.split('|');
                             return (
-                              <a key={i} href={data} download={name} className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded hover:underline">
+                              <a key={i} href={data} download={name} className="text-xs px-2 py-1 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded hover:underline">
                                 📎 {name}
                               </a>
                             );
@@ -181,15 +181,15 @@ export default function ManageBugs() {
                         </div>
                       )}
                       <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-500 dark:text-slate-400">
-                        {bug.email && <span>📧 {bug.email}</span>}
-                        {bug.userAgent && <span title={bug.userAgent}>🖥️ UA: {bug.userAgent.slice(0,60)}{bug.userAgent.length>60?'…':''}</span>}
+                        {bug.email && <span>✉️ {bug.email}</span>}
+                        {bug.userAgent && <span title={bug.userAgent}>🖥️ UA: {bug.userAgent.slice(0,60)}{bug.userAgent.length>60?'⬦':''}</span>}
                         <span>⏱️ {new Date(bug.createdAt).toLocaleString('es-ES')}</span>
                       </div>
 
                       {/* Comments section */}
                       {isExpanded && (
                         <div className="mt-4 border-t border-slate-200 dark:border-slate-700 pt-4">
-                          <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">💬 Comentarios / Retroalimentación</h3>
+                          <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">�x� Comentarios / Retroalimentación</h3>
                           
                           {/* Existing comments */}
                           {hasComments && (
@@ -238,7 +238,7 @@ export default function ManageBugs() {
                         className="px-3 py-1 text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60 rounded-lg"
                         title={isExpanded ? 'Ocultar comentarios' : 'Ver/Añadir comentarios'}
                       >
-                        {isExpanded ? '▲ Ocultar' : '💬 Comentar'}
+                        {isExpanded ? '�� Ocultar' : '�x� Comentar'}
                       </button>
                       {bug.status !== 'OPEN' && (
                         <button
@@ -249,7 +249,7 @@ export default function ManageBugs() {
                       {bug.status === 'OPEN' && (
                         <button
                           onClick={() => updateStatusMutation.mutate({ id: bug.id, status: 'ACK' })}
-                          className="px-3 py-1 text-xs bg-blue-600 text-white hover:bg-blue-700 rounded-lg"
+                          className="px-3 py-1 text-xs bg-amber-600 text-white hover:bg-amber-700 rounded-lg"
                         >Reconocer</button>
                       )}
                       {bug.status !== 'CLOSED' && (
@@ -264,7 +264,7 @@ export default function ManageBugs() {
                         className="px-3 py-1 text-xs bg-red-600 text-white hover:bg-red-700 rounded-lg disabled:opacity-50"
                         title="Eliminar permanentemente"
                       >
-                        🗑️ Eliminar
+                        �x️ Eliminar
                       </button>
                     </div>
                   </div>
@@ -280,3 +280,4 @@ export default function ManageBugs() {
     </div>
   );
 }
+

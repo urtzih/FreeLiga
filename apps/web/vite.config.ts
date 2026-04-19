@@ -1,5 +1,5 @@
 ﻿/**
- * FreeSquash League - Vite Configuration
+ * FreeSquash Liga - Vite Configuration
  *
  * @author Urtzi Diaz Arberas
  * @copyright (c) 2024-2026 Urtzi Diaz Arberas. All rights reserved.

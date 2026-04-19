@@ -308,9 +308,9 @@ export default function Profile() {
     <div className="space-y-6">
       {/* Encabezado */}
       {showBanner && (
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-8 text-white shadow-lg transition-all duration-300">
-          <h1 className="text-3xl font-bold mb-2">Mi Perfil</h1>
-          <p className="text-blue-100">Gestiona tu información personal</p>
+        <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-2xl p-8 text-white shadow-lg transition-all duration-300">
+          <h1 className="text-3xl font-bold mb-2">Mi perfil</h1>
+          <p className="text-amber-100">Gestiona tu información personal</p>
         </div>
       )}
 
@@ -321,7 +321,7 @@ export default function Profile() {
           {!isEditing && (
             <button
               onClick={() => setIsEditing(true)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors text-sm font-medium"
             >
               ✏️ Editar
             </button>
@@ -340,7 +340,7 @@ export default function Profile() {
             {/* Nombre */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Nombre Completo <span className="text-red-500">*</span>
+                Nombre completo <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -348,7 +348,7 @@ export default function Profile() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 disabled={!isEditing}
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
                 placeholder="Tu nombre completo"
                 required
               />
@@ -365,7 +365,7 @@ export default function Profile() {
                 value={formData.nickname}
                 onChange={(e) => setFormData({ ...formData, nickname: e.target.value })}
                 disabled={!isEditing}
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
                 placeholder="Opcional"
               />
             </div>
@@ -381,7 +381,7 @@ export default function Profile() {
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 disabled={!isEditing}
-                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:opacity-60 disabled:cursor-not-allowed"
                 placeholder="+34 600 123 456"
               />
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -631,7 +631,7 @@ export default function Profile() {
                   value={passwordData.currentPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
                   className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  placeholder="••••••••"
+                  placeholder="⬢⬢⬢⬢⬢⬢⬢⬢"
                   required
                 />
               </div>
@@ -697,16 +697,17 @@ export default function Profile() {
       </div>
 
       {/* Información adicional */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
-        <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">ℹ️ Información</h3>
-        <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
-          <li>• Tu nombre y teléfono son visibles para otros jugadores de tu grupo</li>
-          <li>• Puedes cambiar tu email y contraseña en cualquier momento</li>
-          <li>• El email debe ser único en el sistema</li>
-          <li>• La contraseña debe tener al menos 6 caracteres</li>
-          <li>• Los cambios se aplicarán inmediatamente tras guardar</li>
+      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
+        <h3 className="font-semibold text-amber-900 dark:text-amber-200 mb-2">ℹ️ Información</h3>
+        <ul className="text-sm text-amber-800 dark:text-amber-300 space-y-1">
+          <li>⬢ Tu nombre y teléfono son visibles para otros jugadores de tu grupo</li>
+          <li>⬢ Puedes cambiar tu email y contraseña en cualquier momento</li>
+          <li>⬢ El email debe ser único en el sistema</li>
+          <li>⬢ La contraseña debe tener al menos 6 caracteres</li>
+          <li>⬢ Los cambios se aplicarán inmediatamente tras guardar</li>
         </ul>
       </div>
     </div>
   );
 }
+

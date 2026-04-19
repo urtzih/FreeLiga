@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
 import { useToast } from '../../contexts/ToastContext';
@@ -250,9 +250,9 @@ export default function SendPushNotifications() {
 
     return (
         <div className="space-y-5">
-            <div className="rounded-2xl p-6 text-white bg-gradient-to-r from-blue-600 to-indigo-600">
+            <div className="rounded-2xl p-6 text-white bg-gradient-to-r from-amber-600 to-amber-600">
                 <h1 className="text-2xl font-bold">Centro de Notificaciones</h1>
-                <p className="text-blue-100 mt-1">On-demand y automatizadas con targeting por jugador o grupo.</p>
+                <p className="text-amber-100 mt-1">On-demand y automatizadas con targeting por jugador o grupo.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
@@ -291,8 +291,8 @@ export default function SendPushNotifications() {
 
             <div className="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                 <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex gap-2">
-                    <button onClick={() => setTab('SEND_NOW')} className={`px-4 py-2 rounded-lg text-sm ${tab === 'SEND_NOW' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-700'}`}>Enviar ahora</button>
-                    <button onClick={() => setTab('SCHEDULED')} className={`px-4 py-2 rounded-lg text-sm ${tab === 'SCHEDULED' ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-700'}`}>Programadas</button>
+                    <button onClick={() => setTab('SEND_NOW')} className={`px-4 py-2 rounded-lg text-sm ${tab === 'SEND_NOW' ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-slate-700'}`}>Enviar ahora</button>
+                    <button onClick={() => setTab('SCHEDULED')} className={`px-4 py-2 rounded-lg text-sm ${tab === 'SCHEDULED' ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-slate-700'}`}>Programadas</button>
                 </div>
                 <div className="p-4 space-y-3">
                     <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar jugador/grupo" className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-900 dark:border-slate-700" />
@@ -307,7 +307,7 @@ export default function SendPushNotifications() {
                             <input value={sendForm.title} onChange={(e) => setSendForm((prev) => ({ ...prev, title: e.target.value }))} placeholder="Titulo" className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-900 dark:border-slate-700" />
                             <textarea value={sendForm.body} onChange={(e) => setSendForm((prev) => ({ ...prev, body: e.target.value }))} rows={4} placeholder="Mensaje" className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-900 dark:border-slate-700" />
                             <input value={sendForm.url} onChange={(e) => setSendForm((prev) => ({ ...prev, url: e.target.value }))} placeholder="URL" className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-900 dark:border-slate-700" />
-                            <button onClick={() => sendNowMutation.mutate()} disabled={sendNowMutation.isPending || !sendForm.templateKey || (sendForm.targetType !== 'ALL' && !sendForm.targetValue)} className="w-full rounded-lg bg-blue-600 py-2 text-white disabled:bg-blue-300">{sendNowMutation.isPending ? 'Enviando...' : 'Enviar notificacion'}</button>
+                            <button onClick={() => sendNowMutation.mutate()} disabled={sendNowMutation.isPending || !sendForm.templateKey || (sendForm.targetType !== 'ALL' && !sendForm.targetValue)} className="w-full rounded-lg bg-amber-600 py-2 text-white disabled:bg-amber-300">{sendNowMutation.isPending ? 'Enviando...' : 'Enviar notificacion'}</button>
                         </div>
                     )}
 
@@ -351,7 +351,7 @@ export default function SendPushNotifications() {
                                             payload: { title, body, status: campaign.status },
                                         });
                                     }}
-                                    className="px-2 py-1 text-xs rounded bg-blue-600 text-white"
+                                    className="px-2 py-1 text-xs rounded bg-amber-600 text-white"
                                 >
                                     Editar
                                 </button>
@@ -375,3 +375,4 @@ export default function SendPushNotifications() {
         </div>
     );
 }
+

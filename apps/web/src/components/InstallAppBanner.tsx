@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { useToast } from '../contexts/ToastContext';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
 import { usePushNotification } from '../hooks/usePushNotification';
@@ -126,7 +126,7 @@ export default function InstallAppBanner() {
     };
 
     return (
-        <div className="bg-gradient-to-r from-emerald-700 via-teal-700 to-cyan-700 text-white px-3 py-3">
+        <div className="bg-gradient-to-r from-emerald-700 via-yellow-700 to-yellow-700 text-white px-3 py-3">
             <div className="max-w-5xl mx-auto">
                 <div className="rounded-2xl border border-white/25 bg-white/10 backdrop-blur-md px-4 py-3 shadow-lg">
                     <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
@@ -195,3 +195,4 @@ export default function InstallAppBanner() {
         </div>
     );
 }
+

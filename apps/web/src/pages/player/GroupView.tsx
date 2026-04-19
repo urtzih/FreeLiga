@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../lib/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import Loader from '../../components/Loader';
 
 interface ClassificationRow {
@@ -17,6 +18,8 @@ interface ClassificationRow {
 export default function GroupView() {
     const { id } = useParams<{ id: string }>();
     const { user } = useAuth();
+    const { language, localeCode, t, formatDate } = useLanguage();
+    const tr = (es: string, eu: string) => (language === 'eu' ? eu : es);
     const calendarEnabled = user?.player?.calendarEnabled ?? false;
     const [visibleRecentMatches, setVisibleRecentMatches] = useState(10);
     const [visibleRemainingMatches, setVisibleRemainingMatches] = useState(6);
@@ -65,14 +68,14 @@ export default function GroupView() {
     if (groupError) {
         return (
             <div className="text-center py-12">
-                <div className="text-red-600 dark:text-red-400 text-lg mb-4">Error cargando el grupo</div>
-                <p className="text-slate-600 dark:text-slate-400 mb-4">Es posible que:</p>
+                <div className="text-red-600 dark:text-red-400 text-lg mb-4">{tr('Error cargando el grupo', 'Errorea taldea kargatzean')}</div>
+                <p className="text-slate-600 dark:text-slate-400 mb-4">{tr('Es posible que:', 'Baliteke hau gertatzea:')}</p>
                 <ul className="text-left max-w-md mx-auto text-slate-600 dark:text-slate-400 space-y-2">
-                    <li>• El grupo no exista o haya sido eliminado</li>
-                    <li>• No tengas permiso para ver este grupo</li>
-                    <li>• Tu sesión haya expirado</li>
+                    <li>- {tr('El grupo no exista o haya sido eliminado', 'Taldea ez egotea edo ezabatuta egotea')}</li>
+                    <li>- {tr('No tengas permiso para ver este grupo', 'Talde hau ikusteko baimenik ez izatea')}</li>
+                    <li>- {tr('Tu sesión haya expirado', 'Zure saioa iraungi izana')}</li>
                 </ul>
-                <a href="/dashboard" className="text-blue-600 dark:text-blue-400 hover:underline mt-6 inline-block">Volver al inicio</a>
+                <a href="/dashboard" className="text-amber-600 dark:text-amber-400 hover:underline mt-6 inline-block">{tr('Volver al inicio', 'Hasierara itzuli')}</a>
             </div>
         );
     }
@@ -80,14 +83,14 @@ export default function GroupView() {
     if (!group) {
         return (
             <div className="text-center py-12">
-                <div className="text-slate-600 dark:text-slate-400 text-lg mb-4">Grupo no encontrado</div>
-                <a href="/dashboard" className="text-blue-600 dark:text-blue-400 hover:underline">Volver al inicio</a>
+                <div className="text-slate-600 dark:text-slate-400 text-lg mb-4">{tr('Grupo no encontrado', 'Taldea ez da aurkitu')}</div>
+                <a href="/dashboard" className="text-amber-600 dark:text-amber-400 hover:underline">{tr('Volver al inicio', 'Hasierara itzuli')}</a>
             </div>
         );
     }
 
     if (classificationError) {
-        return <div className="text-center py-12 text-red-600">Error cargando clasificación</div>;
+        return <div className="text-center py-12 text-red-600">{tr('Error cargando clasificación', 'Errorea sailkapena kargatzean')}</div>;
     }
 
     const totalPlayers = group.groupPlayers.length;
@@ -106,7 +109,7 @@ export default function GroupView() {
 
     const recentOpponentOptions = [...group.groupPlayers]
         .map((gp: any) => ({ id: String(gp.playerId), name: gp.player.name }))
-        .sort((a, b) => a.name.localeCompare(b.name, 'es'));
+        .sort((a, b) => a.name.localeCompare(b.name, localeCode));
 
     const filteredRecentMatches = selectedRecentOpponent === 'all'
         ? recentPlayedMatches
@@ -117,6 +120,9 @@ export default function GroupView() {
     const displayedRecentMatches = selectedRecentOpponent === 'all'
         ? filteredRecentMatches.slice(0, visibleRecentMatches)
         : filteredRecentMatches;
+    const closedMyMatchesCount = myMatches.filter((m: any) =>
+        (m.matchStatus === 'PLAYED' && m.gamesP1 !== null && m.gamesP2 !== null) || m.matchStatus === 'INJURY'
+    ).length;
 
     const hasPlayedBetween = (playerAId: string, playerBId: string) => {
         return completedMatches.some((match: any) => (
@@ -151,11 +157,18 @@ export default function GroupView() {
         if (!group.groupPlayers) return;
 
         const rows: string[] = [];
-        rows.push('Posición,Jugador,Partidos Ganados,Partidos Perdidos,Sets Ganados,Sets Perdidos,Movimiento');
+        rows.push(tr(
+            'Posición,Jugador,Partidos Ganados,Partidos Perdidos,Sets Ganados,Sets Perdidos,Movimiento',
+            'Postua,Jokalaria,Irabazitako Partidak,Galdutako Partidak,Irabazitako Setak,Galdutako Setak,Mugimendua',
+        ));
 
         const sortedPlayers = [...group.groupPlayers].sort((a: any, b: any) => a.rankingPosition - b.rankingPosition);
         sortedPlayers.forEach((gp: any) => {
-            const movement = gp.rankingPosition <= 2 ? 'ASCENSO' : gp.rankingPosition > totalPlayers - 2 ? 'DESCENSO' : 'MANTIENE';
+            const movement = gp.rankingPosition <= 2
+                ? tr('ASCENSO', 'IGOERA')
+                : gp.rankingPosition > totalPlayers - 2
+                    ? tr('DESCENSO', 'JAITSIERA')
+                    : tr('MANTIENE', 'MANTENTZEN DA');
             const wins = group.matches.filter((m: any) => m.matchStatus === 'PLAYED' && m.winnerId === gp.playerId).length || 0;
             const losses = group.matches.filter((m: any) => m.matchStatus === 'PLAYED' && ((m.player1Id === gp.playerId && m.winnerId === m.player2Id) || (m.player2Id === gp.playerId && m.winnerId === m.player1Id))).length || 0;
 
@@ -180,7 +193,7 @@ export default function GroupView() {
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
         link.setAttribute('href', url);
-        link.setAttribute('download', `clasificacion_${group.name.replace(/\s+/g, '_')}.csv`);
+        link.setAttribute('download', `${tr('clasificacion', 'sailkapena')}_${group.name.replace(/\s+/g, '_')}.csv`);
         link.click();
     };
 
@@ -196,10 +209,10 @@ export default function GroupView() {
                     {user?.role === 'ADMIN' && (
                         <button
                             onClick={handleExportGroupCSV}
-                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2 shadow-sm"
-                            title="Descargar clasificación como CSV"
+                            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2 shadow-sm"
+                            title={tr('Descargar clasificación como CSV', 'Sailkapena CSV gisa deskargatu')}
                         >
-                            📥 CSV
+                            📄 CSV
                         </button>
                     )}
                     {group.whatsappUrl && (
@@ -208,59 +221,65 @@ export default function GroupView() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors font-medium flex items-center gap-2 shadow-sm whitespace-nowrap h-fit self-center"
-                            title="Grupo WhatsApp"
+                            title={tr('Grupo WhatsApp', 'WhatsApp taldea')}
                         >
                             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                             </svg>
-                            <span className="hidden sm:inline">Grupo WhatsApp</span>
+                            <span className="hidden sm:inline">{tr('Grupo WhatsApp', 'WhatsApp taldea')}</span>
                             <span className="sm:hidden">WhatsApp</span>
                         </a>
                     )}
                 </div>
             </div>
 
-            {/* Indicadores de Progreso */}
+                        {/* Indicadores de Progreso */}
             <div className="grid grid-cols-3 md:grid-cols-3 gap-2 md:gap-6">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg md:rounded-xl p-2 md:p-6 text-white shadow-lg">
+                <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg md:rounded-xl p-2 md:p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between mb-1 md:mb-2">
-                        <span className="text-xs md:text-sm font-medium opacity-90">Días Restantes</span>
-                        <span className="text-lg md:text-2xl">⏰</span>
+                        <span className="text-xs md:text-sm font-medium opacity-90">{t('groupView.kpi.daysRemaining')}</span>
+                        <span className="text-lg md:text-2xl">{String.fromCodePoint(0x23F0)}</span>
                     </div>
                     <p className="text-2xl md:text-4xl font-bold">{daysRemaining > 0 ? daysRemaining : 0}</p>
-                    <p className="text-xs opacity-75 mt-0.5 md:mt-1 hidden md:block">Hasta el {endDate.toLocaleDateString('es-ES')}</p>
+                    <p className="text-xs opacity-75 mt-0.5 md:mt-1 hidden md:block">
+                        {t('groupView.kpi.untilDate', { date: formatDate(endDate) })}
+                    </p>
                 </div>
 
                 <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg md:rounded-xl p-2 md:p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between mb-1 md:mb-2">
-                        <span className="text-xs md:text-sm font-medium opacity-90">Progreso</span>
-                        <span className="text-lg md:text-2xl">📊</span>
+                        <span className="text-xs md:text-sm font-medium opacity-90">{t('groupView.kpi.progress')}</span>
+                        <span className="text-lg md:text-2xl">{String.fromCodePoint(0x1F4CA)}</span>
                     </div>
                     <p className="text-2xl md:text-4xl font-bold">{completionPercentage}%</p>
-                    <p className="text-xs opacity-75 mt-0.5 md:mt-1 hidden md:block">{matchesPlayed} / {totalPossibleMatches} partidos</p>
+                    <p className="text-xs opacity-75 mt-0.5 md:mt-1 hidden md:block">
+                        {t('groupView.kpi.matchesProgress', { played: matchesPlayed, total: totalPossibleMatches })}
+                    </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg md:rounded-xl p-2 md:p-6 text-white shadow-lg">
+                <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg md:rounded-xl p-2 md:p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between mb-1 md:mb-2">
-                        <span className="text-xs md:text-sm font-medium opacity-90">Total Jugadores</span>
-                        <span className="text-lg md:text-2xl">👥</span>
+                        <span className="text-xs md:text-sm font-medium opacity-90">{t('groupView.kpi.totalPlayers')}</span>
+                        <span className="text-lg md:text-2xl">{String.fromCodePoint(0x1F465)}</span>
                     </div>
                     <p className="text-2xl md:text-4xl font-bold">{totalPlayers}</p>
-                    <p className="text-xs opacity-75 mt-0.5 md:mt-1 hidden md:block">Activos en el grupo</p>
+                    <p className="text-xs opacity-75 mt-0.5 md:mt-1 hidden md:block">{t('groupView.kpi.activeInGroup')}</p>
                 </div>
             </div>
 
             {/* Estadísticas del Grupo */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Estadísticas del Grupo</h2>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">{tr('Estadísticas del Grupo', 'Taldearen Estatistikak')}</h2>
                     {classification && classification.length > 0 && (
-                        <span className="text-xs text-slate-500 dark:text-slate-400">{classification.length} jugadores</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                            {classification.length} {tr('jugadores', 'jokalari')}
+                        </span>
                     )}
                 </div>
                 <div className="p-6 space-y-6">
                     {!classification || classification.length === 0 ? (
-                        <p className="text-sm text-slate-600 dark:text-slate-400">Sin partidos registrados todavía.</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">{tr('Sin partidos registrados todavía.', 'Oraindik ez dago partidarik erregistratuta.')}</p>
                     ) : (
                         <>
 
@@ -269,12 +288,12 @@ export default function GroupView() {
                                 <table className="w-full text-sm">
                                     <thead className="bg-slate-50 dark:bg-slate-900">
                                         <tr>
-                                            <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Pos</th>
-                                            <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-400">Jugador</th>
-                                            <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Victorias</th>
-                                            <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Derrotas</th>
-                                            <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Restantes</th>
-                                            <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Lesión</th>
+                                            <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">{tr('Pos', 'Pos')}</th>
+                                            <th className="px-3 py-2 text-left font-medium text-slate-600 dark:text-slate-400">{tr('Jugador', 'Jokalaria')}</th>
+                                            <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">{tr('Victorias', 'Garaipenak')}</th>
+                                            <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">{tr('Derrotas', 'Porrotak')}</th>
+                                            <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">{tr('Restantes', 'Geratzen direnak')}</th>
+                                            <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">{tr('Lesión', 'Lesioa')}</th>
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Sets +</th>
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Sets -</th>
                                         </tr>
@@ -296,7 +315,7 @@ export default function GroupView() {
                                             
                                             // Determinar ascenso/descenso
                                             const isPromotion = idx < 2; // Top 2: ascenso
-                                            const isRelegation = idx >= totalPlayers - 2; // Últimos 2: descenso
+                                            const isRelegation = idx >= totalPlayers - 2; // altimos 2: descenso
                                             
                                             const rowClass = isPromotion 
                                                 ? "bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30" 
@@ -312,7 +331,7 @@ export default function GroupView() {
                                                             <span>{row.playerName}</span>
                                                             {isInjuredPlayer && (
                                                                 <span className="text-[11px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
-                                                                    🤕 Lesionado
+                                                                    {String.fromCodePoint(0x1F915)} {tr('Lesionado', 'Lesionatua')}
                                                                 </span>
                                                             )}
                                                         </span>
@@ -335,11 +354,11 @@ export default function GroupView() {
                                 <table className="min-w-full text-sm">
                                     <thead>
                                         <tr className="text-left text-slate-500 border-b border-slate-200 dark:border-slate-700">
-                                            <th className="px-2 py-2">Pos</th>
-                                            <th className="px-2 py-2">Jugador</th>
+                                            <th className="px-2 py-2">{tr('Pos', 'Pos')}</th>
+                                            <th className="px-2 py-2">{tr('Jugador', 'Jokalaria')}</th>
                                             <th className="px-2 py-2 text-center">G</th>
                                             <th className="px-2 py-2 text-center">P</th>
-                                            <th className="px-2 py-2 text-center">Dif</th>
+                                            <th className="px-2 py-2 text-center">Average</th>
                                             <th className="px-2 py-2 text-center">R</th>
                                         </tr>
                                     </thead>
@@ -360,7 +379,7 @@ export default function GroupView() {
                                             
                                             // Determinar ascenso/descenso
                                             const isPromotion = idx < 2; // Top 2: ascenso
-                                            const isRelegation = idx >= totalPlayers - 2; // Últimos 2: descenso
+                                            const isRelegation = idx >= totalPlayers - 2; // altimos 2: descenso
                                             
                                             const rowClass = isPromotion 
                                                 ? "bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30" 
@@ -376,7 +395,7 @@ export default function GroupView() {
                                                             <span>{row.playerName}</span>
                                                             {isInjuredPlayer && (
                                                                 <span className="text-[10px] px-1 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
-                                                                    🤕
+                                                                    {String.fromCodePoint(0x1F915)}
                                                                 </span>
                                                             )}
                                                         </span>
@@ -401,20 +420,20 @@ export default function GroupView() {
             {/* Clasificación Actual (Ranking interno) */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Contrincantes</h2>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">{tr('Contrincantes', 'Aurkariak')}</h2>
                 </div>
                 <div className="hidden md:block overflow-x-auto">
                     <table className="w-full">
                         <thead className="bg-slate-50 dark:bg-slate-900">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                    Jugador
+                                    {tr('Jugador', 'Jokalaria')}
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                    Resultado Directo
+                                    {tr('Resultado directo', 'Emaitza zuzena')}
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                                    Contacto
+                                    {tr('Contacto', 'Kontaktua')}
                                 </th>
                             </tr>
                         </thead>
@@ -432,7 +451,7 @@ export default function GroupView() {
                                         )
                                     );
                                     
-                                    let resultText = 'No jugado';
+                                    let resultText = tr('No jugado', 'Jokatu gabe');
                                     let resultColor = 'text-slate-400';
                                     
                                     if (directMatch) {
@@ -441,13 +460,13 @@ export default function GroupView() {
                                         
                                         if (won) {
                                             resultText = directMatch.player1Id === user?.player?.id 
-                                                ? `✓ ${directMatch.gamesP1}-${directMatch.gamesP2}` 
-                                                : `✓ ${directMatch.gamesP2}-${directMatch.gamesP1}`;
+                                                ? `${directMatch.gamesP1}-${directMatch.gamesP2}` 
+                                                : `${directMatch.gamesP2}-${directMatch.gamesP1}`;
                                             resultColor = 'text-green-600 dark:text-green-400 font-semibold';
                                         } else if (lost) {
                                             resultText = directMatch.player1Id === user?.player?.id 
-                                                ? `✗ ${directMatch.gamesP1}-${directMatch.gamesP2}` 
-                                                : `✗ ${directMatch.gamesP2}-${directMatch.gamesP1}`;
+                                                ? `${directMatch.gamesP1}-${directMatch.gamesP2}` 
+                                                : `${directMatch.gamesP2}-${directMatch.gamesP1}`;
                                             resultColor = 'text-red-600 dark:text-red-400 font-semibold';
                                         }
                                     }
@@ -455,18 +474,26 @@ export default function GroupView() {
                                     return (
                                         <tr 
                                             key={gp.id} 
-                                            className={`hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors ${isCurrentUser ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}
+                                            className={`hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors ${isCurrentUser ? 'bg-amber-50 dark:bg-amber-900/20' : ''}`}
                                         >
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center space-x-2">
-                                                    {index < 2 && <span className="text-xl">🏆</span>}
-                                                    {index >= totalPlayers - 2 && <span className="text-xl">⚠️</span>}
+                                                    {index < 2 && (
+                                                        <span className="text-xs font-semibold text-green-700 dark:text-green-300">
+                                                            {String.fromCodePoint(0x1F3C6)} TOP
+                                                        </span>
+                                                    )}
+                                                    {index >= totalPlayers - 2 && (
+                                                        <span className="text-xs font-semibold text-red-700 dark:text-red-300">
+                                                            {String.fromCodePoint(0x2B07)} OUT
+                                                        </span>
+                                                    )}
                                                     <span className="text-sm font-bold text-slate-600 dark:text-slate-400">
                                                         #{gp.rankingPosition}
                                                     </span>
                                                     <div>
-                                                        <p className={`font-medium ${isCurrentUser ? 'text-blue-600 dark:text-blue-400' : 'text-slate-900 dark:text-white'}`}>
-                                                            {gp.player.name} {isCurrentUser && '(Tú)'}
+                                                        <p className={`font-medium ${isCurrentUser ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}>
+                                                            {gp.player.name} {isCurrentUser && tr('(Tú)', '(Zu)')}
                                                         </p>
                                                         {gp.player.nickname && (
                                                             <p className="text-sm text-slate-500 dark:text-slate-400">"{gp.player.nickname}"</p>
@@ -476,7 +503,7 @@ export default function GroupView() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 {isCurrentUser ? (
-                                                    <span className="text-sm text-slate-400 dark:text-slate-500 italic">—</span>
+                                                    <span className="text-sm text-slate-400 dark:text-slate-500 italic">{tr('Eres tú', 'Zu zara')}</span>
                                                 ) : (
                                                     <span className={`text-sm ${resultColor}`}>
                                                         {resultText}
@@ -485,9 +512,9 @@ export default function GroupView() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 {isCurrentUser ? (
-                                                    <span className="text-sm text-slate-400 dark:text-slate-500 italic">Eres tú</span>
+                                                    <span className="text-sm text-slate-400 dark:text-slate-500 italic">{tr('Eres tú', 'Zu zara')}</span>
                                                 ) : (
-                                                    <ContactButtons phone={gp.player.phone} email={gp.player.user?.email} />
+                                                    <ContactButtons phone={gp.player.phone} email={gp.player.user?.email} language={language} />
                                                 )}
                                             </td>
                                         </tr>
@@ -511,7 +538,7 @@ export default function GroupView() {
                                 )
                             );
                             
-                            let resultText = 'No jugado';
+                            let resultText = tr('No jugado', 'Jokatu gabe');
                             let resultColor = 'text-slate-400';
                             
                             if (directMatch) {
@@ -520,13 +547,13 @@ export default function GroupView() {
                                 
                                 if (won) {
                                     resultText = directMatch.player1Id === user?.player?.id 
-                                        ? `✓ ${directMatch.gamesP1}-${directMatch.gamesP2}` 
-                                        : `✓ ${directMatch.gamesP2}-${directMatch.gamesP1}`;
+                                        ? `${directMatch.gamesP1}-${directMatch.gamesP2}` 
+                                        : `${directMatch.gamesP2}-${directMatch.gamesP1}`;
                                     resultColor = 'text-green-600 dark:text-green-400 font-semibold';
                                 } else if (lost) {
                                     resultText = directMatch.player1Id === user?.player?.id 
-                                        ? `✗ ${directMatch.gamesP1}-${directMatch.gamesP2}` 
-                                        : `✗ ${directMatch.gamesP2}-${directMatch.gamesP1}`;
+                                        ? `${directMatch.gamesP1}-${directMatch.gamesP2}` 
+                                        : `${directMatch.gamesP2}-${directMatch.gamesP1}`;
                                     resultColor = 'text-red-600 dark:text-red-400 font-semibold';
                                 }
                             }
@@ -534,18 +561,26 @@ export default function GroupView() {
                             return (
                                 <div 
                                     key={gp.id} 
-                                    className={`p-4 rounded-lg border ${isCurrentUser ? 'border-blue-300 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-700' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'}`}
+                                    className={`p-4 rounded-lg border ${isCurrentUser ? 'border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-700' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'}`}
                                 >
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="flex items-start gap-3 flex-1">
                                             <div>
-                                                {index < 2 && <span className="text-lg">🏆</span>}
-                                                {index >= totalPlayers - 2 && <span className="text-lg">⚠️</span>}
+                                                {index < 2 && (
+                                                    <span className="text-xs font-semibold text-green-700 dark:text-green-300">
+                                                        {String.fromCodePoint(0x1F3C6)} TOP
+                                                    </span>
+                                                )}
+                                                {index >= totalPlayers - 2 && (
+                                                    <span className="text-xs font-semibold text-red-700 dark:text-red-300">
+                                                        {String.fromCodePoint(0x2B07)} OUT
+                                                    </span>
+                                                )}
                                                 {index >= 2 && index < totalPlayers - 2 && <span className="text-sm font-bold text-slate-500">#{gp.rankingPosition}</span>}
                                             </div>
                                             <div className="flex-1">
-                                                <p className={`font-semibold text-sm ${isCurrentUser ? 'text-blue-600 dark:text-blue-400' : 'text-slate-900 dark:text-white'}`}>
-                                                    #{gp.rankingPosition} {gp.player.name} {isCurrentUser && '(Tú)'}
+                                                <p className={`font-semibold text-sm ${isCurrentUser ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}>
+                                                    #{gp.rankingPosition} {gp.player.name} {isCurrentUser && tr('(Tú)', '(Zu)')}
                                                 </p>
                                                 {gp.player.nickname && (
                                                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">"{gp.player.nickname}"</p>
@@ -558,7 +593,7 @@ export default function GroupView() {
                                     </div>
                                     {!isCurrentUser && (
                                         <div className="mt-3 flex gap-2">
-                                            <ContactButtons phone={gp.player.phone} email={gp.player.user?.email} />
+                                            <ContactButtons phone={gp.player.phone} email={gp.player.user?.email} language={language} />
                                         </div>
                                     )}
                                 </div>
@@ -572,18 +607,18 @@ export default function GroupView() {
 
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                     <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center sm:justify-between">
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Partidos Recientes</h2>
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">{tr('Partidos Recientes', 'Azken Partidak')}</h2>
                         <div className="flex items-center gap-2">
                             <label htmlFor="recent-opponent-filter" className="text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                                Jugador
+                                {tr('Jugador', 'Jokalaria')}
                             </label>
                             <select
                                 id="recent-opponent-filter"
                                 value={selectedRecentOpponent}
                                 onChange={(e) => setSelectedRecentOpponent(e.target.value)}
-                                className="px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                className="px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                             >
-                                <option value="all">Todos</option>
+                                <option value="all">{tr('Todos', 'Guztiak')}</option>
                                 {recentOpponentOptions.map((opponent) => (
                                     <option key={opponent.id} value={opponent.id}>
                                         {opponent.name}
@@ -608,7 +643,7 @@ export default function GroupView() {
                                             </span>
                                         </div>
                                         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                                            {new Date(match.date).toLocaleDateString('es-ES')}
+                                            {new Date(match.date).toLocaleDateString(localeCode)}
                                         </p>
                                     </div>
                                     <div className="text-right">
@@ -617,7 +652,7 @@ export default function GroupView() {
                                         </p>
                                         {match.matchStatus !== 'PLAYED' && (
                                             <p className="text-xs text-orange-600 dark:text-orange-400 uppercase">
-                                                {match.matchStatus === 'INJURY' ? 'LESIÓN' : 'CANCELADO'}
+                                                {match.matchStatus === 'INJURY' ? tr('LESIÓN', 'LESIOA') : tr('CANCELADO', 'EZEZTATUA')}
                                             </p>
                                         )}
                                     </div>
@@ -629,9 +664,9 @@ export default function GroupView() {
                         <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 text-center">
                             <button
                                 onClick={() => setVisibleRecentMatches((prev) => Math.min(prev + 10, filteredRecentMatches.length))}
-                                className="px-4 py-2 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/60 transition-colors font-medium"
+                                className="px-4 py-2 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/60 transition-colors font-medium"
                             >
-                                {filteredRecentMatches.length - visibleRecentMatches <= 10 ? 'Ver todos' : 'Ver mas'}
+                                {filteredRecentMatches.length - visibleRecentMatches <= 10 ? tr('Ver todos', 'Guztiak ikusi') : tr('Ver más', 'Gehiago ikusi')}
                             </button>
                         </div>
                     )}
@@ -643,8 +678,12 @@ export default function GroupView() {
             {remainingMatchesList.length > 0 && (
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                     <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Partidos Restantes</h2>
-                        <span className="text-sm text-slate-500 dark:text-slate-400">{remainingMatchesList.length} pendientes</span>
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">{tr('Partidos Restantes', 'Geratzen diren Partidak')}</h2>
+                        <span className="text-sm text-slate-500 dark:text-slate-400">
+                            {language === 'eu'
+                                ? `${remainingMatchesList.length} zain`
+                                : `${remainingMatchesList.length} pendientes`}
+                        </span>
                     </div>
                     <div className="divide-y divide-slate-200 dark:divide-slate-700">
                         {remainingMatchesList.slice(0, visibleRemainingMatches).map((match) => (
@@ -655,7 +694,7 @@ export default function GroupView() {
                                         <span className="text-slate-600 dark:text-slate-400">vs</span>
                                         <span className="font-medium text-slate-900 dark:text-white">{match.player2Name}</span>
                                     </div>
-                                    <span className="text-xs font-semibold uppercase text-amber-700 dark:text-amber-400">Pendiente</span>
+                                    <span className="text-xs font-semibold uppercase text-amber-700 dark:text-amber-400">{tr('Pendiente', 'Zain')}</span>
                                 </div>
                             </div>
                         ))}
@@ -664,9 +703,9 @@ export default function GroupView() {
                         <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 text-center">
                             <button
                                 onClick={() => setVisibleRemainingMatches((prev) => prev + 6)}
-                                className="px-4 py-2 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/60 transition-colors font-medium"
+                                className="px-4 py-2 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/60 transition-colors font-medium"
                             >
-                                Ver más
+                                {tr('Ver más', 'Gehiago ikusi')}
                             </button>
                         </div>
                     )}
@@ -677,11 +716,11 @@ export default function GroupView() {
             {user?.player?.id && myMatches.length > 0 && (
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                     <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Mis Partidos</h2>
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">{tr('Mis Partidos', 'Nire Partidak')}</h2>
                         <span className="text-sm text-slate-500 dark:text-slate-400">
-                            {myMatches.filter((m: any) =>
-                                (m.matchStatus === 'PLAYED' && m.gamesP1 !== null && m.gamesP2 !== null) || m.matchStatus === 'INJURY'
-                            ).length} cerrados de {myMatches.length} totales
+                            {language === 'eu'
+                                ? `${closedMyMatchesCount} itxita / ${myMatches.length} guztira`
+                                : `${closedMyMatchesCount} cerrados de ${myMatches.length} totales`}
                         </span>
                     </div>
                     <div className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -710,10 +749,10 @@ export default function GroupView() {
                                                     )}
                                                     <div>
                                                         <p className="font-medium text-slate-900 dark:text-white">
-                                                            vs {opponent.name}
+                                                            {tr('vs', 'vs')} {opponent.name}
                                                         </p>
                                                         <p className="text-sm text-slate-500 dark:text-slate-400">
-                                                            {new Date(played ? match.date : (match.scheduledDate || match.date)).toLocaleDateString('es-ES', { 
+                                                            {new Date(played ? match.date : (match.scheduledDate || match.date)).toLocaleDateString(localeCode, { 
                                                                 day: '2-digit', 
                                                                 month: '2-digit', 
                                                                 year: 'numeric',
@@ -727,7 +766,7 @@ export default function GroupView() {
                                                 {played ? (
                                                     match.matchStatus === 'INJURY' ? (
                                                         <p className="text-sm font-bold text-orange-600 dark:text-orange-400 uppercase">
-                                                            LESIÓN
+                                                            {tr('LESIÓN', 'LESIOA')}
                                                         </p>
                                                     ) : (
                                                         <p className={`text-2xl font-bold ${won ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
@@ -736,7 +775,7 @@ export default function GroupView() {
                                                     )
                                                 ) : (
                                                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                                                        Pendiente
+                                                        {tr('Pendiente', 'Zain')}
                                                     </p>
                                                 )}
                                             </div>
@@ -751,11 +790,12 @@ export default function GroupView() {
     );
 }
 
-function ContactButtons({ phone, email }: { phone?: string; email?: string }) {
+function ContactButtons({ phone, email, language }: { phone?: string; email?: string; language: 'es' | 'eu' }) {
+    const tr = (es: string, eu: string) => (language === 'eu' ? eu : es);
     const hasValidEmail = email && !email.endsWith('@ejemplo.com');
     
     if (!phone && !hasValidEmail) {
-        return <span className="text-sm text-slate-400">Sin información de contacto</span>;
+        return <span className="text-sm text-slate-400">{tr('Sin información de contacto', 'Kontaktu informaziorik gabe')}</span>;
     }
 
     return (
@@ -776,8 +816,8 @@ function ContactButtons({ phone, email }: { phone?: string; email?: string }) {
                     </a>
                     <a
                         href={`tel:${phone}`}
-                        className="px-2 py-0.5 md:px-3 md:py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors text-xs md:text-sm font-medium"
-                        title="Llamar"
+                        className="px-2 py-0.5 md:px-3 md:py-1 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors text-xs md:text-sm font-medium"
+                        title={tr('Llamar', 'Deitu')}
                     >
                         📞
                     </a>
@@ -786,8 +826,8 @@ function ContactButtons({ phone, email }: { phone?: string; email?: string }) {
             {hasValidEmail && (
                 <a
                     href={`mailto:${email}`}
-                    className="px-2 py-0.5 md:px-3 md:py-1 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors text-xs md:text-sm font-medium"
-                    title="Enviar email"
+                    className="px-2 py-0.5 md:px-3 md:py-1 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors text-xs md:text-sm font-medium"
+                    title={tr('Enviar email', 'Emaila bidali')}
                 >
                     ✉️
                 </a>
@@ -795,3 +835,6 @@ function ContactButtons({ phone, email }: { phone?: string; email?: string }) {
         </div>
     );
 }
+
+
+

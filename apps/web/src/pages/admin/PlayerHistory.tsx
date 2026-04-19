@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import api from '../../lib/api';
 import { useAdminQuery } from '../../hooks/useAdminQuery';
 import { Line } from 'react-chartjs-2';
@@ -170,10 +170,10 @@ export default function PlayerHistory() {
 
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-6">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-3 md:p-6 text-white shadow-lg">
+                <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl p-3 md:p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between mb-2">
                         <span className="text-xs md:text-sm font-medium opacity-90">Total Registrados</span>
-                        <span className="text-xl md:text-2xl">👥</span>
+                        <span className="text-xl md:text-2xl">�x�</span>
                     </div>
                     <p className="text-3xl md:text-4xl font-bold">{totalRegistered}</p>
                 </div>
@@ -181,7 +181,7 @@ export default function PlayerHistory() {
                 <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-3 md:p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between mb-2">
                         <span className="text-xs md:text-sm font-medium opacity-90">Activos</span>
-                        <span className="text-xl md:text-2xl">✅</span>
+                        <span className="text-xl md:text-2xl">�S&</span>
                     </div>
                     <p className="text-3xl md:text-4xl font-bold">{activeCount}</p>
                     <p className="text-xs md:text-sm opacity-75 mt-1">{totalRegistered > 0 ? Math.round((activeCount / totalRegistered) * 100) : 0}%</p>
@@ -190,7 +190,7 @@ export default function PlayerHistory() {
                 <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl p-3 md:p-6 text-white shadow-lg">
                     <div className="flex items-center justify-between mb-2">
                         <span className="text-xs md:text-sm font-medium opacity-90">Inactivos</span>
-                        <span className="text-xl md:text-2xl">❌</span>
+                        <span className="text-xl md:text-2xl">�R</span>
                     </div>
                     <p className="text-3xl md:text-4xl font-bold">{inactiveCount}</p>
                     <p className="text-xs md:text-sm opacity-75 mt-1">{totalRegistered > 0 ? Math.round((inactiveCount / totalRegistered) * 100) : 0}%</p>
@@ -204,21 +204,21 @@ export default function PlayerHistory() {
                         onClick={() => setViewMode('chart')}
                         className={`px-4 py-2 font-medium transition-colors border-b-2 ${
                             viewMode === 'chart'
-                                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                                ? 'border-amber-600 text-amber-600 dark:text-amber-400'
                                 : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                     >
-                        📈 Gráfico
+                        �x� Gráfico
                     </button>
                     <button
                         onClick={() => setViewMode('timeline')}
                         className={`px-4 py-2 font-medium transition-colors border-b-2 ${
                             viewMode === 'timeline'
-                                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                                ? 'border-amber-600 text-amber-600 dark:text-amber-400'
                                 : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                     >
-                        📋 Lista
+                        �x9 Lista
                     </button>
                 </div>
                 {viewMode === 'timeline' && (
@@ -264,10 +264,10 @@ export default function PlayerHistory() {
                             link.setAttribute('download', `historial_jugadores_${new Date().toISOString().split('T')[0]}.csv`);
                             link.click();
                         }}
-                        className="px-4 py-2 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+                        className="px-4 py-2 text-sm bg-amber-600 text-white rounded hover:bg-amber-700 transition-colors"
                         title="Descargar historial como CSV"
                     >
-                        📥 CSV
+                        �x� CSV
                     </button>
                 )}
             </div>
@@ -344,7 +344,7 @@ export default function PlayerHistory() {
                             <div className="p-4">
                                 <div className="flex items-start justify-between mb-2">
                                     <div className="flex items-center gap-3">
-                                        <div className={`text-2xl ${player.isActive ? '✅' : '❌'}`}></div>
+                                        <div className={`text-2xl ${player.isActive ? '�S&' : '�R'}`}></div>
                                         <div>
                                             <h3 className="font-semibold text-slate-900 dark:text-white text-lg">
                                                 {player.playerName}
@@ -376,17 +376,17 @@ export default function PlayerHistory() {
                                                         <span className="inline-block w-24 font-medium">{history.season}</span>
                                                         {history.group ? (
                                                             <>
-                                                                <span className="text-slate-500">•</span>
+                                                                <span className="text-slate-500">⬢</span>
                                                                 <span>{history.group}</span>
-                                                                <span className="text-slate-500">•</span>
+                                                                <span className="text-slate-500">⬢</span>
                                                                 <span>Posición: #{history.finalRank || '-'}</span>
                                                                 {history.movement && (
                                                                     <>
-                                                                        <span className="text-slate-500">•</span>
+                                                                        <span className="text-slate-500">⬢</span>
                                                                         <span className="font-medium">
-                                                                            {history.movement === 'PROMOTION' && '📈 Ascenso'}
-                                                                            {history.movement === 'RELEGATION' && '📉 Descenso'}
-                                                                            {history.movement === 'STAY' && '➡️ Mantiene'}
+                                                                            {history.movement === 'PROMOTION' && '�x� Ascenso'}
+                                                                            {history.movement === 'RELEGATION' && '�x0 Descenso'}
+                                                                            {history.movement === 'STAY' && '�~�️ Mantiene'}
                                                                         </span>
                                                                     </>
                                                                 )}
@@ -408,3 +408,4 @@ export default function PlayerHistory() {
         </div>
     );
 }
+

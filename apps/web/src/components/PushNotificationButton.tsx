@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { usePushNotification } from '../hooks/usePushNotification';
 import { useToast } from '../contexts/ToastContext';
 
@@ -49,7 +49,7 @@ export default function PushNotificationButton({
                 ${
                     isSubscribed
                         ? 'bg-green-500 hover:bg-green-600 text-white'
-                        : 'bg-blue-500 hover:bg-blue-600 text-white'
+                        : 'bg-amber-500 hover:bg-amber-600 text-white'
                 }
                 disabled:opacity-50 disabled:cursor-not-allowed
             `}
@@ -78,3 +78,4 @@ export default function PushNotificationButton({
         </button>
     );
 }
+

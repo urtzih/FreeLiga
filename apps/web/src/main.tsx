@@ -1,5 +1,5 @@
 /**
- * FreeSQuash League - Web Application
+ * FreeSquash Liga - Web Application
  *
  * @author Urtzi Diaz Arberas
  * @copyright (c) 2024-2026 Urtzi Diaz Arberas. All rights reserved.

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
 import PlayerHistory from './PlayerHistory';
@@ -101,7 +101,7 @@ export default function ManageUsers() {
         if (!name.trim()) {
             return 'El nombre es obligatorio';
         }
-        const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]+$/;
+        const nameRegex = /^[a-zA-ZáéíóúÁ�0Í��añ�ü�S\s'-]+$/;
         if (!nameRegex.test(name)) {
             return 'El nombre solo puede contener letras';
         }
@@ -165,7 +165,7 @@ export default function ManageUsers() {
         }
     });
 
-    // Client‑side sort and filtering
+    // Client�side sort and filtering
     const filteredUsers = (data?.users || [])
         .filter(user => {
             // Filter by group (client-side)
@@ -534,7 +534,7 @@ export default function ManageUsers() {
                     <div className="flex gap-2">
                         <button
                             onClick={handleExportCSV}
-                            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm flex items-center gap-2"
+                            className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors shadow-sm flex items-center gap-2"
                             title="Exportar todos los usuarios filtrados a CSV"
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -544,7 +544,7 @@ export default function ManageUsers() {
                         </button>
                         <button
                             onClick={() => setShowCreateModal(true)}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2"
+                            className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors shadow-sm flex items-center gap-2"
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -560,20 +560,20 @@ export default function ManageUsers() {
                 <button
                     onClick={() => setActiveTab('users')}
                     className={`px-4 py-2 font-medium transition-colors border-b-2 ${activeTab === 'users'
-                        ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                        ? 'border-amber-600 text-amber-600 dark:text-amber-400'
                         : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                 >
-                    👥 Usuarios
+                    �x� Usuarios
                 </button>
                 <button
                     onClick={() => setActiveTab('history')}
                     className={`px-4 py-2 font-medium transition-colors border-b-2 ${activeTab === 'history'
-                        ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                        ? 'border-amber-600 text-amber-600 dark:text-amber-400'
                         : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                         }`}
                 >
-                    📊 Historial
+                    �x` Historial
                 </button>
             </div>
 
@@ -585,7 +585,7 @@ export default function ManageUsers() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    🔍 Buscar por nombre o email
+                                    �x� Buscar por nombre o email
                                 </label>
                                 <div className="flex gap-2">
                                     <input
@@ -594,11 +594,11 @@ export default function ManageUsers() {
                                         value={searchTerm}
                                         onChange={e => setSearchTerm(e.target.value)}
                                         onKeyDown={handleKeyDown}
-                                        className="flex-1 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                                        className="flex-1 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
                                     />
                                     <button
                                         onClick={handleSearch}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium whitespace-nowrap"
+                                        className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors font-medium whitespace-nowrap"
                                     >
                                         Buscar
                                     </button>
@@ -606,7 +606,7 @@ export default function ManageUsers() {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    🏠 Filtrar por grupo
+                                    �x�� Filtrar por grupo
                                 </label>
                                 <select
                                     value={filterGroup}
@@ -614,7 +614,7 @@ export default function ManageUsers() {
                                         setFilterGroup(e.target.value);
                                         setPage(1);
                                     }}
-                                    className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                                    className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
                                 >
                                     <option value="">Todos los grupos</option>
                                     <option value="sin-grupo">Sin grupo</option>
@@ -625,7 +625,7 @@ export default function ManageUsers() {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                    🔐 Filtrar por estado
+                                    �x� Filtrar por estado
                                 </label>
                                 <select
                                     value={filterActive}
@@ -633,16 +633,16 @@ export default function ManageUsers() {
                                         setFilterActive(e.target.value as 'all' | 'active' | 'inactive');
                                         setPage(1); // Reset page when filter changes
                                     }}
-                                    className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                                    className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
                                 >
                                     <option value="all">Todos los estados</option>
-                                    <option value="active">✓ Activos</option>
-                                    <option value="inactive">✗ Inactivos</option>
+                                    <option value="active">�S Activos</option>
+                                    <option value="inactive">�S Inactivos</option>
                                 </select>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
-                                    💰 Filtrar por cuotas pagada
+                                    �x� Filtrar por cuotas pagada
                                 </label>
                                 <div className="space-y-3">
                                     <div className="space-y-2">
@@ -671,8 +671,8 @@ export default function ManageUsers() {
                                             <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Mostrar:</label>
                                             {[
                                                 { value: 'all', label: 'Todos' },
-                                                { value: 'paid', label: '✓ Que pagaron (alguno de estos años)' },
-                                                { value: 'unpaid', label: '✗ Que no pagaron (ninguno de estos años)' }
+                                                { value: 'paid', label: '�S Que pagaron (alguno de estos años)' },
+                                                { value: 'unpaid', label: '�S Que no pagaron (ninguno de estos años)' }
                                             ].map((option) => (
                                                 <label key={option.value} className="flex items-center gap-2 cursor-pointer">
                                                     <input
@@ -711,22 +711,22 @@ export default function ManageUsers() {
                                             <div className="flex items-center gap-1">ID</div>
                                         </th>
                                         <th onClick={() => handleSort('email')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
-                                            <div className="flex items-center gap-1">Email {sortField === 'email' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}</div>
+                                            <div className="flex items-center gap-1">Email {sortField === 'email' && <span>{sortDirection === 'asc' ? '� ' : '� '}</span>}</div>
                                         </th>
                                         <th onClick={() => handleSort('name')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
-                                            <div className="flex items-center gap-1">Jugador {sortField === 'name' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}</div>
+                                            <div className="flex items-center gap-1">Jugador {sortField === 'name' && <span>{sortDirection === 'asc' ? '� ' : '� '}</span>}</div>
                                         </th>
                                         <th onClick={() => handleSort('phone')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
-                                            <div className="flex items-center gap-1">Teléfono {sortField === 'phone' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}</div>
+                                            <div className="flex items-center gap-1">Teléfono {sortField === 'phone' && <span>{sortDirection === 'asc' ? '� ' : '� '}</span>}</div>
                                         </th>
                                         <th onClick={() => handleSort('group')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
-                                            <div className="flex items-center gap-1">Grupo {sortField === 'group' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}</div>
+                                            <div className="flex items-center gap-1">Grupo {sortField === 'group' && <span>{sortDirection === 'asc' ? '� ' : '� '}</span>}</div>
                                         </th>
                                         <th onClick={() => handleSort('createdAt')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
-                                            <div className="flex items-center gap-1">Fecha Registro {sortField === 'createdAt' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}</div>
+                                            <div className="flex items-center gap-1">Fecha Registro {sortField === 'createdAt' && <span>{sortDirection === 'asc' ? '� ' : '� '}</span>}</div>
                                         </th>
                                         <th onClick={() => handleSort('lastConnection')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
-                                            <div className="flex items-center gap-1">Última Conexión {sortField === 'lastConnection' && <span>{sortDirection === 'asc' ? '↑' : '↓'}</span>}</div>
+                                            <div className="flex items-center gap-1">�altima Conexión {sortField === 'lastConnection' && <span>{sortDirection === 'asc' ? '� ' : '� '}</span>}</div>
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Acciones</th>
                                     </tr>
@@ -747,7 +747,7 @@ export default function ManageUsers() {
                                                         className="text-xs px-2 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
                                                         title="Copiar ID completo"
                                                     >
-                                                        📋
+                                                        �x9
                                                     </button>
                                                 </div>
                                             </td>
@@ -794,9 +794,9 @@ export default function ManageUsers() {
                                                             : 'bg-red-600 text-white hover:bg-red-700'}`}
                                                         title={user.isActive ? 'Desactivar usuario' : 'Activar usuario'}
                                                     >
-                                                        {user.isActive ? '✓ Activo' : '✗ Inactivo'}
+                                                        {user.isActive ? '�S Activo' : '�S Inactivo'}
                                                     </button>
-                                                    <button onClick={() => handleOpenEditModal(user)} className="text-sm px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Editar</button>
+                                                    <button onClick={() => handleOpenEditModal(user)} className="text-sm px-3 py-1 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors">Editar</button>
                                                     <button
                                                         onClick={() => handleOpenFeesModal(user)} 
                                                         className={`text-xs px-2 py-1 rounded border font-medium transition-colors ${
@@ -806,7 +806,7 @@ export default function ManageUsers() {
                                                         }`}
                                                         title="Editar cuotas anuales"
                                                     >
-                                                        {user.player?.annualFeesPaid?.includes(2026) ? '✓ 2026' : '✗ 2026'}
+                                                        {user.player?.annualFeesPaid?.includes(2026) ? '�S 2026' : '�S 2026'}
                                                     </button>
                                                     {user.player?.currentGroup?.id && (
                                                         <button
@@ -817,7 +817,7 @@ export default function ManageUsers() {
                                                             Lesionar
                                                         </button>
                                                     )}
-                                                    <button onClick={() => { setSelectedUser(user); setShowResetPassword(true); }} className="text-sm px-3 py-1 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">Resetear</button>
+                                                    <button onClick={() => { setSelectedUser(user); setShowResetPassword(true); }} className="text-sm px-3 py-1 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors">Cambiar contraseña</button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -866,7 +866,7 @@ export default function ManageUsers() {
                                             placeholder="usuario@email.com"
                                         />
                                         {validationErrors.createEmail && (
-                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">❌ {validationErrors.createEmail}</p>
+                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">�R {validationErrors.createEmail}</p>
                                         )}
                                     </div>
                                     <div>
@@ -889,7 +889,7 @@ export default function ManageUsers() {
                                             placeholder="Nombre y apellidos"
                                         />
                                         {validationErrors.createName && (
-                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">❌ {validationErrors.createName}</p>
+                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">�R {validationErrors.createName}</p>
                                         )}
                                         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Solo letras y espacios</p>
                                     </div>
@@ -915,7 +915,7 @@ export default function ManageUsers() {
                                             placeholder="+34 600 123 456"
                                         />
                                         {validationErrors.createPhone && (
-                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">❌ {validationErrors.createPhone}</p>
+                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">�R {validationErrors.createPhone}</p>
                                         )}
                                         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Mínimo 9 dígitos</p>
                                     </div>
@@ -929,7 +929,7 @@ export default function ManageUsers() {
                                             }} 
                                             className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                                         >
-                                            <option value="PLAYER">👤 Jugador</option>
+                                            <option value="PLAYER">�x� Jugador</option>
                                             <option value="ADMIN">⭐ Administrador</option>
                                         </select>
                                         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Por defecto: Jugador</p>
@@ -948,11 +948,11 @@ export default function ManageUsers() {
                                             ))}
                                         </select>
                                         {createForm.role === 'ADMIN' && (
-                                            <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">⚠️ Los administradores no pueden estar en grupos</p>
+                                            <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">�a�️ Los administradores no pueden estar en grupos</p>
                                         )}
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">💰 Cuota pagada para años</label>
+                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">�x� Cuota pagada para años</label>
                                         <div className="space-y-2">
                                             {Array.from({ length: new Date().getFullYear() - 2026 + 3 }, (_, i) => 2026 + i).map((year) => (
                                                 <label key={year} className="flex items-center gap-2 cursor-pointer">
@@ -1007,7 +1007,7 @@ export default function ManageUsers() {
                                             className={`w-full px-4 py-2 border ${validationErrors.editEmail ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'} rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white`} 
                                         />
                                         {validationErrors.editEmail && (
-                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">❌ {validationErrors.editEmail}</p>
+                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">�R {validationErrors.editEmail}</p>
                                         )}
                                     </div>
                                     <div>
@@ -1025,7 +1025,7 @@ export default function ManageUsers() {
                                             className={`w-full px-4 py-2 border ${validationErrors.editName ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'} rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white`} 
                                         />
                                         {validationErrors.editName && (
-                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">❌ {validationErrors.editName}</p>
+                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">�R {validationErrors.editName}</p>
                                         )}
                                         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Solo letras y espacios</p>
                                     </div>
@@ -1050,7 +1050,7 @@ export default function ManageUsers() {
                                             className={`w-full px-4 py-2 border ${validationErrors.editPhone ? 'border-red-500' : 'border-slate-300 dark:border-slate-600'} rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white`} 
                                         />
                                         {validationErrors.editPhone && (
-                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">❌ {validationErrors.editPhone}</p>
+                                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">�R {validationErrors.editPhone}</p>
                                         )}
                                         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Mínimo 9 dígitos</p>
                                     </div>
@@ -1065,13 +1065,13 @@ export default function ManageUsers() {
                                             disabled={!!selectedUser?.player?.currentGroup?.id}
                                             className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            <option value="PLAYER">👤 Jugador</option>
+                                            <option value="PLAYER">�x� Jugador</option>
                                             <option value="ADMIN">⭐ Administrador</option>
                                         </select>
                                         {selectedUser?.player?.currentGroup?.id ? (
-                                            <p className="mt-1 text-xs text-red-600 dark:text-red-400">⚠️ No se puede cambiar el rol mientras esté en un grupo activo</p>
+                                            <p className="mt-1 text-xs text-red-600 dark:text-red-400">�a�️ No se puede cambiar el rol mientras esté en un grupo activo</p>
                                         ) : (
-                                            <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">⚠️ Cambiar a Admin otorga permisos completos</p>
+                                            <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">�a�️ Cambiar a Admin otorga permisos completos</p>
                                         )}
                                     </div>
                                     <div>
@@ -1088,7 +1088,7 @@ export default function ManageUsers() {
                                             ))}
                                         </select>
                                         {editForm.role === 'ADMIN' && (
-                                            <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">⚠️ Los administradores no pueden estar en grupos</p>
+                                            <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">�a�️ Los administradores no pueden estar en grupos</p>
                                         )}
                                     </div>
                                     <div className="flex space-x-3 mt-6">
@@ -1108,15 +1108,15 @@ export default function ManageUsers() {
                     {showResetPassword && selectedUser && (
                         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                             <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl">
-                                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Resetear Contraseña</h3>
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Cambiar contraseña</h3>
                                 <p className="text-slate-600 dark:text-slate-400 mb-4">Usuario: <strong>{selectedUser.email}</strong></p>
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nueva Contraseña</label>
                                     <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mínimo 6 caracteres" className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
                                 </div>
                                 <div className="flex space-x-3">
-                                    <button onClick={handleResetPassword} disabled={resetPasswordMutation.isPending} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
-                                        {resetPasswordMutation.isPending ? 'Reseteando...' : 'Resetear'}
+                                    <button onClick={handleResetPassword} disabled={resetPasswordMutation.isPending} className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50">
+                                        {resetPasswordMutation.isPending ? 'Cambiando contraseña...' : 'Cambiar contraseña'}
                                     </button>
                                     <button onClick={() => { setShowResetPassword(false); setNewPassword(''); setSelectedUser(null); }} className="flex-1 px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600">
                                         Cancelar
@@ -1145,7 +1145,7 @@ export default function ManageUsers() {
                                                             onClick={() => handleToggleFeeYear(year)}
                                                             className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
                                                         >
-                                                            ✕ Quitar
+                                                            �S" Quitar
                                                         </button>
                                                     </div>
                                                 ))
@@ -1254,3 +1254,4 @@ export default function ManageUsers() {
         </div>
     );
 }
+

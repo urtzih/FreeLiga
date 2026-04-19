@@ -1,5 +1,7 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
+import LanguageSelector from '../components/i18n/LanguageSelector';
 
 const RecentMatches = lazy(() => import('../components/RecentMatches'));
 const PublicGroupsClassification = lazy(() => import('../components/PublicGroupsClassification'));
@@ -7,76 +9,70 @@ const PublicStats = lazy(() => import('../components/PublicStats'));
 const PublicHistoricalStats = lazy(() => import('../components/PublicHistoricalStats'));
 
 export default function Home() {
+    const { t } = useLanguage();
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-            {/* Hero Section */}
+        <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-amber-50">
             <div className="relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-5"></div>
-                <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+                <div className="absolute inset-0 bg-gradient-to-r from-amber-600 to-amber-600 opacity-5"></div>
+                <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-14">
                     <div className="text-center">
-                        {/* Logo FreeSquash - Circular */}
-                        <div className="mb-8 flex justify-center">
+                        <div className="mb-5 sm:mb-8 flex justify-center">
                             <img
                                 src="/logo.jpg"
                                 alt="FreeSquash Logo"
-                                className="w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 rounded-full object-cover border-4 border-white dark:border-slate-700 shadow-2xl hover:scale-105 transition-transform cursor-pointer"
+                                className="w-24 h-24 sm:w-36 sm:h-36 lg:w-48 lg:h-48 rounded-full object-cover border-4 border-white dark:border-slate-700 shadow-2xl hover:scale-105 transition-transform cursor-pointer"
                             />
                         </div>
 
-                        <h1 className="text-5xl sm:text-6xl lg:text-7xl leading-[1.1] font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-6">
-                            FreeSquash Liga
+                        <h1 className="text-3xl sm:text-6xl lg:text-7xl leading-[1.1] font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-600 to-amber-600 mb-3 sm:mb-6">
+                            {t('home.hero.title')}
                         </h1>
-                        <p className="text-xl sm:text-2xl text-gray-700 mb-4 max-w-3xl mx-auto">
-                            Nuestra liga de squash en Vitoria-Gasteiz
+                        <p className="text-base sm:text-2xl text-gray-700 mb-2 sm:mb-4 max-w-3xl mx-auto">
+                            {t('home.hero.subtitle')}
                         </p>
-                        <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-                            Sistema de gestión interno para administrar grupos, partidos y clasificaciones de nuestra comunidad de squash
+                        <p className="text-sm sm:text-lg text-gray-600 mb-5 sm:mb-8 max-w-2xl mx-auto">
+                            {t('home.hero.description')}
                         </p>
 
                         <div className="flex justify-center">
                             <Link
                                 to="/login"
-                                className="px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                                className="px-6 py-3 sm:px-10 sm:py-4 bg-gradient-to-r from-amber-600 to-amber-600 text-white text-base sm:text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
                             >
-                                Acceder a la Plataforma
+                                {t('home.hero.cta')}
                             </Link>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Public Data Section - Matchs, Groups, Classification */}
-            <div className="bg-white py-16">
+            <div className="bg-white py-8 sm:py-16">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <Suspense fallback={<div className="text-center py-8">Cargando datos...</div>}>
-                        {/* Historical Stats */}
+                    <Suspense fallback={<div className="text-center py-8">{t('home.loadingData')}</div>}>
                         <PublicHistoricalStats />
-
-                        {/* Public Stats */}
                         <PublicStats />
 
-                        {/* Groups Classification - First */}
                         <div className="mb-16">
                             <PublicGroupsClassification />
                             <div className="text-center mt-8">
                                 <Link
                                     to="/public/groups"
-                                    className="inline-block px-8 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors"
+                                    className="inline-block px-8 py-3 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition-colors"
                                 >
-                                    Explorar todos los grupos →
+                                    {t('home.exploreGroups')} →
                                 </Link>
                             </div>
                         </div>
 
-                        {/* Recent Matches - Second */}
                         <div>
                             <RecentMatches />
                             <div className="text-center mt-6">
                                 <Link
                                     to="/public/matches"
-                                    className="inline-block px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                                    className="inline-block px-8 py-3 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition-colors"
                                 >
-                                    Ver todos los partidos →
+                                    {t('home.viewAllMatches')} →
                                 </Link>
                             </div>
                         </div>
@@ -84,310 +80,247 @@ export default function Home() {
                 </div>
             </div>
 
-            {/* Features Section */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-                <h2 className="text-4xl font-bold text-center text-gray-900 mb-12">
-                    Funcionalidades de la plataforma
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16">
+                <h2 className="text-2xl sm:text-4xl font-bold text-center text-gray-900 mb-5 sm:mb-12">
+                    {t('home.features.title')}
                 </h2>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {/* Feature 1 */}
-                    <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200">
-                        <div className="text-4xl mb-4">🏆</div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-3">Grupos por Nivel</h3>
+                <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-8">
+                    <div className="bg-white rounded-xl shadow-lg p-3 sm:p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200">
+                        <div className="text-2xl sm:text-4xl mb-2 sm:mb-4">🏆</div>
+                        <h3 className="text-sm sm:text-xl font-bold text-gray-900 mb-1 sm:mb-3">{t('home.features.levelGroups.title')}</h3>
                         <p className="text-gray-600">
-                            Organización en múltiples grupos según nivel de juego, con clasificaciones actualizadas automáticamente y sistema de ascensos/descensos al finalizar cada temporada.
+                            {t('home.features.levelGroups.description')}
                         </p>
                     </div>
 
-                    {/* Feature 2 */}
-                    <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200">
-                        <div className="text-4xl mb-4">🎾</div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-3">Registro de Partidos</h3>
+                    <div className="bg-white rounded-xl shadow-lg p-3 sm:p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200">
+                        <div className="text-2xl sm:text-4xl mb-2 sm:mb-4">🎾</div>
+                        <h3 className="text-sm sm:text-xl font-bold text-gray-900 mb-1 sm:mb-3">{t('home.features.matchRecord.title')}</h3>
                         <p className="text-gray-600">
-                            Registra los resultados de tus partidos de squash rápidamente. El sistema actualiza automáticamente las clasificaciones tras cada partido.
+                            {t('home.features.matchRecord.description')}
                         </p>
                     </div>
 
-                    {/* Feature 3 */}
-                    <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200">
-                        <div className="text-4xl mb-4">📊</div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-3">Ranking Justo</h3>
+                    <div className="bg-white rounded-xl shadow-lg p-3 sm:p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200">
+                        <div className="text-2xl sm:text-4xl mb-2 sm:mb-4">📊</div>
+                        <h3 className="text-sm sm:text-xl font-bold text-gray-900 mb-1 sm:mb-3">{t('home.features.fairRanking.title')}</h3>
                         <p className="text-gray-600">
-                            Sistema de clasificación con algoritmo de desempate que considera enfrentamientos directos y diferencia de sets para garantizar un ranking equitativo.
+                            {t('home.features.fairRanking.description')}
                         </p>
                     </div>
 
-                    {/* Feature 4 */}
-                    <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200">
-                        <div className="text-4xl mb-4">📈</div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-3">Tu Evolución</h3>
+                    <div className="bg-white rounded-xl shadow-lg p-3 sm:p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200">
+                        <div className="text-2xl sm:text-4xl mb-2 sm:mb-4">📈</div>
+                        <h3 className="text-sm sm:text-xl font-bold text-gray-900 mb-1 sm:mb-3">{t('home.features.progress.title')}</h3>
                         <p className="text-gray-600">
-                            Consulta todas tus estadísticas: victorias, derrotas, porcentaje de éxito, diferencia de sets y tu racha actual para seguir tu progreso.
+                            {t('home.features.progress.description')}
                         </p>
                     </div>
 
-                    {/* Feature 5 */}
-                    <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200">
-                        <div className="text-4xl mb-4">📞</div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-3">Contacto entre Jugadores</h3>
+                    <div className="bg-white rounded-xl shadow-lg p-3 sm:p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200">
+                        <div className="text-2xl sm:text-4xl mb-2 sm:mb-4">📞</div>
+                        <h3 className="text-sm sm:text-xl font-bold text-gray-900 mb-1 sm:mb-3">{t('home.features.contact.title')}</h3>
                         <p className="text-gray-600">
-                            Encuentra los datos de contacto de otros jugadores de tu grupo para coordinar partidos fácilmente mediante WhatsApp o llamada.
+                            {t('home.features.contact.description')}
                         </p>
                     </div>
 
-                    {/* Feature 6 */}
-                    <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200">
-                        <div className="text-4xl mb-4">⬆️⬇️</div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-3">Ascensos y Descensos</h3>
+                    <div className="bg-white rounded-xl shadow-lg p-3 sm:p-6 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200">
+                        <div className="text-2xl sm:text-4xl mb-2 sm:mb-4">⬆️⬇️</div>
+                        <h3 className="text-sm sm:text-xl font-bold text-gray-900 mb-1 sm:mb-3">{t('home.features.promotions.title')}</h3>
                         <p className="text-gray-600">
-                            Al final de cada temporada, los mejores ascienden y los últimos descienden, manteniendo grupos competitivos y equilibrados.
+                            {t('home.features.promotions.description')}
                         </p>
                     </div>
                 </div>
             </div>
 
-            {/* How to Use Section */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 py-16">
+            <div className="bg-gradient-to-r from-amber-600 to-amber-600 py-8 sm:py-16">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <h2 className="text-4xl font-bold text-center text-white mb-12">
-                        ¿Cómo funciona?
+                    <h2 className="text-2xl sm:text-4xl font-bold text-center text-white mb-6 sm:mb-12">
+                        {t('home.howItWorks.title')}
                     </h2>
 
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-                        {/* Step 1 */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-8">
                         <div className="text-center">
-                            <div className="bg-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold text-blue-600 mx-auto mb-4 shadow-lg">
+                            <div className="bg-white rounded-full w-10 h-10 sm:w-16 sm:h-16 flex items-center justify-center text-lg sm:text-2xl font-bold text-amber-600 mx-auto mb-2 sm:mb-4 shadow-lg">
                                 1
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-2">Contacta al Admin</h3>
-                            <p className="text-blue-100">
-                                El administrador te creará una cuenta y te asignará a tu grupo
+                            <h3 className="text-sm sm:text-xl font-bold text-white mb-1 sm:mb-2">{t('home.howItWorks.step1.title')}</h3>
+                            <p className="hidden sm:block text-amber-100">
+                                {t('home.howItWorks.step1.description')}
                             </p>
                         </div>
 
-                        {/* Step 2 */}
                         <div className="text-center">
-                            <div className="bg-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold text-blue-600 mx-auto mb-4 shadow-lg">
+                            <div className="bg-white rounded-full w-10 h-10 sm:w-16 sm:h-16 flex items-center justify-center text-lg sm:text-2xl font-bold text-amber-600 mx-auto mb-2 sm:mb-4 shadow-lg">
                                 2
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-2">Inicia Sesión</h3>
-                            <p className="text-blue-100">
-                                Accede con tus credenciales y consulta tu grupo y clasificación
+                            <h3 className="text-sm sm:text-xl font-bold text-white mb-1 sm:mb-2">{t('home.howItWorks.step2.title')}</h3>
+                            <p className="hidden sm:block text-amber-100">
+                                {t('home.howItWorks.step2.description')}
                             </p>
                         </div>
 
-                        {/* Step 3 */}
                         <div className="text-center">
-                            <div className="bg-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold text-blue-600 mx-auto mb-4 shadow-lg">
+                            <div className="bg-white rounded-full w-10 h-10 sm:w-16 sm:h-16 flex items-center justify-center text-lg sm:text-2xl font-bold text-amber-600 mx-auto mb-2 sm:mb-4 shadow-lg">
                                 3
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-2">Juega y Registra</h3>
-                            <p className="text-blue-100">
-                                Juega tus partidos y registra los resultados
+                            <h3 className="text-sm sm:text-xl font-bold text-white mb-1 sm:mb-2">{t('home.howItWorks.step3.title')}</h3>
+                            <p className="hidden sm:block text-amber-100">
+                                {t('home.howItWorks.step3.description')}
                             </p>
                         </div>
 
-                        {/* Step 4 */}
                         <div className="text-center">
-                            <div className="bg-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold text-blue-600 mx-auto mb-4 shadow-lg">
+                            <div className="bg-white rounded-full w-10 h-10 sm:w-16 sm:h-16 flex items-center justify-center text-lg sm:text-2xl font-bold text-amber-600 mx-auto mb-2 sm:mb-4 shadow-lg">
                                 4
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-2">Sigue la Liga</h3>
-                            <p className="text-blue-100">
-                                Consulta la clasificación, tu progreso y el historial de partidos
+                            <h3 className="text-sm sm:text-xl font-bold text-white mb-1 sm:mb-2">{t('home.howItWorks.step4.title')}</h3>
+                            <p className="hidden sm:block text-amber-100">
+                                {t('home.howItWorks.step4.description')}
                             </p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Roles Section */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-                <h2 className="text-4xl font-bold text-center text-gray-900 mb-12">
-                    Tipos de Usuario
-                </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                    {/* Player Role */}
-                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-lg p-8 border-2 border-green-200">
-                        <div className="text-5xl mb-4">👤</div>
-                        <h3 className="text-2xl font-bold text-gray-900 mb-4">Jugador</h3>
-                        <ul className="space-y-2 text-gray-700">
-                            <li className="flex items-start">
-                                <span className="text-green-600 mr-2">✓</span>
-                                <span>Ver clasificación y estadísticas personales</span>
-                            </li>
-                            <li className="flex items-start">
-                                <span className="text-green-600 mr-2">✓</span>
-                                <span>Registrar resultados de partidos</span>
-                            </li>
-                            <li className="flex items-start">
-                                <span className="text-green-600 mr-2">✓</span>
-                                <span>Consultar historial completo</span>
-                            </li>
-                            <li className="flex items-start">
-                                <span className="text-green-600 mr-2">✓</span>
-                                <span>Contactar con otros jugadores</span>
-                            </li>
-                        </ul>
-                    </div>
-
-                    {/* Admin Role */}
-                    <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl shadow-lg p-8 border-2 border-purple-200">
-                        <div className="text-5xl mb-4">👨‍💼</div>
-                        <h3 className="text-2xl font-bold text-gray-900 mb-4">Administrador</h3>
-                        <ul className="space-y-2 text-gray-700">
-                            <li className="flex items-start">
-                                <span className="text-purple-600 mr-2">✓</span>
-                                <span>Crear y gestionar temporadas</span>
-                            </li>
-                            <li className="flex items-start">
-                                <span className="text-purple-600 mr-2">✓</span>
-                                <span>Crear y gestionar grupos</span>
-                            </li>
-                            <li className="flex items-start">
-                                <span className="text-purple-600 mr-2">✓</span>
-                                <span>Asignar jugadores a grupos</span>
-                            </li>
-                            <li className="flex items-start">
-                                <span className="text-purple-600 mr-2">✓</span>
-                                <span>Panel de administración completo</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            {/* Instalación Móvil */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl shadow-xl p-8 border-2 border-indigo-200 dark:border-indigo-700">
-                    <div className="text-center mb-8">
-                        <div className="text-5xl mb-4">📱</div>
-                        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-                            Instala FreeSquash en tu móvil
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16">
+                <div className="bg-gradient-to-br from-amber-50 via-white to-orange-50 dark:from-amber-900/20 dark:via-slate-900 dark:to-amber-900/20 rounded-2xl shadow-xl p-4 sm:p-8 border-2 border-amber-200 dark:border-amber-700">
+                    <div className="text-center mb-4 sm:mb-8">
+                        <span className="inline-block bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-200 text-xs sm:text-sm font-semibold px-3 py-1 rounded-full mb-3">
+                            {t('home.mobileInstall.recommended')}
+                        </span>
+                        <div className="text-2xl sm:text-5xl mb-2 sm:mb-4">📱</div>
+                        <h2 className="text-xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-4">
+                            {t('home.mobileInstall.title')}
                         </h2>
-                        <p className="text-lg text-gray-600 dark:text-gray-300">
-                            Accede más rápido y cómodamente instalando nuestra app en tu dispositivo
+                        <p className="text-sm sm:text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+                            {t('home.mobileInstall.subtitle')}
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-                        {/* Android */}
-                        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="text-4xl">🤖</div>
-                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Android</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-2 gap-3 sm:gap-6 max-w-4xl mx-auto">
+                        <div className="bg-white dark:bg-slate-800 rounded-xl p-3 sm:p-6 shadow-lg border border-amber-100 dark:border-slate-700">
+                            <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-4">
+                                <div className="text-3xl sm:text-4xl">📲</div>
+                                <h3 className="text-sm sm:text-xl font-bold text-gray-900 dark:text-white">{t('home.mobileInstall.installTitle')}</h3>
                             </div>
-                            <ol className="space-y-3 text-gray-700 dark:text-gray-300">
-                                <li className="flex gap-3">
-                                    <span className="font-bold text-indigo-600 dark:text-indigo-400">1.</span>
-                                    <span>Abre esta página en <strong>Chrome</strong></span>
-                                </li>
-                                <li className="flex gap-3">
-                                    <span className="font-bold text-indigo-600 dark:text-indigo-400">2.</span>
-                                    <span>Toca el menú <strong>(⋮)</strong> arriba a la derecha</span>
-                                </li>
-                                <li className="flex gap-3">
-                                    <span className="font-bold text-indigo-600 dark:text-indigo-400">3.</span>
-                                    <span>Selecciona <strong>"Añadir a pantalla de inicio"</strong></span>
-                                </li>
-                                <li className="flex gap-3">
-                                    <span className="font-bold text-indigo-600 dark:text-indigo-400">4.</span>
-                                    <span>Confirma y busca el icono de FreeSquash</span>
-                                </li>
-                            </ol>
+                            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mb-3 sm:mb-5">
+                                {t('home.mobileInstall.installHint')}
+                            </p>
+
+                            <div className="space-y-3 sm:space-y-5">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-xl">🤖</span>
+                                        <h4 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">{t('home.mobileInstall.android.title')}</h4>
+                                    </div>
+                                    <ol className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                        <li>{t('home.mobileInstall.android.step1')}</li>
+                                        <li>{t('home.mobileInstall.android.step2')}</li>
+                                        <li>{t('home.mobileInstall.android.step3')}</li>
+                                        <li>{t('home.mobileInstall.android.step4')}</li>
+                                    </ol>
+                                </div>
+
+                                <div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-xl">🍎</span>
+                                        <h4 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">{t('home.mobileInstall.ios.title')}</h4>
+                                    </div>
+                                    <ol className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                        <li>{t('home.mobileInstall.ios.step1')}</li>
+                                        <li>{t('home.mobileInstall.ios.step2')}</li>
+                                        <li>{t('home.mobileInstall.ios.step3')}</li>
+                                        <li>{t('home.mobileInstall.ios.step4')}</li>
+                                    </ol>
+                                </div>
+                            </div>
                         </div>
 
-                        {/* iOS */}
-                        <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="text-4xl">🍎</div>
-                                <h3 className="text-xl font-bold text-gray-900 dark:text-white">iPhone/iPad</h3>
+                        <div className="bg-white dark:bg-slate-800 rounded-xl p-3 sm:p-6 shadow-lg border border-amber-100 dark:border-slate-700">
+                            <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-4">
+                                <div className="text-3xl sm:text-4xl">🔔</div>
+                                <h3 className="text-sm sm:text-xl font-bold text-gray-900 dark:text-white">{t('home.mobileInstall.notifications.title')}</h3>
                             </div>
-                            <ol className="space-y-3 text-gray-700 dark:text-gray-300">
-                                <li className="flex gap-3">
-                                    <span className="font-bold text-indigo-600 dark:text-indigo-400">1.</span>
-                                    <span>Abre esta página en <strong>Safari</strong></span>
+                            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mb-3 sm:mb-5">
+                                {t('home.mobileInstall.notifications.subtitle')}
+                            </p>
+                            <ul className="space-y-2 sm:space-y-3 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                <li className="flex gap-2">
+                                    <span className="text-amber-600 dark:text-amber-400 font-bold">✓</span>
+                                    <span>{t('home.mobileInstall.notifications.step1')}</span>
                                 </li>
-                                <li className="flex gap-3">
-                                    <span className="font-bold text-indigo-600 dark:text-indigo-400">2.</span>
-                                    <span>Toca el botón de compartir <strong>(□↑)</strong></span>
+                                <li className="flex gap-2">
+                                    <span className="text-amber-600 dark:text-amber-400 font-bold">✓</span>
+                                    <span>{t('home.mobileInstall.notifications.step2')}</span>
                                 </li>
-                                <li className="flex gap-3">
-                                    <span className="font-bold text-indigo-600 dark:text-indigo-400">3.</span>
-                                    <span>Desplázate y selecciona <strong>"Añadir a pantalla de inicio"</strong></span>
+                                <li className="flex gap-2">
+                                    <span className="text-amber-600 dark:text-amber-400 font-bold">✓</span>
+                                    <span>{t('home.mobileInstall.notifications.step3')}</span>
                                 </li>
-                                <li className="flex gap-3">
-                                    <span className="font-bold text-indigo-600 dark:text-indigo-400">4.</span>
-                                    <span>Confirma y busca el icono de FreeSquash</span>
+                                <li className="flex gap-2">
+                                    <span className="text-amber-600 dark:text-amber-400 font-bold">✓</span>
+                                    <span>{t('home.mobileInstall.notifications.step4')}</span>
                                 </li>
-                            </ol>
+                            </ul>
+                            <div className="mt-3 sm:mt-5 space-y-2">
+                                <p className="text-xs text-gray-600 dark:text-gray-400 bg-amber-50 dark:bg-slate-900 rounded-lg p-2 sm:p-3">
+                                    {t('home.mobileInstall.notifications.androidTip')}
+                                </p>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 bg-amber-50 dark:bg-slate-900 rounded-lg p-2 sm:p-3">
+                                    {t('home.mobileInstall.notifications.iosTip')}
+                                </p>
+                            </div>
                         </div>
                     </div>
 
-                    <div className="mt-6 text-center">
-                        <p className="text-gray-600 dark:text-gray-400 italic">
-                            💡 Después de instalar, podrás abrir FreeSquash como cualquier otra app sin necesidad del navegador
+                    <div className="mt-3 sm:mt-6">
+                        <p className="text-xs sm:text-sm text-center text-gray-600 dark:text-gray-400 italic">
+                            💡 {t('home.mobileInstall.note')}
                         </p>
                     </div>
                 </div>
             </div>
 
-            {/* CTA Section - New Members */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 py-12">
+            <div className="bg-gradient-to-r from-amber-600 to-amber-600 py-8 sm:py-16">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <h2 className="text-3xl font-bold text-white mb-4">
-                        📋 ¿Eres nuevo?
+                    <h2 className="text-2xl sm:text-4xl font-bold text-white mb-3 sm:mb-6">
+                        {t('home.existingMembers.title')}
                     </h2>
-                    <p className="text-lg text-blue-100 mb-6">
-                        Consulta las instrucciones para solicitar acceso a la plataforma
-                    </p>
-                    <div className="flex justify-center">
-                        <Link
-                            to="/inicio"
-                            className="px-10 py-3 bg-white text-blue-600 text-base font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
-                        >
-                            Ver instrucciones de acceso
-                        </Link>
-                    </div>
-                </div>
-            </div>
-
-            {/* CTA Section - Existing Members */}
-            <div className="bg-gradient-to-r from-indigo-600 to-blue-600 py-16">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <h2 className="text-4xl font-bold text-white mb-6">
-                        ¿Ya eres miembro?
-                    </h2>
-                    <p className="text-xl text-blue-100 mb-8">
-                        Accede a tu cuenta para consultar clasificaciones, registrar partidos y seguir tus estadísticas
+                    <p className="text-sm sm:text-xl text-amber-100 mb-4 sm:mb-8">
+                        {t('home.existingMembers.description')}
                     </p>
                     <div className="flex justify-center">
                         <Link
                             to="/login"
-                            className="px-12 py-4 bg-white text-blue-600 text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
+                            className="px-7 sm:px-12 py-2.5 sm:py-4 bg-white text-amber-600 text-sm sm:text-lg font-semibold rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200"
                         >
-                            Iniciar Sesión
+                            {t('home.existingMembers.cta')}
                         </Link>
                     </div>
-                    <p className="mt-6 text-blue-100 text-sm">
-                        ¿Problemas para acceder? Contacta con el administrador
+                    <p className="mt-3 sm:mt-6 text-amber-100 text-xs sm:text-sm">
+                        {t('home.existingMembers.help')}
                     </p>
                 </div>
             </div>
 
-            {/* Footer */}
             <footer className="bg-gray-900 text-gray-300 py-8">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-2">
                     <p className="text-sm">
-                        © 2025 FreeSquash League. Todos los derechos reservados.
+                        {t('footer.copyright', { year: new Date().getFullYear() })}
                     </p>
-                    <p className="text-xs mt-2 text-gray-500">
-                        Sistema interno de gestión de liga
+                    <p className="text-xs text-gray-500">
+                        {t('footer.managementSystem')}
                     </p>
+                    <div className="flex justify-center pt-1">
+                        <LanguageSelector className="flex items-center" />
+                    </div>
                 </div>
             </footer>
         </div>
     );
 }
+

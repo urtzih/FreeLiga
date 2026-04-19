@@ -1,4 +1,4 @@
-import { useToast } from '../contexts/ToastContext';
+﻿import { useToast } from '../contexts/ToastContext';
 
 export default function ToastContainer() {
     const { toasts, removeToast } = useToast();
@@ -15,7 +15,7 @@ export default function ToastContainer() {
                 return 'bg-yellow-500 text-white';
             case 'info':
             default:
-                return 'bg-blue-500 text-white';
+                return 'bg-amber-500 text-white';
         }
     };
 
@@ -69,3 +69,4 @@ export default function ToastContainer() {
         </div>
     );
 }
+

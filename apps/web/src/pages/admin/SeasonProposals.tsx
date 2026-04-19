@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from 'react-router-dom';
+﻿import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import api from '../../lib/api';
@@ -303,14 +303,14 @@ export default function SeasonProposals() {
                         to="/admin/seasons"
                         className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
                     >
-                        ← Volver
+                        � � Volver
                     </Link>
 
                     {!isApproved && hasChanges && (
                         <button
                             onClick={handleSave}
                             disabled={saveMutation.isPending}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg animate-pulse"
+                            className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors shadow-lg animate-pulse"
                         >
                             {saveMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
                         </button>
@@ -338,7 +338,7 @@ export default function SeasonProposals() {
                                 }
                             }}
                             disabled={rolloverMutation.isPending}
-                            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                            className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
                         >
                             {rolloverMutation.isPending ? 'Generando...' : 'Generar Siguiente Temporada'}
                         </button>
@@ -348,24 +348,24 @@ export default function SeasonProposals() {
 
             {/* Summary Statistics */}
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
-                    <div className="text-sm font-medium text-blue-600 dark:text-blue-400">Total Jugadores</div>
-                    <div className="text-3xl font-bold text-blue-900 dark:text-blue-100">{localEntries.length}</div>
+                <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-700">
+                    <div className="text-sm font-medium text-amber-600 dark:text-amber-400">Total Jugadores</div>
+                    <div className="text-3xl font-bold text-amber-900 dark:text-amber-100">{localEntries.length}</div>
                 </div>
                 <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-700">
-                    <div className="text-sm font-medium text-green-600 dark:text-green-400">Ascensos 📈</div>
+                    <div className="text-sm font-medium text-green-600 dark:text-green-400">Ascensos �x�</div>
                     <div className="text-3xl font-bold text-green-900 dark:text-green-100">{promotions}</div>
                 </div>
                 <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-700">
-                    <div className="text-sm font-medium text-red-600 dark:text-red-400">Descensos 📉</div>
+                    <div className="text-sm font-medium text-red-600 dark:text-red-400">Descensos �x0</div>
                     <div className="text-3xl font-bold text-red-900 dark:text-red-100">{relegations}</div>
                 </div>
                 <div className="bg-slate-50 dark:bg-slate-900/20 rounded-lg p-4 border border-slate-200 dark:border-slate-700">
-                    <div className="text-sm font-medium text-slate-600 dark:text-slate-400">Mantienen ➡️</div>
+                    <div className="text-sm font-medium text-slate-600 dark:text-slate-400">Mantienen �~�️</div>
                     <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">{stays}</div>
                 </div>
                 <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 border border-orange-200 dark:border-orange-700">
-                    <div className="text-sm font-medium text-orange-600 dark:text-orange-400">Desactivados 🚫</div>
+                    <div className="text-sm font-medium text-orange-600 dark:text-orange-400">Desactivados �xa�</div>
                     <div className="text-3xl font-bold text-orange-900 dark:text-orange-100">
                         {localEntries.filter((e: any) => e.player?.user?.isActive === false).length}
                     </div>
@@ -375,16 +375,16 @@ export default function SeasonProposals() {
             {isApproved && (
                 <div className="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-700 rounded-lg p-6">
                     <div className="flex items-start gap-4">
-                        <div className="text-4xl">✅</div>
+                        <div className="text-4xl">�S&</div>
                         <div>
                             <h3 className="font-bold text-green-900 dark:text-green-100 text-lg">Propuesta Aprobada</h3>
                             <p className="text-green-800 dark:text-green-200 mt-2">
                                 Los movimientos han sido registrados en el historial de los jugadores. Los cambios serán aplicados cuando generes la siguiente temporada.
                             </p>
                             <div className="mt-4 space-y-1 text-sm text-green-700 dark:text-green-300">
-                                <p>✓ {promotions} jugador(es) ascendido(s)</p>
-                                <p>✓ {relegations} jugador(es) descendido(s)</p>
-                                <p>✓ {stays} jugador(es) mantiene(n) grupo</p>
+                                <p>�S {promotions} jugador(es) ascendido(s)</p>
+                                <p>�S {relegations} jugador(es) descendido(s)</p>
+                                <p>�S {stays} jugador(es) mantiene(n) grupo</p>
                             </div>
                         </div>
                     </div>
@@ -432,7 +432,7 @@ export default function SeasonProposals() {
                             </div>
                             <div className="grid grid-cols-[minmax(150px,1fr)_40px_34px_34px_34px_44px_minmax(120px,1fr)] px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70">
                                 <span className="pl-9">Jugador</span>
-                                <span className="text-center">🏆</span>
+                                <span className="text-center">�x� </span>
                                 <span className="text-center">D</span>
                                 <span className="text-center">R</span>
                                 <span className="text-center">Les</span>
@@ -488,7 +488,7 @@ export default function SeasonProposals() {
                                                     {wins}
                                                 </span>
                                                 <span className="text-sm text-center font-semibold text-rose-600 dark:text-rose-300 pt-1">{playerStats.losses}</span>
-                                                <span className="text-sm text-center font-semibold text-sky-600 dark:text-sky-300 pt-1">{playerStats.remaining}</span>
+                                                <span className="text-sm text-center font-semibold text-yellow-600 dark:text-yellow-300 pt-1">{playerStats.remaining}</span>
                                                 <span className="text-sm text-center font-semibold text-orange-600 dark:text-orange-300 pt-1">{playerStats.injuries}</span>
                                                 <span className={`text-sm text-center font-semibold pt-1 ${playerStats.setAverage > 0 ? 'text-green-600 dark:text-green-300' : playerStats.setAverage < 0 ? 'text-red-600 dark:text-red-300' : 'text-slate-500 dark:text-slate-300'}`}>
                                                     {playerStats.setAverage > 0 ? `+${playerStats.setAverage}` : playerStats.setAverage}
@@ -497,9 +497,9 @@ export default function SeasonProposals() {
                                                 {isApproved ? (
                                                     <div className="flex items-center gap-2 min-w-0">
                                                         <div className={`text-xs font-bold ${statusColor} whitespace-nowrap`}>
-                                                            {movement === 'STAY' && 'Mantiene ➡️'}
-                                                            {movement === 'PROMOTION' && 'Asciende 📈'}
-                                                            {movement === 'RELEGATION' && 'Desciende 📉'}
+                                                            {movement === 'STAY' && 'Mantiene �~�️'}
+                                                            {movement === 'PROMOTION' && 'Asciende �x�'}
+                                                            {movement === 'RELEGATION' && 'Desciende �x0'}
                                                         </div>
                                                         {userId && (
                                                             <select
@@ -514,8 +514,8 @@ export default function SeasonProposals() {
                                                                 }}
                                                                 className="text-xs bg-transparent border-none focus:ring-0 cursor-pointer text-slate-500 dark:text-slate-300 min-w-0"
                                                             >
-                                                                <option value="">Acción ▾</option>
-                                                                <option value="TOGGLE">{isActive ? 'Desactivar 🚫' : 'Activar ✅'}</option>
+                                                                <option value="">Acción ��</option>
+                                                                <option value="TOGGLE">{isActive ? 'Desactivar �xa�' : 'Activar �S&'}</option>
                                                             </select>
                                                         )}
                                                     </div>
@@ -537,12 +537,12 @@ export default function SeasonProposals() {
                                                         }}
                                                         className={`text-xs font-bold bg-transparent border-none focus:ring-0 cursor-pointer ${statusColor} whitespace-nowrap w-full min-w-0`}
                                                     >
-                                                        <option value="STAY">Mantiene ➡️</option>
-                                                        <option value="PROMOTION">Asciende 📈</option>
-                                                        <option value="RELEGATION">Desciende 📉</option>
+                                                        <option value="STAY">Mantiene �~�️</option>
+                                                        <option value="PROMOTION">Asciende �x�</option>
+                                                        <option value="RELEGATION">Desciende �x0</option>
                                                         {userId && (
                                                             <option value={`TOGGLE:${userId}`}>
-                                                                {isActive ? 'Desactivar 🚫' : 'Activar ✅'}
+                                                                {isActive ? 'Desactivar �xa�' : 'Activar �S&'}
                                                             </option>
                                                         )}
                                                     </select>
@@ -577,7 +577,7 @@ export default function SeasonProposals() {
                                 >
                                     {candidatePlayers.map((u: any) => (
                                         <option key={u.player.id} value={u.player.id}>
-                                            {u.player.name} ({u.email}) {u.isActive === false ? '• Inactivo' : ''} {u.player.currentGroup ? '• Tiene grupo' : '• Sin grupo'}
+                                            {u.player.name} ({u.email}) {u.isActive === false ? '⬢ Inactivo' : ''} {u.player.currentGroup ? '⬢ Tiene grupo' : '⬢ Sin grupo'}
                                         </option>
                                     ))}
                                 </select>
@@ -643,7 +643,7 @@ export default function SeasonProposals() {
                             {Object.values(groupDistribution).some(g => g.count !== 8) && (
                                 <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg">
                                     <p className="text-sm text-amber-900 dark:text-amber-200 font-semibold">
-                                        ⚠️ Atención: Algunos grupos no tienen exactamente 8 jugadores
+                                        �a�️ Atención: Algunos grupos no tienen exactamente 8 jugadores
                                     </p>
                                 </div>
                             )}
@@ -657,7 +657,7 @@ export default function SeasonProposals() {
                                 <button
                                     onClick={confirmSave}
                                     disabled={saveMutation.isPending}
-                                    className="flex-1 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                                    className="flex-1 px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
                                 >
                                     {saveMutation.isPending ? 'Guardando...' : 'Confirmar y Guardar'}
                                 </button>
@@ -669,3 +669,4 @@ export default function SeasonProposals() {
         </div>
     );
 }
+

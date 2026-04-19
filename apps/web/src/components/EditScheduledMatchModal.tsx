@@ -24,6 +24,7 @@ export default function EditScheduledMatchModal({
   onClose,
   onSuccess,
 }: EditScheduledMatchModalProps) {
+  const closedSeasonMessage = 'Solo puedes editar partidos de la temporada activa';
   const [formData, setFormData] = useState({
     scheduledDate: '',
     scheduledTime: '',
@@ -90,12 +91,14 @@ export default function EditScheduledMatchModal({
         onClose();
       }
     } catch (err: any) {
+      const apiError = err?.response?.data?.error;
       const errorMsg =
-        err.response?.data?.error ||
+        (typeof apiError === 'string' ? apiError : null) ||
         err.response?.data?.message ||
         (typeof err.message === 'string' ? err.message : 'Error al actualizar la programación');
-      setError(errorMsg);
-      toast.error(errorMsg);
+      const normalizedMessage = errorMsg.includes('temporada activa') ? closedSeasonMessage : errorMsg;
+      setError(normalizedMessage);
+      toast.error(normalizedMessage);
     } finally {
       setIsLoading(false);
     }
@@ -221,7 +224,7 @@ export default function EditScheduledMatchModal({
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2 text-white bg-amber-600 hover:bg-amber-700 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? '⏳ Guardando...' : 'Guardar Cambios'}
             </button>
@@ -231,3 +234,4 @@ export default function EditScheduledMatchModal({
     </div>
   );
 }
+

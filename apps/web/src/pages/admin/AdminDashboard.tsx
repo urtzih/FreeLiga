@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+﻿import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
@@ -73,31 +73,31 @@ export default function AdminDashboard() {
                 <StatCard
                     title="Jugadores"
                     value={stats?.totals.players || 0}
-                    icon="🏃"
-                    color="from-blue-500 to-blue-600"
+                    icon="�x��"
+                    color="from-amber-500 to-amber-600"
                 />
                 <StatCard
                     title="Grupos"
                     value={stats?.totals.groups || 0}
-                    icon="👥"
+                    icon="�x�"
                     color="from-green-500 to-green-600"
                 />
                 <StatCard
                     title="Grupos Activos"
                     value={stats?.totals.activeGroups || 0}
-                    icon="✅"
+                    icon="�S&"
                     color="from-emerald-500 to-emerald-600"
                 />
                 <StatCard
                     title="Temporadas"
                     value={stats?.totals.seasons || 0}
-                    icon="📅"
-                    color="from-purple-500 to-purple-600"
+                    icon="�x&"
+                    color="from-amber-500 to-amber-600"
                 />
                 <StatCard
                     title="Partidos"
                     value={stats?.totals.matches || 0}
-                    icon="🎾"
+                    icon="�x}�"
                     color="from-orange-500 to-orange-600"
                 />
             </div>
@@ -125,7 +125,7 @@ export default function AdminDashboard() {
                                 <Link
                                     key={group.id}
                                     to={`/groups/${group.id}`}
-                                    className="block p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 transition-colors"
+                                    className="block p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-amber-500 dark:hover:border-amber-500 transition-colors"
                                 >
                                     <h4 className="font-bold text-slate-900 dark:text-white mb-2">{group.name}</h4>
                                     <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-400">
@@ -160,7 +160,7 @@ export default function AdminDashboard() {
                                             </span>
                                         </div>
                                         <div className="text-sm text-slate-600 dark:text-slate-400">
-                                            {match.group.season.name} - {match.group.name} •{' '}
+                                            {match.group.season.name} - {match.group.name} ⬢{' '}
                                             {new Date(match.date).toLocaleDateString('es-ES')}
                                         </div>
                                     </div>
@@ -170,7 +170,7 @@ export default function AdminDashboard() {
                                         </div>
                                         {match.winner && (
                                             <div className="text-xs text-green-600 dark:text-green-400">
-                                                ✓ {match.winner.name}
+                                                �S {match.winner.name}
                                             </div>
                                         )}
                                     </div>
@@ -181,9 +181,9 @@ export default function AdminDashboard() {
                     <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900">
                         <Link
                             to="/matches/history"
-                            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-medium"
+                            className="text-amber-600 dark:text-amber-400 hover:text-amber-700 font-medium"
                         >
-                            Ver Todos los Partidos →
+                            Ver Todos los Partidos � 
                         </Link>
                     </div>
                 </div>
@@ -195,7 +195,7 @@ export default function AdminDashboard() {
                     to="/admin/seasons"
                     className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 hover:shadow-xl transition-shadow"
                 >
-                    <div className="text-4xl mb-4">📅</div>
+                    <div className="text-4xl mb-4">�x&</div>
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Temporadas</h3>
                     <p className="text-slate-600 dark:text-slate-400">Crear y gestionar temporadas</p>
                 </Link>
@@ -204,7 +204,7 @@ export default function AdminDashboard() {
                     to="/admin/groups"
                     className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 hover:shadow-xl transition-shadow"
                 >
-                    <div className="text-4xl mb-4">👥</div>
+                    <div className="text-4xl mb-4">�x�</div>
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Grupos</h3>
                     <p className="text-slate-600 dark:text-slate-400">Gestionar grupos y asignaciones</p>
                 </Link>
@@ -214,7 +214,7 @@ export default function AdminDashboard() {
                     to="/admin/users"
                     className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 hover:shadow-xl transition-shadow"
                 >
-                    <div className="text-4xl mb-4">👤</div>
+                    <div className="text-4xl mb-4">�x�</div>
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Usuarios</h3>
                     <p className="text-slate-600 dark:text-slate-400">Gestionar usuarios del sistema</p>
                 </Link>
@@ -247,3 +247,4 @@ function StatCard({
         </div>
     );
 }
+

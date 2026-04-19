@@ -1,4 +1,4 @@
-interface LoaderProps {
+﻿interface LoaderProps {
   label?: string;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
@@ -25,7 +25,7 @@ export default function Loader({ label = 'Cargando...', size = 'md', className =
       </style>
       <div className={`relative ${s.width} ${s.height} overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800/60`}> 
         <div
-          className="absolute inset-y-0 left-[-40%] w-2/5 rounded-full bg-gradient-to-r from-indigo-500 via-blue-500 to-indigo-500"
+          className="absolute inset-y-0 left-[-40%] w-2/5 rounded-full bg-gradient-to-r from-amber-500 via-amber-500 to-amber-500"
           style={{ animation: 'fl-sweep 1.1s ease-in-out infinite' }}
         />
       </div>
@@ -33,3 +33,4 @@ export default function Loader({ label = 'Cargando...', size = 'md', className =
     </div>
   );
 }
+

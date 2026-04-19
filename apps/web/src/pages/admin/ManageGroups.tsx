@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import api from '../../lib/api';
@@ -209,14 +209,14 @@ export default function ManageGroups() {
                 <div className="flex gap-2">
                     <button
                         onClick={() => setShowSwapModal(true)}
-                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                        className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
                         title="Intercambiar jugadores entre grupos"
                     >
-                        ⇄ Intercambiar
+                        �! Intercambiar
                     </button>
                     <button
                         onClick={() => setShowForm(!showForm)}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
                     >
                         {showForm ? 'Cancelar' : '+ Nuevo Grupo'}
                     </button>
@@ -229,7 +229,7 @@ export default function ManageGroups() {
                     <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-4 w-full max-w-md">
                         <div className="flex justify-between items-center mb-3">
                             <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Añadir jugador al grupo</h2>
-                            <button onClick={() => setShowAddModal(false)} className="text-slate-500 hover:text-slate-700">✕</button>
+                            <button onClick={() => setShowAddModal(false)} className="text-slate-500 hover:text-slate-700">�S"</button>
                         </div>
                         <div className="space-y-3">
                             <div>
@@ -249,11 +249,11 @@ export default function ManageGroups() {
                                                 fontWeight: player.isActive === false ? 'normal' : '500'
                                             }}
                                         >
-                                            {player.isActive === false ? '✗ ' : '✓ '}{player.player.name} {!player.player.currentGroup ? '(Sin grupo)' : ''}
+                                            {player.isActive === false ? '�S ' : '�S '}{player.player.name} {!player.player.currentGroup ? '(Sin grupo)' : ''}
                                         </option>
                                     ))}
                                 </select>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">✓ Activo | ✗ Inactivo</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">�S Activo | �S Inactivo</p>
                             </div>
                             <div className="flex justify-end gap-2">
                                 <button
@@ -349,13 +349,13 @@ export default function ManageGroups() {
                         >
                             <span>{group.whatsappUrl ? '✅ WhatsApp configurado' : '⚠️ Sin link de WhatsApp'}</span>
                             {group.whatsappUrl && (
-                                <span className="opacity-0 group-hover/whatsapp:opacity-100 transition-opacity">✎</span>
+                                <span className="opacity-0 group-hover/whatsapp:opacity-100 transition-opacity">↗</span>
                             )}
                         </div>
                         <div className="space-y-2">
                             <div className="flex items-center justify-between text-sm">
                                 <span className="text-slate-600 dark:text-slate-400">{group._count?.groupPlayers || 0} jugadores</span>
-                                <Link to={`/groups/${group.id}`} className="text-blue-600 dark:text-blue-400 hover:text-blue-700 font-medium">
+                                <Link to={`/groups/${group.id}`} className="text-amber-600 dark:text-amber-400 hover:text-amber-700 font-medium">
                                     Ver →
                                 </Link>
                             </div>
@@ -366,11 +366,11 @@ export default function ManageGroups() {
                                     }}
                                     className={`w-full px-3 py-2 text-xs rounded-lg font-semibold transition-all ${
                                         expandedGroup === group.id
-                                            ? 'bg-blue-600 dark:bg-blue-700 text-white'
-                                            : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800'
+                                            ? 'bg-amber-600 dark:bg-amber-700 text-white'
+                                            : 'bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-800'
                                     }`}
                                 >
-                                    {expandedGroup === group.id ? '▼ Ocultar clasificación' : '▶ Ver clasificación'}
+                                    {expandedGroup === group.id ? '�� Ocultar clasificación' : '�� Ver clasificación'}
                                 </button>
                                 <button
                                     onClick={() => {
@@ -410,14 +410,14 @@ export default function ManageGroups() {
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <div className="text-xs px-2 py-1 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                                                        {gp.rankingPosition <= 2 ? '📈 Ascenso' : gp.rankingPosition > group.groupPlayers.length - 2 ? '📉 Descenso' : 'Mantiene'}
+                                                        {gp.rankingPosition <= 2 ? '�x� Ascenso' : gp.rankingPosition > group.groupPlayers.length - 2 ? '�x0 Descenso' : 'Mantiene'}
                                                     </div>
                                                     <button
                                                         onClick={() => handleRemovePlayer(group.id, gp.playerId, gp.player.name)}
                                                         className="px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700"
                                                         title="Quitar del grupo"
                                                     >
-                                                        ✕
+                                                        �S"
                                                     </button>
                                                 </div>
                                             </div>
@@ -451,8 +451,8 @@ export default function ManageGroups() {
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl p-6 w-full max-w-2xl">
                         <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">⇄ Intercambiar Jugadores entre Grupos</h2>
-                            <button onClick={() => setShowSwapModal(false)} className="text-slate-500 hover:text-slate-700">✕</button>
+                            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">�! Intercambiar Jugadores entre Grupos</h2>
+                            <button onClick={() => setShowSwapModal(false)} className="text-slate-500 hover:text-slate-700">�S"</button>
                         </div>
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -527,9 +527,9 @@ export default function ManageGroups() {
                                     </div>
                                 </div>
                             </div>
-                            <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-                                <p className="text-sm text-blue-900 dark:text-blue-200">
-                                    ℹ️ Los jugadores intercambiarán sus posiciones en el ranking de sus respectivos grupos.
+                            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
+                                <p className="text-sm text-amber-900 dark:text-amber-200">
+                                    ��️ Los jugadores intercambiarán sus posiciones en el ranking de sus respectivos grupos.
                                 </p>
                             </div>
                             <div className="flex justify-end gap-2">
@@ -542,9 +542,9 @@ export default function ManageGroups() {
                                 <button
                                     disabled={!swapPlayer1.playerId || !swapPlayer2.playerId || swapPlayersMutation.isPending}
                                     onClick={handleSwapPlayers}
-                                    className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 disabled:opacity-50"
+                                    className="px-4 py-2 rounded bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
                                 >
-                                    {swapPlayersMutation.isPending ? 'Intercambiando...' : '⇄ Intercambiar Jugadores'}
+                                    {swapPlayersMutation.isPending ? 'Intercambiando...' : '�! Intercambiar Jugadores'}
                                 </button>
                             </div>
                         </div>
@@ -587,3 +587,4 @@ export default function ManageGroups() {
         </div>
     );
 }
+

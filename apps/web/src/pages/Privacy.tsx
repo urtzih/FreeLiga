@@ -1,4 +1,4 @@
-export default function Privacy() {
+﻿export default function Privacy() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-8">
@@ -20,7 +20,7 @@ export default function Privacy() {
           {/* 2. ¿Qué datos recopilamos? */}
           <section>
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">2. Datos que Recopilamos</h2>
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
+            <div className="bg-amber-50 border-l-4 border-amber-500 p-4 mb-4">
               <h3 className="font-semibold text-gray-800 mb-2">Datos que proporcionas directamente:</h3>
               <ul className="list-disc list-inside text-gray-700 space-y-2">
                 <li><strong>Email y contraseña</strong> - Para autenticación en la plataforma</li>
@@ -31,7 +31,7 @@ export default function Privacy() {
               </ul>
             </div>
 
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
+            <div className="bg-amber-50 border-l-4 border-amber-500 p-4">
               <h3 className="font-semibold text-gray-800 mb-2">Datos generados automáticamente:</h3>
               <ul className="list-disc list-inside text-gray-700 space-y-2">
                 <li><strong>Resultados de partidos</strong> - Para estadísticas y rankings</li>
@@ -192,3 +192,4 @@ export default function Privacy() {
     </div>
   );
 }
+

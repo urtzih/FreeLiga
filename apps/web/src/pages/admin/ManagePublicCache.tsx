@@ -197,8 +197,8 @@ export default function ManagePublicCache() {
     };
 
     const getTypeColor = (type: string) => {
-        if (type === 'public') return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-        if (type === 'private') return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+        if (type === 'public') return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
+        if (type === 'private') return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200';
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
     };
 
@@ -299,7 +299,7 @@ export default function ManagePublicCache() {
             {stats && (
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div className="bg-white dark:bg-slate-800 rounded-xl shadow border border-slate-200 dark:border-slate-700 p-4">
-                        <div className="text-3xl font-bold text-blue-600">{stats.size}</div>
+                        <div className="text-3xl font-bold text-amber-600">{stats.size}</div>
                         <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Entradas en caché</p>
                     </div>
                     <div className="bg-white dark:bg-slate-800 rounded-xl shadow border border-slate-200 dark:border-slate-700 p-4">
@@ -315,7 +315,7 @@ export default function ManagePublicCache() {
                         <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Misses</p>
                     </div>
                     <div className="bg-white dark:bg-slate-800 rounded-xl shadow border border-slate-200 dark:border-slate-700 p-4">
-                        <div className="text-3xl font-bold text-indigo-600">{stats.metrics.sets}</div>
+                        <div className="text-3xl font-bold text-amber-600">{stats.metrics.sets}</div>
                         <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Sets</p>
                     </div>
                 </div>
@@ -348,7 +348,7 @@ export default function ManagePublicCache() {
                             <button
                                 onClick={invalidateAllScopesCache}
                                 disabled={loading}
-                                className="px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium transition-colors whitespace-nowrap"
+                                className="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium transition-colors whitespace-nowrap"
                             >
                                 {loading ? 'Invalidando...' : 'Todo'}
                             </button>
@@ -381,17 +381,17 @@ export default function ManagePublicCache() {
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Grupo ID</label>
                         <input value={groupId} onChange={e => setGroupId(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700" />
-                        <button onClick={invalidateByGroup} disabled={!groupId || loading} className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm">Invalidar grupo</button>
+                        <button onClick={invalidateByGroup} disabled={!groupId || loading} className="px-3 py-2 rounded-lg bg-amber-600 text-white text-sm">Invalidar grupo</button>
                     </div>
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Jugador ID</label>
                         <input value={playerId} onChange={e => setPlayerId(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700" />
-                        <button onClick={invalidateByPlayer} disabled={!playerId || loading} className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm">Invalidar jugador</button>
+                        <button onClick={invalidateByPlayer} disabled={!playerId || loading} className="px-3 py-2 rounded-lg bg-amber-600 text-white text-sm">Invalidar jugador</button>
                     </div>
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Temporada ID</label>
                         <input value={seasonId} onChange={e => setSeasonId(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700" />
-                        <button onClick={invalidateBySeason} disabled={!seasonId || loading} className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm">Invalidar temporada</button>
+                        <button onClick={invalidateBySeason} disabled={!seasonId || loading} className="px-3 py-2 rounded-lg bg-amber-600 text-white text-sm">Invalidar temporada</button>
                     </div>
                 </div>
             </div>
@@ -425,7 +425,7 @@ export default function ManagePublicCache() {
 
                 {loadingStats ? (
                     <div className="p-8 text-center">
-                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600"></div>
                         <p className="mt-2 text-slate-600 dark:text-slate-400">Cargando datos de caché...</p>
                     </div>
                 ) : stats && filteredEntries.length > 0 ? (
@@ -451,7 +451,7 @@ export default function ManagePublicCache() {
                                             <div className="mt-1">
                                                 <button
                                                     onClick={() => copyToClipboard(entry.key)}
-                                                    className="text-xs text-blue-600 hover:underline"
+                                                    className="text-xs text-amber-600 hover:underline"
                                                 >
                                                     Copiar
                                                 </button>
@@ -519,7 +519,7 @@ export default function ManagePublicCache() {
                 </div>
             </div>
 
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 text-sm text-blue-800 dark:text-blue-300">
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 text-sm text-amber-800 dark:text-amber-300">
                 <p className="font-semibold">Notas</p>
                 <ul className="mt-2 space-y-1">
                     <li>Caché pública: TTL semanal. Caché privada: TTL 24h.</li>
@@ -530,3 +530,4 @@ export default function ManagePublicCache() {
         </div>
     );
 }
+
