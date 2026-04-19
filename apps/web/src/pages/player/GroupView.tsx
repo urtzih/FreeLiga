@@ -18,7 +18,9 @@ export default function GroupView() {
     const { id } = useParams<{ id: string }>();
     const { user } = useAuth();
     const calendarEnabled = user?.player?.calendarEnabled ?? false;
+    const [visibleRecentMatches, setVisibleRecentMatches] = useState(10);
     const [visibleRemainingMatches, setVisibleRemainingMatches] = useState(6);
+    const [selectedRecentOpponent, setSelectedRecentOpponent] = useState<string>('all');
 
     const { data: group, isLoading, error: groupError } = useQuery({
         queryKey: ['group', id],
@@ -101,6 +103,20 @@ export default function GroupView() {
 
     const recentPlayedMatches = [...playedMatches]
         .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    const recentOpponentOptions = [...group.groupPlayers]
+        .map((gp: any) => ({ id: String(gp.playerId), name: gp.player.name }))
+        .sort((a, b) => a.name.localeCompare(b.name, 'es'));
+
+    const filteredRecentMatches = selectedRecentOpponent === 'all'
+        ? recentPlayedMatches
+        : recentPlayedMatches.filter((match: any) =>
+            String(match.player1Id) === selectedRecentOpponent || String(match.player2Id) === selectedRecentOpponent
+        );
+
+    const displayedRecentMatches = selectedRecentOpponent === 'all'
+        ? filteredRecentMatches.slice(0, visibleRecentMatches)
+        : filteredRecentMatches;
 
     const hasPlayedBetween = (playerAId: string, playerBId: string) => {
         return completedMatches.some((match: any) => (
@@ -276,6 +292,7 @@ export default function GroupView() {
                                             const played = row.wins + row.losses;
                                             const remaining = totalMatchesForPlayer - played - playerInjuries;
                                             const displayInjuries = remaining === 0 ? playerInjuries : 0;
+                                            const isInjuredPlayer = displayInjuries > 0;
                                             
                                             // Determinar ascenso/descenso
                                             const isPromotion = idx < 2; // Top 2: ascenso
@@ -290,7 +307,16 @@ export default function GroupView() {
                                             return (
                                                 <tr key={row.playerId} className={rowClass}>
                                                     <td className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-400">{idx + 1}</td>
-                                                    <td className="px-3 py-2">{row.playerName}</td>
+                                                    <td className="px-3 py-2">
+                                                        <span className="inline-flex items-center gap-1">
+                                                            <span>{row.playerName}</span>
+                                                            {isInjuredPlayer && (
+                                                                <span className="text-[11px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                                                                    🤕 Lesionado
+                                                                </span>
+                                                            )}
+                                                        </span>
+                                                    </td>
                                                     <td className="px-3 py-2 text-center font-semibold text-green-600 dark:text-green-400">{row.wins}</td>
                                                     <td className="px-3 py-2 text-center font-semibold text-red-600 dark:text-red-400">{row.losses}</td>
                                                     <td className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-400">{remaining}</td>
@@ -327,6 +353,7 @@ export default function GroupView() {
                                                 m.matchStatus === 'INJURY'
                                             ).length;
                                             const remaining = totalMatchesForPlayer - played - playerInjuries;
+                                            const isInjuredPlayer = remaining === 0 && playerInjuries > 0;
                                             
                                             // Calculate set difference
                                             const setDifference = row.setsWon - row.setsLost;
@@ -344,7 +371,16 @@ export default function GroupView() {
                                             return (
                                                 <tr key={row.playerId} className={rowClass}>
                                                     <td className="px-2 py-2 text-slate-500">{idx + 1}</td>
-                                                    <td className="px-2 py-2 font-medium text-slate-900 dark:text-white">{row.playerName}</td>
+                                                    <td className="px-2 py-2 font-medium text-slate-900 dark:text-white">
+                                                        <span className="inline-flex items-center gap-1">
+                                                            <span>{row.playerName}</span>
+                                                            {isInjuredPlayer && (
+                                                                <span className="text-[10px] px-1 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                                                                    🤕
+                                                                </span>
+                                                            )}
+                                                        </span>
+                                                    </td>
                                                     <td className="px-2 py-2 text-center font-semibold text-green-600 dark:text-green-400">{row.wins}</td>
                                                     <td className="px-2 py-2 text-center font-semibold text-red-600 dark:text-red-400">{row.losses}</td>
                                                     <td className={`px-2 py-2 text-center font-semibold ${setDifference >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
@@ -535,12 +571,29 @@ export default function GroupView() {
             {recentPlayedMatches.length > 0 && (
 
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                    <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center sm:justify-between">
                         <h2 className="text-xl font-bold text-slate-900 dark:text-white">Partidos Recientes</h2>
+                        <div className="flex items-center gap-2">
+                            <label htmlFor="recent-opponent-filter" className="text-sm font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                                Jugador
+                            </label>
+                            <select
+                                id="recent-opponent-filter"
+                                value={selectedRecentOpponent}
+                                onChange={(e) => setSelectedRecentOpponent(e.target.value)}
+                                className="px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                            >
+                                <option value="all">Todos</option>
+                                {recentOpponentOptions.map((opponent) => (
+                                    <option key={opponent.id} value={opponent.id}>
+                                        {opponent.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
                     <div className="divide-y divide-slate-200 dark:divide-slate-700">
-                        {recentPlayedMatches
-                            .slice(0, 10)
+                        {displayedRecentMatches
                             .map((match: any) => (
                             <div key={match.id} className="p-4">
                                 <div className="flex items-center justify-between">
@@ -572,6 +625,16 @@ export default function GroupView() {
                             </div>
                         ))}
                     </div>
+                    {selectedRecentOpponent === 'all' && visibleRecentMatches < filteredRecentMatches.length && (
+                        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 text-center">
+                            <button
+                                onClick={() => setVisibleRecentMatches((prev) => Math.min(prev + 10, filteredRecentMatches.length))}
+                                className="px-4 py-2 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/60 transition-colors font-medium"
+                            >
+                                {filteredRecentMatches.length - visibleRecentMatches <= 10 ? 'Ver todos' : 'Ver mas'}
+                            </button>
+                        </div>
+                    )}
                 </div>
             )
             }
