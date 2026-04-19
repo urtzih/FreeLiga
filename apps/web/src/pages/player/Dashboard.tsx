@@ -315,7 +315,7 @@ export default function Dashboard() {
                     </div>
                     <div className="px-3 md:px-6 py-2 md:py-4 bg-slate-50 dark:bg-slate-900">
                         <Link
-                            to="/matches/history"
+                            to={currentGroup ? `/groups/${currentGroup.id}` : '/matches/history'}
                             className="text-sm md:text-base text-amber-600 dark:text-amber-400 hover:text-amber-700 font-medium"
                         >
                             {t('dashboard.viewAllMatches')} →
