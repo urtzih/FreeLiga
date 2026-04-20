@@ -843,7 +843,7 @@ export default function GroupView() {
                                                             {tr('LESION', 'LESIOA')}
                                                         </p>
                                                     ) : (
-                                                        <p className={`text-2xl font-bold ${won ? 'text-club-yellow-700 dark:text-club-yellow-300' : 'text-red-600 dark:text-red-400'}`}>
+                                                        <p className={`text-2xl font-bold ${won ? 'text-green-700 dark:text-green-300' : 'text-red-600 dark:text-red-400'}`}>
                                                             {myScore} - {opponentScore}
                                                         </p>
                                                     )
