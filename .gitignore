@@ -49,6 +49,8 @@ lerna-debug.log*
 backups/
 *.sql
 *.sql.gz
+!packages/database/prisma/migrations/**/migration.sql
+!packages/database/prisma/migrations/migration_lock.toml
 
 # Prisma
 .env.production.example
