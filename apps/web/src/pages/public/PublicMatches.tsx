@@ -46,7 +46,7 @@ export default function PublicMatches() {
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-4xl font-bold mb-2">🎾 {t('publicMatches.title')}</h1>
-                            <p className="text-amber-100">{t('publicMatches.subtitle')}</p>
+                            <p className="club-page-hero-subtitle">{t('publicMatches.subtitle')}</p>
                         </div>
                         <Link
                             to="/"
@@ -143,3 +143,4 @@ export default function PublicMatches() {
         </div>
     );
 }
+

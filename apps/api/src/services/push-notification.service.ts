@@ -79,6 +79,9 @@ interface PushAdoptionMetrics {
     };
 }
 
+const DEFAULT_PUSH_ICON = '/icon-192.png';
+const DEFAULT_PUSH_BADGE = '/icon-maskable-192.png';
+
 // Configure web-push with VAPID keys
 export function initializePushNotifications() {
     const vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
@@ -277,8 +280,8 @@ export async function sendPushByTarget(
     const payload = JSON.stringify({
         title: notification.title,
         body: notification.body,
-        icon: notification.icon || '/logo.jpg',
-        badge: notification.badge || '/logo.jpg',
+        icon: notification.icon || DEFAULT_PUSH_ICON,
+        badge: notification.badge || DEFAULT_PUSH_BADGE,
         tag: notification.tag || 'default',
         data: {
             url: notification.url || '/',

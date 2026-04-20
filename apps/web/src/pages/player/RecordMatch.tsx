@@ -169,9 +169,9 @@ export default function RecordMatch() {
 
     return (
         <div className="max-w-2xl mx-auto space-y-6">
-            <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl p-8 text-white shadow-lg">
+            <div className="club-page-hero p-8">
                 <h1 className="text-3xl font-bold mb-2">{t('recordMatch.headerTitle')}</h1>
-                <p className="text-green-100">{t('recordMatch.headerSubtitle')}</p>
+                <p className="club-page-hero-subtitle">{t('recordMatch.headerSubtitle')}</p>
             </div>
 
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-8 relative">
@@ -197,7 +197,7 @@ export default function RecordMatch() {
                             max={getTodayLocalISO()}
                             value={formData.date}
                             onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                            className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                            className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent"
                         />
                     </div>
 
@@ -217,7 +217,7 @@ export default function RecordMatch() {
                                     onChange={(e) => setFormData({ ...formData, player2Id: e.target.value })}
                                     required
                                     disabled={isLoadingGroup || availableOpponents.length === 0}
-                                    className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <option value="">{t('recordMatch.selectOpponent')}</option>
                                     {availableOpponents.map((gp: any) => (
@@ -320,16 +320,18 @@ export default function RecordMatch() {
                             {formData.player2Id && (
                                 <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4">
                                     <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">{t('recordMatch.preview.title')}</p>
-                                    <div className="flex items-center justify-center space-x-4 text-lg">
-                                        <span className={`font-bold ${formData.gamesP1 > formData.gamesP2 ? 'text-green-600 dark:text-green-400' : 'text-slate-900 dark:text-white'}`}>
+                                    <div className="overflow-x-auto">
+                                        <div className="flex items-center justify-center gap-3 sm:gap-4 text-base sm:text-lg whitespace-nowrap min-w-max">
+                                            <span className={`font-bold shrink-0 whitespace-nowrap ${formData.gamesP1 > formData.gamesP2 ? 'text-green-600 dark:text-green-400' : 'text-slate-900 dark:text-white'}`}>
                                             {user?.player?.name}
-                                        </span>
-                                        <span className="text-2xl font-bold text-slate-900 dark:text-white">
+                                            </span>
+                                            <span className="text-2xl font-bold text-slate-900 dark:text-white shrink-0 whitespace-nowrap">
                                             {formData.gamesP1} - {formData.gamesP2}
-                                        </span>
-                                        <span className={`font-bold ${formData.gamesP2 > formData.gamesP1 ? 'text-green-600 dark:text-green-400' : 'text-slate-900 dark:text-white'}`}>
+                                            </span>
+                                            <span className={`font-bold shrink-0 whitespace-nowrap ${formData.gamesP2 > formData.gamesP1 ? 'text-green-600 dark:text-green-400' : 'text-slate-900 dark:text-white'}`}>
                                             {group?.groupPlayers.find((gp: any) => gp.playerId === formData.player2Id)?.player.name}
-                                        </span>
+                                            </span>
+                                        </div>
                                     </div>
                                     {formData.gamesP1 !== formData.gamesP2 && (formData.gamesP1 === 3 || formData.gamesP2 === 3) && (
                                         <p className="text-center text-xs text-slate-500 dark:text-slate-400 mt-2">
@@ -352,7 +354,7 @@ export default function RecordMatch() {
                     <button
                         type="submit"
                         disabled={mutation.isPending || !formData.player2Id}
-                        className="w-full px-6 py-3 text-white font-medium rounded-lg bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+                        className="w-full px-6 py-3 club-btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {mutation.isPending ? t('recordMatch.submit.pending') : t('recordMatch.submit.default')}
                     </button>

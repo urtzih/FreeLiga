@@ -51,10 +51,10 @@ export default function GroupView() {
         const isInjury = match.matchStatus === 'INJURY';
         const isScheduledPending = (match.isScheduled || !!match.scheduledDate) && !hasResult;
 
-        // Mostrar siempre partidos jugados o por lesión
+        // Mostrar siempre partidos jugados o por lesion
         if (hasResult || isInjury) return true;
 
-        // Mostrar pendientes solo si fueron programados y calendario está habilitado
+        // Mostrar pendientes solo si fueron programados y calendario esta habilitado
         if (isScheduledPending) return calendarEnabled;
 
         // Ocultar pendientes internos no programados
@@ -73,7 +73,7 @@ export default function GroupView() {
                 <ul className="text-left max-w-md mx-auto text-slate-600 dark:text-slate-400 space-y-2">
                     <li>- {tr('El grupo no exista o haya sido eliminado', 'Taldea ez egotea edo ezabatuta egotea')}</li>
                     <li>- {tr('No tengas permiso para ver este grupo', 'Talde hau ikusteko baimenik ez izatea')}</li>
-                    <li>- {tr('Tu sesión haya expirado', 'Zure saioa iraungi izana')}</li>
+                    <li>- {tr('Tu sesion haya expirado', 'Zure saioa iraungi izana')}</li>
                 </ul>
                 <a href="/dashboard" className="text-amber-600 dark:text-amber-400 hover:underline mt-6 inline-block">{tr('Volver al inicio', 'Hasierara itzuli')}</a>
             </div>
@@ -90,19 +90,14 @@ export default function GroupView() {
     }
 
     if (classificationError) {
-        return <div className="text-center py-12 text-red-600">{tr('Error cargando clasificación', 'Errorea sailkapena kargatzean')}</div>;
+        return <div className="text-center py-12 text-red-600">{tr('Error cargando clasificacion', 'Errorea sailkapena kargatzean')}</div>;
     }
 
     const totalPlayers = group.groupPlayers.length;
-    const totalPossibleMatches = (totalPlayers * (totalPlayers - 1)) / 2;
     const completedMatches = group.matches.filter((m: any) =>
         (m.matchStatus === 'PLAYED' && m.gamesP1 !== null && m.gamesP2 !== null) || m.matchStatus === 'INJURY'
     );
     const playedMatches = group.matches.filter((m: any) => m.matchStatus === 'PLAYED' && m.gamesP1 !== null && m.gamesP2 !== null);
-    const matchesPlayed = completedMatches.length;
-    const completionPercentage = totalPossibleMatches > 0
-        ? Math.round((matchesPlayed / totalPossibleMatches) * 100)
-        : 0;
 
     const recentPlayedMatches = [...playedMatches]
         .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -110,6 +105,53 @@ export default function GroupView() {
     const recentOpponentOptions = [...group.groupPlayers]
         .map((gp: any) => ({ id: String(gp.playerId), name: gp.player.name }))
         .sort((a, b) => a.name.localeCompare(b.name, localeCode));
+
+    const isClosedMatchForClassification = (match: any) =>
+        (match.matchStatus === 'PLAYED' && match.gamesP1 !== null && match.gamesP2 !== null) ||
+        match.matchStatus === 'INJURY';
+
+    const getClassificationProgress = (playerId: number) => {
+        const completedOpponents = new Set<string>();
+        const injuryOpponents = new Set<string>();
+
+        group.matches.forEach((match: any) => {
+            if (!isClosedMatchForClassification(match)) return;
+
+            const isPlayer1 = String(match.player1Id) === String(playerId);
+            const isPlayer2 = String(match.player2Id) === String(playerId);
+            if (!isPlayer1 && !isPlayer2) return;
+
+            const opponentId = isPlayer1 ? match.player2Id : match.player1Id;
+            completedOpponents.add(String(opponentId));
+
+            if (match.matchStatus === 'INJURY') {
+                injuryOpponents.add(String(opponentId));
+            }
+        });
+
+        const remaining = Math.max(0, (totalPlayers - 1) - completedOpponents.size);
+
+        return {
+            remaining,
+            injuries: injuryOpponents.size,
+        };
+    };
+
+    const classificationProgressByPlayer = new Map<string, { remaining: number; injuries: number }>();
+    let maxInjuriesInGroup = 0;
+    (classification ?? []).forEach((row) => {
+        const progress = getClassificationProgress(Number(row.playerId));
+        classificationProgressByPlayer.set(String(row.playerId), progress);
+        if (progress.injuries > maxInjuriesInGroup) {
+            maxInjuriesInGroup = progress.injuries;
+        }
+    });
+
+    const isActuallyInjuredPlayer = (playerId: number | string) => {
+        const progress = classificationProgressByPlayer.get(String(playerId));
+        if (!progress) return false;
+        return progress.injuries > 0 && progress.remaining === 0 && progress.injuries === maxInjuriesInGroup;
+    };
 
     const filteredRecentMatches = selectedRecentOpponent === 'all'
         ? recentPlayedMatches
@@ -123,6 +165,84 @@ export default function GroupView() {
     const closedMyMatchesCount = myMatches.filter((m: any) =>
         (m.matchStatus === 'PLAYED' && m.gamesP1 !== null && m.gamesP2 !== null) || m.matchStatus === 'INJURY'
     ).length;
+    const getDirectMatchDisplay = (opponentPlayerId: string) => {
+        const defaultDisplay = {
+            resultText: tr('No jugado', 'Jokatu gabe'),
+            resultColor: 'text-slate-400',
+            resultStatusText: tr('Pendiente', 'Pendiente'),
+            resultStatusTone: 'bg-slate-100 text-slate-600 dark:bg-slate-700/50 dark:text-slate-300',
+            resultBadgeTone: 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+            showScoreBadge: false,
+        };
+        const myPlayerId = user?.player?.id;
+        if (!myPlayerId) return defaultDisplay;
+
+        const directMatch = group.matches.find((m: any) => {
+            const isDirectMatch =
+                (m.player1Id === myPlayerId && m.player2Id === opponentPlayerId) ||
+                (m.player2Id === myPlayerId && m.player1Id === opponentPlayerId);
+            const isClosedByStatus =
+                (m.matchStatus === 'PLAYED' && m.gamesP1 !== null && m.gamesP2 !== null) ||
+                m.matchStatus === 'INJURY' ||
+                m.matchStatus === 'CANCELLED';
+            return isDirectMatch && isClosedByStatus;
+        });
+
+        if (!directMatch) return defaultDisplay;
+
+        if (directMatch.matchStatus === 'INJURY') {
+            return {
+                resultText: tr('Lesion', 'Lesioa'),
+                resultColor: 'text-orange-600 dark:text-orange-400 font-semibold',
+                resultStatusText: tr('Lesion', 'Lesioa'),
+                resultStatusTone: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+                resultBadgeTone: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-700/50',
+                showScoreBadge: false,
+            };
+        }
+
+        if (directMatch.matchStatus === 'CANCELLED') {
+            return {
+                resultText: tr('Cancelado', 'Ezeztatua'),
+                resultColor: 'text-slate-500 dark:text-slate-400 font-semibold',
+                resultStatusText: tr('Cancelado', 'Ezeztatua'),
+                resultStatusTone: 'bg-slate-100 text-slate-700 dark:bg-slate-700/50 dark:text-slate-300',
+                resultBadgeTone: 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
+                showScoreBadge: false,
+            };
+        }
+
+        const myGames = directMatch.player1Id === myPlayerId ? directMatch.gamesP1 : directMatch.gamesP2;
+        const opponentGames = directMatch.player1Id === myPlayerId ? directMatch.gamesP2 : directMatch.gamesP1;
+        const won = directMatch.winnerId === myPlayerId;
+        const lost = directMatch.winnerId === opponentPlayerId;
+        let resultColor = 'text-slate-500 dark:text-slate-400 font-semibold';
+        let resultStatusText = tr('Resultado', 'Emaitza');
+        let resultStatusTone = 'bg-slate-100 text-slate-700 dark:bg-slate-700/50 dark:text-slate-300';
+        let resultBadgeTone = 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700';
+
+        if (won) {
+            resultColor = 'text-emerald-700 dark:text-emerald-400 font-semibold';
+            resultStatusText = tr('Victoria', 'Garaipena');
+            resultStatusTone = 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300';
+            resultBadgeTone = 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-700/50';
+        }
+        if (lost) {
+            resultColor = 'text-red-600 dark:text-red-400 font-semibold';
+            resultStatusText = tr('Derrota', 'Porrota');
+            resultStatusTone = 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300';
+            resultBadgeTone = 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700/50';
+        }
+
+        return {
+            resultText: `${myGames}-${opponentGames}`,
+            resultColor,
+            resultStatusText,
+            resultStatusTone,
+            resultBadgeTone,
+            showScoreBadge: true,
+        };
+    };
 
     const hasPlayedBetween = (playerAId: string, playerBId: string) => {
         return completedMatches.some((match: any) => (
@@ -147,18 +267,18 @@ export default function GroupView() {
         }
     }
 
-    // Calcular días restantes
+    // Calcular dias restantes
     const endDate = new Date(group.season.endDate);
     const today = new Date();
     const daysRemaining = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-    // Función para exportar CSV del grupo
+    // Funcion para exportar CSV del grupo
     const handleExportGroupCSV = () => {
         if (!group.groupPlayers) return;
 
         const rows: string[] = [];
         rows.push(tr(
-            'Posición,Jugador,Partidos Ganados,Partidos Perdidos,Sets Ganados,Sets Perdidos,Movimiento',
+            'Posicion,Jugador,Partidos Ganados,Partidos Perdidos,Sets Ganados,Sets Perdidos,Movimiento',
             'Postua,Jokalaria,Irabazitako Partidak,Galdutako Partidak,Irabazitako Setak,Galdutako Setak,Mugimendua',
         ));
 
@@ -200,7 +320,7 @@ export default function GroupView() {
     return (
         <div className="space-y-6">
             {/* Encabezado */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 flex justify-between items-start">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 flex justify-between items-center">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">{group.name}</h1>
                     <p className="text-slate-600 dark:text-slate-400">{group.season.name}</p>
@@ -209,10 +329,10 @@ export default function GroupView() {
                     {user?.role === 'ADMIN' && (
                         <button
                             onClick={handleExportGroupCSV}
-                            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2 shadow-sm"
-                            title={tr('Descargar clasificación como CSV', 'Sailkapena CSV gisa deskargatu')}
+                            className="px-4 py-2 club-btn-dark font-medium flex items-center gap-2 shadow-sm"
+                            title={tr('Descargar clasificacion como CSV', 'Sailkapena CSV gisa deskargatu')}
                         >
-                            📄 CSV
+                            {String.fromCodePoint(0x1F4C4)} CSV
                         </button>
                     )}
                     {group.whatsappUrl && (
@@ -220,7 +340,7 @@ export default function GroupView() {
                             href={group.whatsappUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors font-medium flex items-center gap-2 shadow-sm whitespace-nowrap h-fit self-center"
+                            className="px-4 py-2 bg-yellow-400 hover:bg-yellow-300 text-black border-2 border-black/85 rounded-lg transition-colors font-semibold flex items-center gap-2 shadow-sm whitespace-nowrap h-fit self-center"
                             title={tr('Grupo WhatsApp', 'WhatsApp taldea')}
                         >
                             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -233,57 +353,46 @@ export default function GroupView() {
                 </div>
             </div>
 
-                        {/* Indicadores de Progreso */}
-            <div className="grid grid-cols-3 md:grid-cols-3 gap-2 md:gap-6">
-                <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg md:rounded-xl p-2 md:p-6 text-white shadow-lg">
+                        {/* Indicadores */}
+            <div className="grid grid-cols-2 gap-1.5 md:gap-6">
+                <div className="bg-gradient-to-br from-yellow-300 to-yellow-400 rounded-lg md:rounded-xl p-2 md:p-6 text-club-black-900 border border-black/15 shadow-lg">
                     <div className="flex items-center justify-between mb-1 md:mb-2">
-                        <span className="text-xs md:text-sm font-medium opacity-90">{t('groupView.kpi.daysRemaining')}</span>
-                        <span className="text-lg md:text-2xl">{String.fromCodePoint(0x23F0)}</span>
+                        <span className="text-[11px] md:text-sm font-semibold opacity-90">{t('groupView.kpi.daysRemaining')}</span>
+                        <span className="text-base md:text-2xl">{String.fromCodePoint(0x23F0)}</span>
                     </div>
-                    <p className="text-2xl md:text-4xl font-bold">{daysRemaining > 0 ? daysRemaining : 0}</p>
-                    <p className="text-xs opacity-75 mt-0.5 md:mt-1 hidden md:block">
+                    <p className="text-xl md:text-4xl font-bold leading-none">{daysRemaining > 0 ? daysRemaining : 0}</p>
+                    <p className="text-xs text-black/75 mt-0.5 md:mt-1 hidden md:block">
                         {t('groupView.kpi.untilDate', { date: formatDate(endDate) })}
                     </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg md:rounded-xl p-2 md:p-6 text-white shadow-lg">
+                <div className="bg-gradient-to-br from-[#171717] to-[#2b2b2b] rounded-lg md:rounded-xl p-2 md:p-6 text-yellow-100 border border-yellow-400/30 shadow-lg">
                     <div className="flex items-center justify-between mb-1 md:mb-2">
-                        <span className="text-xs md:text-sm font-medium opacity-90">{t('groupView.kpi.progress')}</span>
-                        <span className="text-lg md:text-2xl">{String.fromCodePoint(0x1F4CA)}</span>
+                        <span className="text-[11px] md:text-sm font-semibold opacity-90">{t('groupView.kpi.totalPlayers')}</span>
+                        <span className="text-base md:text-2xl">{String.fromCodePoint(0x1F465)}</span>
                     </div>
-                    <p className="text-2xl md:text-4xl font-bold">{completionPercentage}%</p>
-                    <p className="text-xs opacity-75 mt-0.5 md:mt-1 hidden md:block">
-                        {t('groupView.kpi.matchesProgress', { played: matchesPlayed, total: totalPossibleMatches })}
-                    </p>
-                </div>
-
-                <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg md:rounded-xl p-2 md:p-6 text-white shadow-lg">
-                    <div className="flex items-center justify-between mb-1 md:mb-2">
-                        <span className="text-xs md:text-sm font-medium opacity-90">{t('groupView.kpi.totalPlayers')}</span>
-                        <span className="text-lg md:text-2xl">{String.fromCodePoint(0x1F465)}</span>
-                    </div>
-                    <p className="text-2xl md:text-4xl font-bold">{totalPlayers}</p>
-                    <p className="text-xs opacity-75 mt-0.5 md:mt-1 hidden md:block">{t('groupView.kpi.activeInGroup')}</p>
+                    <p className="text-xl md:text-4xl font-bold leading-none">{totalPlayers}</p>
+                    <p className="text-xs text-yellow-100/80 mt-0.5 md:mt-1 hidden md:block">{t('groupView.kpi.activeInGroup')}</p>
                 </div>
             </div>
 
-            {/* Estadísticas del Grupo */}
+            {/* Estadisticas del Grupo */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">{tr('Estadísticas del Grupo', 'Taldearen Estatistikak')}</h2>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">{tr('Estadisticas del Grupo', 'Taldearen Estatistikak')}</h2>
                     {classification && classification.length > 0 && (
                         <span className="text-xs text-slate-500 dark:text-slate-400">
                             {classification.length} {tr('jugadores', 'jokalari')}
                         </span>
                     )}
                 </div>
-                <div className="p-6 space-y-6">
+                <div className="p-3 md:p-6 space-y-0 md:space-y-6">
                     {!classification || classification.length === 0 ? (
-                        <p className="text-sm text-slate-600 dark:text-slate-400">{tr('Sin partidos registrados todavía.', 'Oraindik ez dago partidarik erregistratuta.')}</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">{tr('Sin partidos registrados todavia.', 'Oraindik ez dago partidarik erregistratuta.')}</p>
                     ) : (
                         <>
 
-                            {/* Tabla para escritorio - versión completa */}
+                            {/* Tabla para escritorio - version completa */}
                             <div className="hidden md:block overflow-x-auto">
                                 <table className="w-full text-sm">
                                     <thead className="bg-slate-50 dark:bg-slate-900">
@@ -293,42 +402,42 @@ export default function GroupView() {
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">{tr('Victorias', 'Garaipenak')}</th>
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">{tr('Derrotas', 'Porrotak')}</th>
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">{tr('Restantes', 'Geratzen direnak')}</th>
-                                            <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">{tr('Lesión', 'Lesioa')}</th>
+                                            <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">{tr('Lesion', 'Lesioa')}</th>
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Sets +</th>
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Sets -</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                                         {classification.map((row, idx) => {
-                                            // Calculate injuries for this player
-                                            const playerInjuries = group.matches.filter((m: any) =>
-                                                (m.player1Id === row.playerId || m.player2Id === row.playerId) &&
-                                                m.matchStatus === 'INJURY'
-                                            ).length;
-
-                                            // Calculate remaining matches
-                                            const totalMatchesForPlayer = totalPlayers - 1;
-                                            const played = row.wins + row.losses;
-                                            const remaining = totalMatchesForPlayer - played - playerInjuries;
-                                            const displayInjuries = remaining === 0 ? playerInjuries : 0;
-                                            const isInjuredPlayer = displayInjuries > 0;
+                                            const progress = classificationProgressByPlayer.get(String(row.playerId)) ?? getClassificationProgress(Number(row.playerId));
+                                            const remaining = progress.remaining;
+                                            const injuries = progress.injuries;
+                                            const isInjuredPlayer = isActuallyInjuredPlayer(row.playerId);
+                                            const displayInjuries = isInjuredPlayer ? injuries : 0;
+                                            const isCurrentUser = String(row.playerId) === String(user?.player?.id);
                                             
                                             // Determinar ascenso/descenso
                                             const isPromotion = idx < 2; // Top 2: ascenso
                                             const isRelegation = idx >= totalPlayers - 2; // altimos 2: descenso
                                             
-                                            const rowClass = isPromotion 
-                                                ? "bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30" 
-                                                : isRelegation 
+                                            const baseRowClass = isPromotion
+                                                ? "bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
+                                                : isRelegation
                                                 ? "bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30"
                                                 : "hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors";
+                                            const rowClass = `${baseRowClass} ${isCurrentUser ? 'ring-1 ring-inset ring-amber-400/70 dark:ring-amber-500/45' : ''}`;
 
                                             return (
                                                 <tr key={row.playerId} className={rowClass}>
-                                                    <td className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-400">{idx + 1}</td>
+                                                    <td className={`px-3 py-2 text-center font-semibold ${isCurrentUser ? 'font-bold text-slate-700 dark:text-slate-200' : 'text-slate-600 dark:text-slate-400'}`}>{idx + 1}</td>
                                                     <td className="px-3 py-2">
                                                         <span className="inline-flex items-center gap-1">
-                                                            <span>{row.playerName}</span>
+                                                            <span className={isCurrentUser ? 'font-bold' : ''}>{row.playerName}</span>
+                                                            {isCurrentUser && (
+                                                                <span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 dark:bg-amber-700/40 dark:text-amber-100 font-semibold">
+                                                                    {tr('Tu', 'Zu')}
+                                                                </span>
+                                                            )}
                                                             {isInjuredPlayer && (
                                                                 <span className="text-[11px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
                                                                     {String.fromCodePoint(0x1F915)} {tr('Lesionado', 'Lesionatua')}
@@ -336,7 +445,7 @@ export default function GroupView() {
                                                             )}
                                                         </span>
                                                     </td>
-                                                    <td className="px-3 py-2 text-center font-semibold text-green-600 dark:text-green-400">{row.wins}</td>
+                                                    <td className="px-3 py-2 text-center font-semibold text-green-700 dark:text-green-300">{row.wins}</td>
                                                     <td className="px-3 py-2 text-center font-semibold text-red-600 dark:text-red-400">{row.losses}</td>
                                                     <td className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-400">{remaining}</td>
                                                     <td className="px-3 py-2 text-center font-semibold text-orange-600 dark:text-orange-400">{displayInjuries}</td>
@@ -349,7 +458,7 @@ export default function GroupView() {
                                 </table>
                             </div>
 
-                            {/* Tabla para móvil - versión compacta */}
+                            {/* Tabla para movil - version compacta */}
                             <div className="md:hidden overflow-x-auto -mx-2">
                                 <table className="min-w-full text-sm">
                                     <thead>
@@ -364,15 +473,10 @@ export default function GroupView() {
                                     </thead>
                                     <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                                         {classification.map((row, idx) => {
-                                            // Calculate remaining matches
-                                            const totalMatchesForPlayer = totalPlayers - 1;
-                                            const played = row.wins + row.losses;
-                                            const playerInjuries = group.matches.filter((m: any) =>
-                                                (m.player1Id === row.playerId || m.player2Id === row.playerId) &&
-                                                m.matchStatus === 'INJURY'
-                                            ).length;
-                                            const remaining = totalMatchesForPlayer - played - playerInjuries;
-                                            const isInjuredPlayer = remaining === 0 && playerInjuries > 0;
+                                            const progress = classificationProgressByPlayer.get(String(row.playerId)) ?? getClassificationProgress(Number(row.playerId));
+                                            const remaining = progress.remaining;
+                                            const isInjuredPlayer = isActuallyInjuredPlayer(row.playerId);
+                                            const isCurrentUser = String(row.playerId) === String(user?.player?.id);
                                             
                                             // Calculate set difference
                                             const setDifference = row.setsWon - row.setsLost;
@@ -381,18 +485,24 @@ export default function GroupView() {
                                             const isPromotion = idx < 2; // Top 2: ascenso
                                             const isRelegation = idx >= totalPlayers - 2; // altimos 2: descenso
                                             
-                                            const rowClass = isPromotion 
-                                                ? "bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30" 
-                                                : isRelegation 
+                                            const baseRowClass = isPromotion
+                                                ? "bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
+                                                : isRelegation
                                                 ? "bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30"
                                                 : "hover:bg-slate-50 dark:hover:bg-slate-900/60";
+                                            const rowClass = `${baseRowClass} ${isCurrentUser ? 'ring-1 ring-inset ring-amber-400/70 dark:ring-amber-500/45' : ''}`;
 
                                             return (
                                                 <tr key={row.playerId} className={rowClass}>
-                                                    <td className="px-2 py-2 text-slate-500">{idx + 1}</td>
-                                                    <td className="px-2 py-2 font-medium text-slate-900 dark:text-white">
+                                                    <td className={`px-2 py-2 ${isCurrentUser ? 'font-semibold text-slate-700 dark:text-slate-200' : 'text-slate-500'}`}>{idx + 1}</td>
+                                                    <td className={`px-2 py-2 font-medium ${isCurrentUser ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-900 dark:text-white'}`}>
                                                         <span className="inline-flex items-center gap-1">
                                                             <span>{row.playerName}</span>
+                                                            {isCurrentUser && (
+                                                                <span className="text-[10px] px-1 py-0.5 rounded bg-amber-200 text-amber-900 dark:bg-amber-700/40 dark:text-amber-100 font-semibold">
+                                                                    {tr('Tu', 'Zu')}
+                                                                </span>
+                                                            )}
                                                             {isInjuredPlayer && (
                                                                 <span className="text-[10px] px-1 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
                                                                     {String.fromCodePoint(0x1F915)}
@@ -400,9 +510,9 @@ export default function GroupView() {
                                                             )}
                                                         </span>
                                                     </td>
-                                                    <td className="px-2 py-2 text-center font-semibold text-green-600 dark:text-green-400">{row.wins}</td>
+                                                    <td className="px-2 py-2 text-center font-semibold text-green-700 dark:text-green-300">{row.wins}</td>
                                                     <td className="px-2 py-2 text-center font-semibold text-red-600 dark:text-red-400">{row.losses}</td>
-                                                    <td className={`px-2 py-2 text-center font-semibold ${setDifference >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                                                    <td className={`px-2 py-2 text-center font-semibold ${setDifference >= 0 ? 'text-club-yellow-700 dark:text-club-yellow-300' : 'text-red-500 dark:text-red-400'}`}>
                                                         {setDifference > 0 ? '+' : ''}{setDifference}
                                                     </td>
                                                     <td className="px-2 py-2 text-center text-slate-700 dark:text-slate-200">{remaining}</td>
@@ -417,7 +527,7 @@ export default function GroupView() {
                 </div>
             </div>
 
-            {/* Clasificación Actual (Ranking interno) */}
+            {/* Clasificacion Actual (Ranking interno) */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white">{tr('Contrincantes', 'Aurkariak')}</h2>
@@ -442,34 +552,7 @@ export default function GroupView() {
                                 .filter((gp: any) => gp.player.user?.role !== 'ADMIN')
                                 .map((gp: any, index: number) => {
                                     const isCurrentUser = gp.playerId === user?.player?.id;
-                                    
-                                    // Buscar enfrentamiento directo
-                                    const directMatch = group.matches.find((m: any) =>
-                                        m.matchStatus === 'PLAYED' && (
-                                            (m.player1Id === user?.player?.id && m.player2Id === gp.playerId) ||
-                                            (m.player2Id === user?.player?.id && m.player1Id === gp.playerId)
-                                        )
-                                    );
-                                    
-                                    let resultText = tr('No jugado', 'Jokatu gabe');
-                                    let resultColor = 'text-slate-400';
-                                    
-                                    if (directMatch) {
-                                        const won = directMatch.winnerId === user?.player?.id;
-                                        const lost = directMatch.winnerId === gp.playerId;
-                                        
-                                        if (won) {
-                                            resultText = directMatch.player1Id === user?.player?.id 
-                                                ? `${directMatch.gamesP1}-${directMatch.gamesP2}` 
-                                                : `${directMatch.gamesP2}-${directMatch.gamesP1}`;
-                                            resultColor = 'text-green-600 dark:text-green-400 font-semibold';
-                                        } else if (lost) {
-                                            resultText = directMatch.player1Id === user?.player?.id 
-                                                ? `${directMatch.gamesP1}-${directMatch.gamesP2}` 
-                                                : `${directMatch.gamesP2}-${directMatch.gamesP1}`;
-                                            resultColor = 'text-red-600 dark:text-red-400 font-semibold';
-                                        }
-                                    }
+                                    const { resultText, resultColor } = getDirectMatchDisplay(gp.playerId);
                                     
                                     return (
                                         <tr 
@@ -479,7 +562,7 @@ export default function GroupView() {
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center space-x-2">
                                                     {index < 2 && (
-                                                        <span className="text-xs font-semibold text-green-700 dark:text-green-300">
+                                                        <span className="text-xs font-semibold text-club-yellow-700 dark:text-club-yellow-300">
                                                             {String.fromCodePoint(0x1F3C6)} TOP
                                                         </span>
                                                     )}
@@ -493,7 +576,7 @@ export default function GroupView() {
                                                     </span>
                                                     <div>
                                                         <p className={`font-medium ${isCurrentUser ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}>
-                                                            {gp.player.name} {isCurrentUser && tr('(Tú)', '(Zu)')}
+                                                    {gp.player.name} {isCurrentUser && tr('(Tu)', '(Zu)')}
                                                         </p>
                                                         {gp.player.nickname && (
                                                             <p className="text-sm text-slate-500 dark:text-slate-400">"{gp.player.nickname}"</p>
@@ -503,7 +586,7 @@ export default function GroupView() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 {isCurrentUser ? (
-                                                    <span className="text-sm text-slate-400 dark:text-slate-500 italic">{tr('Eres tú', 'Zu zara')}</span>
+                                                    <span className="text-sm text-slate-400 dark:text-slate-500 italic">{tr('Eres tu', 'Zu zara')}</span>
                                                 ) : (
                                                     <span className={`text-sm ${resultColor}`}>
                                                         {resultText}
@@ -512,7 +595,7 @@ export default function GroupView() {
                                             </td>
                                             <td className="px-6 py-4">
                                                 {isCurrentUser ? (
-                                                    <span className="text-sm text-slate-400 dark:text-slate-500 italic">{tr('Eres tú', 'Zu zara')}</span>
+                                                    <span className="text-sm text-slate-400 dark:text-slate-500 italic">{tr('Eres tu', 'Zu zara')}</span>
                                                 ) : (
                                                     <ContactButtons phone={gp.player.phone} email={gp.player.user?.email} language={language} />
                                                 )}
@@ -524,39 +607,13 @@ export default function GroupView() {
                     </table>
                 </div>
 
-                {/* Vista Móvil - Cards */}
+            {/* Vista movil - Cards */}
                 <div className="md:hidden space-y-2 p-3">
                     {group.groupPlayers
                         .filter((gp: any) => gp.player.user?.role !== 'ADMIN')
                         .map((gp: any, index: number) => {
                             const isCurrentUser = gp.playerId === user?.player?.id;
-                            
-                            const directMatch = group.matches.find((m: any) =>
-                                m.matchStatus === 'PLAYED' && (
-                                    (m.player1Id === user?.player?.id && m.player2Id === gp.playerId) ||
-                                    (m.player2Id === user?.player?.id && m.player1Id === gp.playerId)
-                                )
-                            );
-                            
-                            let resultText = tr('No jugado', 'Jokatu gabe');
-                            let resultColor = 'text-slate-400';
-                            
-                            if (directMatch) {
-                                const won = directMatch.winnerId === user?.player?.id;
-                                const lost = directMatch.winnerId === gp.playerId;
-                                
-                                if (won) {
-                                    resultText = directMatch.player1Id === user?.player?.id 
-                                        ? `${directMatch.gamesP1}-${directMatch.gamesP2}` 
-                                        : `${directMatch.gamesP2}-${directMatch.gamesP1}`;
-                                    resultColor = 'text-green-600 dark:text-green-400 font-semibold';
-                                } else if (lost) {
-                                    resultText = directMatch.player1Id === user?.player?.id 
-                                        ? `${directMatch.gamesP1}-${directMatch.gamesP2}` 
-                                        : `${directMatch.gamesP2}-${directMatch.gamesP1}`;
-                                    resultColor = 'text-red-600 dark:text-red-400 font-semibold';
-                                }
-                            }
+                            const { resultText, resultStatusText, resultStatusTone, resultBadgeTone, showScoreBadge } = getDirectMatchDisplay(gp.playerId);
 
                             return (
                                 <div 
@@ -567,7 +624,7 @@ export default function GroupView() {
                                         <div className="flex items-start gap-3 flex-1">
                                             <div>
                                                 {index < 2 && (
-                                                    <span className="text-xs font-semibold text-green-700 dark:text-green-300">
+                                                    <span className="text-xs font-semibold text-club-yellow-700 dark:text-club-yellow-300">
                                                         {String.fromCodePoint(0x1F3C6)} TOP
                                                     </span>
                                                 )}
@@ -580,13 +637,28 @@ export default function GroupView() {
                                             </div>
                                             <div className="flex-1">
                                                 <p className={`font-semibold text-sm ${isCurrentUser ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}>
-                                                    #{gp.rankingPosition} {gp.player.name} {isCurrentUser && tr('(Tú)', '(Zu)')}
+                                                    #{gp.rankingPosition} {gp.player.name} {isCurrentUser && tr('(Tu)', '(Zu)')}
                                                 </p>
                                                 {gp.player.nickname && (
                                                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">"{gp.player.nickname}"</p>
                                                 )}
                                                 {!isCurrentUser && (
-                                                    <p className={`text-xs mt-2 ${resultColor}`}>{resultText}</p>
+                                                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                                                        {showScoreBadge ? (
+                                                            <>
+                                                                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${resultStatusTone}`}>
+                                                                    {resultStatusText}
+                                                                </span>
+                                                                <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-sm font-extrabold leading-none ${resultBadgeTone}`}>
+                                                                    {resultText}
+                                                                </span>
+                                                            </>
+                                                        ) : (
+                                                            <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${resultBadgeTone}`}>
+                                                                {resultText}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
@@ -634,11 +706,11 @@ export default function GroupView() {
                                 <div className="flex items-center justify-between">
                                     <div className="flex-1">
                                         <div className="flex items-center space-x-2">
-                                            <span className={`font-medium ${match.winnerId === match.player1Id ? 'text-green-600 dark:text-green-400' : 'text-slate-900 dark:text-white'}`}>
+                                            <span className={`font-medium ${match.winnerId === match.player1Id ? 'text-green-700 dark:text-green-300' : 'text-slate-900 dark:text-white'}`}>
                                                 {match.player1.name}
                                             </span>
                                             <span className="text-slate-600 dark:text-slate-400">vs</span>
-                                            <span className={`font-medium ${match.winnerId === match.player2Id ? 'text-green-600 dark:text-green-400' : 'text-slate-900 dark:text-white'}`}>
+                                            <span className={`font-medium ${match.winnerId === match.player2Id ? 'text-green-700 dark:text-green-300' : 'text-slate-900 dark:text-white'}`}>
                                                 {match.player2.name}
                                             </span>
                                         </div>
@@ -652,7 +724,7 @@ export default function GroupView() {
                                         </p>
                                         {match.matchStatus !== 'PLAYED' && (
                                             <p className="text-xs text-orange-600 dark:text-orange-400 uppercase">
-                                                {match.matchStatus === 'INJURY' ? tr('LESIÓN', 'LESIOA') : tr('CANCELADO', 'EZEZTATUA')}
+                                                {match.matchStatus === 'INJURY' ? tr('LESION', 'LESIOA') : tr('CANCELADO', 'EZEZTATUA')}
                                             </p>
                                         )}
                                     </div>
@@ -664,9 +736,9 @@ export default function GroupView() {
                         <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 text-center">
                             <button
                                 onClick={() => setVisibleRecentMatches((prev) => Math.min(prev + 10, filteredRecentMatches.length))}
-                                className="px-4 py-2 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/60 transition-colors font-medium"
+                                className="px-4 py-2 club-btn-tertiary"
                             >
-                                {filteredRecentMatches.length - visibleRecentMatches <= 10 ? tr('Ver todos', 'Guztiak ikusi') : tr('Ver más', 'Gehiago ikusi')}
+                                {filteredRecentMatches.length - visibleRecentMatches <= 10 ? tr('Ver todos', 'Guztiak ikusi') : tr('Ver mas', 'Gehiago ikusi')}
                             </button>
                         </div>
                     )}
@@ -703,9 +775,9 @@ export default function GroupView() {
                         <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 text-center">
                             <button
                                 onClick={() => setVisibleRemainingMatches((prev) => prev + 6)}
-                                className="px-4 py-2 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/60 transition-colors font-medium"
+                                className="px-4 py-2 club-btn-tertiary"
                             >
-                                {tr('Ver más', 'Gehiago ikusi')}
+                                {tr('Ver mas', 'Gehiago ikusi')}
                             </button>
                         </div>
                     )}
@@ -745,7 +817,7 @@ export default function GroupView() {
                                                         </span>
                                                     )}
                                                     {!played && (
-                                                        <span className="text-2xl">⏳</span>
+                                                        <span className="text-2xl">{String.fromCodePoint(0x23F3)}</span>
                                                     )}
                                                     <div>
                                                         <p className="font-medium text-slate-900 dark:text-white">
@@ -766,10 +838,10 @@ export default function GroupView() {
                                                 {played ? (
                                                     match.matchStatus === 'INJURY' ? (
                                                         <p className="text-sm font-bold text-orange-600 dark:text-orange-400 uppercase">
-                                                            {tr('LESIÓN', 'LESIOA')}
+                                                            {tr('LESION', 'LESIOA')}
                                                         </p>
                                                     ) : (
-                                                        <p className={`text-2xl font-bold ${won ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                                        <p className={`text-2xl font-bold ${won ? 'text-club-yellow-700 dark:text-club-yellow-300' : 'text-red-600 dark:text-red-400'}`}>
                                                             {myScore} - {opponentScore}
                                                         </p>
                                                     )
@@ -795,46 +867,46 @@ function ContactButtons({ phone, email, language }: { phone?: string; email?: st
     const hasValidEmail = email && !email.endsWith('@ejemplo.com');
     
     if (!phone && !hasValidEmail) {
-        return <span className="text-sm text-slate-400">{tr('Sin información de contacto', 'Kontaktu informaziorik gabe')}</span>;
+        return <span className="text-sm text-slate-400">{tr('Sin informacion de contacto', 'Kontaktu informaziorik gabe')}</span>;
     }
 
     return (
-        <div className="flex items-center gap-1 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
             {phone && (
                 <>
                     <a
                         href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="px-2 py-0.5 md:px-3 md:py-1 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-800 transition-colors text-xs md:text-sm font-medium inline-flex items-center gap-1 md:gap-2"
+                        className="min-h-10 min-w-10 px-3 py-2 md:px-3 md:py-1 bg-amber-100 dark:bg-club-black-900 text-club-yellow-700 dark:text-club-yellow-300 rounded-xl hover:bg-amber-200 dark:hover:bg-club-black-800 transition-colors text-sm md:text-sm font-semibold inline-flex items-center justify-center gap-2"
                         title="WhatsApp"
+                        aria-label="WhatsApp"
                     >
-                        <svg className="w-3 h-3 md:w-4 md:h-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
                         </svg>
                         <span className="hidden sm:inline">WhatsApp</span>
                     </a>
                     <a
                         href={`tel:${phone}`}
-                        className="px-2 py-0.5 md:px-3 md:py-1 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors text-xs md:text-sm font-medium"
+                        className="min-h-10 min-w-10 px-3 py-2 md:px-3 md:py-1 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 rounded-xl hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors text-sm md:text-sm font-semibold inline-flex items-center justify-center"
                         title={tr('Llamar', 'Deitu')}
+                        aria-label={tr('Llamar', 'Deitu')}
                     >
-                        📞
+                        {String.fromCodePoint(0x1F4DE)}
                     </a>
                 </>
             )}
             {hasValidEmail && (
                 <a
                     href={`mailto:${email}`}
-                    className="px-2 py-0.5 md:px-3 md:py-1 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors text-xs md:text-sm font-medium"
+                    className="min-h-10 min-w-10 px-3 py-2 md:px-3 md:py-1 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 rounded-xl hover:bg-amber-200 dark:hover:bg-amber-800 transition-colors text-sm md:text-sm font-semibold inline-flex items-center justify-center"
                     title={tr('Enviar email', 'Emaila bidali')}
+                    aria-label={tr('Enviar email', 'Emaila bidali')}
                 >
-                    ✉️
+                    {String.fromCodePoint(0x2709, 0xFE0F)}
                 </a>
             )}
         </div>
     );
 }
-
-
-

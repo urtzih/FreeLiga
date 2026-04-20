@@ -52,7 +52,7 @@ export default function PublicGroups() {
                     <div className="flex items-center justify-between">
                         <div>
                             <h1 className="text-4xl font-bold mb-2">📊 {t('publicGroups.title')}</h1>
-                            <p className="text-amber-100">{t('publicGroups.subtitleSeason', { seasonName: data?.seasonName ?? '-' })}</p>
+                            <p className="club-page-hero-subtitle">{t('publicGroups.subtitleSeason', { seasonName: data?.seasonName ?? '-' })}</p>
                         </div>
                         <Link
                             to="/"
@@ -86,7 +86,7 @@ export default function PublicGroups() {
                             >
                                 <div className="bg-gradient-to-r from-amber-500 to-amber-600 text-white p-4">
                                     <h3 className="text-xl font-bold">{group.name}</h3>
-                                    <p className="text-amber-100 text-sm mt-1">
+                                    <p className="club-page-hero-subtitle text-sm mt-1">
                                         👥 {group.playerCount} {t('public.stats.players').toLowerCase()} · 🎾 {group.matchCount} {t('public.stats.matches').toLowerCase()}
                                     </p>
                                 </div>
@@ -135,3 +135,4 @@ export default function PublicGroups() {
         </div>
     );
 }
+

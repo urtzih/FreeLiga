@@ -134,12 +134,35 @@ export default function GroupsSummary() {
                     const played = playedWithResult + injuryMatches;
                     const progress = possibleMatches > 0 ? Math.round((played / possibleMatches) * 100) : 0;
 
-                    const injuriesByPlayer = new Map<string, number>();
-                    for (const match of groupMatches) {
-                        if (match.matchStatus !== 'INJURY') continue;
-                        injuriesByPlayer.set(match.player1Id, (injuriesByPlayer.get(match.player1Id) || 0) + 1);
-                        injuriesByPlayer.set(match.player2Id, (injuriesByPlayer.get(match.player2Id) || 0) + 1);
-                    }
+                    const isClosedMatchForClassification = (match: GroupDetail['matches'][number]) =>
+                        (match.matchStatus === 'PLAYED' && match.gamesP1 !== null && match.gamesP2 !== null) ||
+                        match.matchStatus === 'INJURY';
+
+                    const getPlayerProgress = (playerId: string) => {
+                        const completedOpponents = new Set<string>();
+                        const injuryOpponents = new Set<string>();
+
+                        for (const match of groupMatches) {
+                            if (!isClosedMatchForClassification(match)) continue;
+
+                            const isPlayer1 = match.player1Id === playerId;
+                            const isPlayer2 = match.player2Id === playerId;
+                            if (!isPlayer1 && !isPlayer2) continue;
+
+                            const opponentId = isPlayer1 ? match.player2Id : match.player1Id;
+                            completedOpponents.add(opponentId);
+
+                            if (match.matchStatus === 'INJURY') {
+                                injuryOpponents.add(opponentId);
+                            }
+                        }
+
+                        return {
+                            remainingMatches: Math.max(0, (players - 1) - completedOpponents.size),
+                            injuryCount: injuryOpponents.size,
+                            isInjuredPlayer: injuryOpponents.size > 0,
+                        };
+                    };
 
                     const isFirstGroup = groupIndex === 0;
                     const isLastGroup = groupIndex === groups.length - 1;
@@ -180,54 +203,67 @@ export default function GroupsSummary() {
                                                     <th className="px-2 py-2">{tr('Jugador', 'Jokalaria')}</th>
                                                     <th className="px-2 py-2 text-center">G</th>
                                                     <th className="px-2 py-2 text-center">P</th>
-                                                    <th className="px-2 py-2 text-center">Average</th>
-                                                    <th className="px-2 py-2 text-center">R</th>
+                                                    <th className="">AVG</th>
+                                                    <th className="px-2 py-2 text-cpx-2 py-2 text-centerenter">R</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                                                {classification.slice(0, 8).map((row, idx) => {
-                                                    const setsDiff = row.setsWon - row.setsLost;
-                                                    const totalMatchesPerPlayer = players - 1;
-                                                    const playedMatches = row.wins + row.losses + row.draws;
-                                                    const injuryCount = injuriesByPlayer.get(row.playerId) || 0;
-                                                    const remainingMatches = totalMatchesPerPlayer - playedMatches - injuryCount;
-                                                    const isInjuredPlayer = remainingMatches === 0 && injuryCount > 0;
+                                                {(() => {
+                                                    const progressByPlayer = new Map<string, { remainingMatches: number; injuryCount: number }>();
+                                                    let maxInjuryCount = 0;
+                                                    classification.forEach((playerRow) => {
+                                                        const progress = getPlayerProgress(playerRow.playerId);
+                                                        progressByPlayer.set(playerRow.playerId, progress);
+                                                        if (progress.injuryCount > maxInjuryCount) {
+                                                            maxInjuryCount = progress.injuryCount;
+                                                        }
+                                                    });
 
-                                                    const isPromotion = !isFirstGroup && idx < 2;
-                                                    const isRelegation = !isLastGroup && idx >= 6;
+                                                    return classification.slice(0, 8).map((row, idx) => {
+                                                        const setsDiff = row.setsWon - row.setsLost;
+                                                        const progress = progressByPlayer.get(row.playerId) ?? getPlayerProgress(row.playerId);
+                                                        const remainingMatches = progress.remainingMatches;
+                                                        const isInjuredPlayer =
+                                                            progress.injuryCount > 0 &&
+                                                            remainingMatches === 0 &&
+                                                            progress.injuryCount === maxInjuryCount;
 
-                                                    const rowClass = isPromotion
-                                                        ? 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30'
-                                                        : isRelegation
-                                                            ? 'bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30'
-                                                            : 'hover:bg-slate-50 dark:hover:bg-slate-900/60';
+                                                        const isPromotion = !isFirstGroup && idx < 2;
+                                                        const isRelegation = !isLastGroup && idx >= 6;
 
-                                                    return (
-                                                        <tr key={row.playerId} className={rowClass}>
-                                                            <td className="px-2 py-2 text-slate-500">{idx + 1}</td>
-                                                            <td className="px-2 py-2 font-medium text-slate-900 dark:text-white">
-                                                                <span className="inline-flex items-center gap-1">
-                                                                    <span>{row.playerName}</span>
-                                                                    {isInjuredPlayer && (
-                                                                        <span className="text-[11px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
-                                                                            {String.fromCodePoint(0x1F915)} {tr('Lesionado', 'Lesionatua')}
-                                                                        </span>
-                                                                    )}
-                                                                </span>
-                                                            </td>
-                                                            <td className="px-2 py-2 text-center font-semibold text-green-600 dark:text-green-400">{row.wins}</td>
-                                                            <td className="px-2 py-2 text-center font-semibold text-red-600 dark:text-red-400">{row.losses}</td>
-                                                            <td
-                                                                className={`px-2 py-2 text-center font-semibold ${
-                                                                    setsDiff >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'
-                                                                }`}
-                                                            >
-                                                                {setsDiff}
-                                                            </td>
-                                                            <td className="px-2 py-2 text-center text-slate-700 dark:text-slate-200">{remainingMatches}</td>
-                                                        </tr>
-                                                    );
-                                                })}
+                                                        const rowClass = isPromotion
+                                                            ? 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30'
+                                                            : isRelegation
+                                                                ? 'bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30'
+                                                                : 'hover:bg-slate-50 dark:hover:bg-slate-900/60';
+
+                                                        return (
+                                                            <tr key={row.playerId} className={rowClass}>
+                                                                <td className="px-2 py-2 text-slate-500">{idx + 1}</td>
+                                                                <td className="px-2 py-2 font-medium text-slate-900 dark:text-white">
+                                                                    <span className="inline-flex items-center gap-1">
+                                                                        <span>{row.playerName}</span>
+                                                                        {isInjuredPlayer && (
+                                                                            <span className="text-[11px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
+                                                                                {String.fromCodePoint(0x1F915)} {tr('Lesionado', 'Lesionatua')}
+                                                                            </span>
+                                                                        )}
+                                                                    </span>
+                                                                </td>
+                                                                <td className="px-2 py-2 text-center font-semibold text-green-600 dark:text-green-400">{row.wins}</td>
+                                                                <td className="px-2 py-2 text-center font-semibold text-red-600 dark:text-red-400">{row.losses}</td>
+                                                                <td
+                                                                    className={`px-2 py-2 text-center font-semibold ${
+                                                                        setsDiff >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'
+                                                                    }`}
+                                                                >
+                                                                    {setsDiff}
+                                                                </td>
+                                                                <td className="px-2 py-2 text-center text-slate-700 dark:text-slate-200">{remainingMatches}</td>
+                                                            </tr>
+                                                        );
+                                                    });
+                                                })()}
                                             </tbody>
                                         </table>
                                     </div>

@@ -147,11 +147,11 @@ export default function Blacklist() {
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-amber-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+        <div className="club-page-hero p-8 mb-8">
+          <h1 className="text-3xl font-bold mb-2">
             {`${String.fromCodePoint(0x26A0)} Lista Negra`}
           </h1>
-          <p className="text-gray-600 dark:text-gray-300">
+          <p className="club-page-hero-subtitle">
             {'Jugadores con menos participaci\u00F3n en la liga'}
           </p>
         </div>

@@ -351,12 +351,12 @@ export default function MatchHistory() {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-2xl p-8 text-white shadow-lg">
+        <div className="space-y-4 md:space-y-6">
+            <div className="club-page-hero p-8">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
                         <h1 className="text-3xl font-bold mb-2">{tr('Historial de partidos', 'Partiden historia')}</h1>
-                        <p className="text-amber-100">{tr('Consulta partidos y aplica filtros por jugadores, fechas, temporada y grupo.', 'Partidak kontsultatu eta iragazi jokalarien, daten, denboraldien eta taldeen arabera.')}</p>
+                        <p className="club-page-hero-subtitle">{tr('Consulta partidos y aplica filtros por jugadores, fechas, temporada y grupo.', 'Partidak kontsultatu eta iragazi jokalarien, daten, denboraldien eta taldeen arabera.')}</p>
                     </div>
                     {isAdmin && (
                         <button
@@ -364,7 +364,7 @@ export default function MatchHistory() {
                                 setCreatePendingError('');
                                 setShowCreatePendingModal(true);
                             }}
-                            className="px-4 py-2 rounded-lg bg-white text-amber-700 font-semibold hover:bg-amber-50 transition-colors"
+                            className="club-btn-primary px-4 py-2 text-sm"
                         >
                             {tr('+ Registrar partido (admin)', '+ Partida erregistratu (admin)')}
                         </button>
@@ -373,7 +373,7 @@ export default function MatchHistory() {
             </div>
 
             {/* Filters */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-4 md:p-6">
                 {!isAdmin && (
                     <div className="mb-4">
                         <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -394,7 +394,7 @@ export default function MatchHistory() {
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3 md:gap-4">
                     {effectiveOnlyMyMatches ? (
                         <div>
                             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -517,9 +517,9 @@ export default function MatchHistory() {
             {/* Match List */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                 {isLoading ? (
-                    <div className="p-12 text-center"><Loader /></div>
+                    <div className="p-8 md:p-12 text-center"><Loader /></div>
                 ) : filteredMatches.length === 0 ? (
-                    <div className="p-12 text-center text-slate-600 dark:text-slate-400">
+                    <div className="p-8 md:p-12 text-center text-slate-600 dark:text-slate-400">
                         {matches.length === 0 ? tr('No hay partidos registrados todavia', 'Oraindik ez dago partida erregistraturik') : tr('No se encontraron partidos con los filtros aplicados', 'Ez da partidarik aurkitu aplikatutako iragazkiekin')}
                     </div>
                 ) : (
@@ -538,10 +538,10 @@ export default function MatchHistory() {
                                 const canDelete = isAdmin;
 
                                 return (
-                                    <div key={match.id} className="p-6 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors group">
+                                    <div key={match.id} className="p-3 md:p-6 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors group">
                                         <div className="flex items-center justify-between">
-                                            <div className="flex items-center space-x-4">
-                                                <div className="text-4xl">
+                                            <div className="flex items-center space-x-3 md:space-x-4 min-w-0">
+                                                <div className="text-3xl md:text-4xl shrink-0">
                                                     {
                                                     match.matchStatus === 'INJURY'
                                                         ? String.fromCodePoint(0x1F915)
@@ -552,13 +552,13 @@ export default function MatchHistory() {
                                                                 : String.fromCodePoint(0x1F3BE)
                                                 }
                                                 </div>
-                                                <div>
+                                                <div className="min-w-0">
                                                     {!isAdmin && (
-                                                        <div className="flex items-center space-x-2">
+                                                        <div className="flex items-center space-x-2 min-w-0">
                                                             {isCurrentPlayerInMatch ? (
-                                                                <span className="font-medium text-slate-900 dark:text-white">vs {opponent.name}</span>
+                                                                <span className="font-medium text-slate-900 dark:text-white truncate">vs {opponent.name}</span>
                                                             ) : (
-                                                                <span className="font-medium text-slate-900 dark:text-white">
+                                                                <span className="font-medium text-slate-900 dark:text-white truncate">
                                                                     <span className={match.winnerId === match.player1Id ? 'text-green-600 dark:text-green-400 font-semibold' : ''}>
                                                                         {match.player1?.name}
                                                                     </span>
@@ -569,15 +569,15 @@ export default function MatchHistory() {
                                                                 </span>
                                                             )}
                                                             {isCurrentPlayerInMatch && opponent.nickname && (
-                                                                <span className="text-sm text-slate-500 dark:text-slate-400">"{opponent.nickname}"</span>
+                                                                <span className="text-xs md:text-sm text-slate-500 dark:text-slate-400 truncate">"{opponent.nickname}"</span>
                                                             )}
                                                         </div>
                                                     )}
-                                                    <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                                                    <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 mt-0.5 md:mt-1">
                                                         {match.group.name} - {formatDate(new Date(match.date))}
                                                     </p>
                                                     {match.group.season && (
-                                                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
+                                                        <p className="text-[11px] md:text-xs text-amber-600 dark:text-amber-400 mt-0.5">
                                                             {match.group.season.name}
                                                         </p>
                                                     )}
@@ -589,7 +589,7 @@ export default function MatchHistory() {
                                                 </div>
                                             </div>
 
-                                            <div className="flex flex-col items-end gap-3">
+                                            <div className="flex flex-col items-end gap-2 md:gap-3 shrink-0">
                                                 {/* Pending Match Indicator */}
                                                 {isAdmin && (match.gamesP1 === null || match.gamesP2 === null) && (
                                                     <div className="text-right">
@@ -601,7 +601,7 @@ export default function MatchHistory() {
                                                 )}
                                                 {match.matchStatus === 'PLAYED' && (
                                                     <div className="text-right">
-                                                        <div className="text-3xl font-bold text-slate-900 dark:text-white">
+                                                        <div className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white leading-none">
                                                             {showPersonalView ? `${myGames} - ${opponentGames}` : `${match.gamesP1} - ${match.gamesP2}`}
                                                         </div>
                                                         {isAdmin ? (
@@ -618,11 +618,11 @@ export default function MatchHistory() {
                                                         ) : (
                                                             <>
                                                                 {showPersonalView ? (
-                                                                    <p className={`text-sm font-medium ${won ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                                                    <p className={`text-xs md:text-sm font-semibold ${won ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                                                                         {won ? tr('Victoria', 'Garaipena') : tr('Derrota', 'Porrota')}
                                                                     </p>
                                                                 ) : (
-                                                                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                                                                    <p className="text-xs md:text-sm font-medium text-slate-600 dark:text-slate-400">
                                                                         {tr('Resultado', 'Emaitza')}
                                                                     </p>
                                                                 )}
@@ -664,25 +664,25 @@ export default function MatchHistory() {
 
                         {/* Pagination */}
                         {totalPages > 1 && (
-                            <div className="p-6 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                                <div className="text-sm text-slate-600 dark:text-slate-400">
+                            <div className="p-3 md:p-6 border-t border-slate-200 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                                <div className="text-xs md:text-sm text-slate-600 dark:text-slate-400 text-center md:text-left">
                                     {tr('Mostrando', 'Erakusten')} {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredMatches.length)} {tr('de', ' / ')} {filteredMatches.length} {tr('partidos', 'partida')}
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <button
                                         onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                                         disabled={currentPage === 1}
-                                        className="px-4 py-2 text-sm bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="px-3 md:px-4 py-2 text-xs md:text-sm bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {tr('Anterior', 'Aurrekoa')}
                                     </button>
-                                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                                    <span className="text-xs md:text-sm text-slate-600 dark:text-slate-400">
                                         {tr('Pagina', 'Orria')} {currentPage} {tr('de', '/')} {totalPages}
                                     </span>
                                     <button
                                         onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                                         disabled={currentPage === totalPages}
-                                        className="px-4 py-2 text-sm bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="px-3 md:px-4 py-2 text-xs md:text-sm bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {tr('Siguiente', 'Hurrengoa')}
                                     </button>
@@ -854,7 +854,7 @@ export default function MatchHistory() {
                                 <button
                                     type="submit"
                                     disabled={createPendingMatchMutation.isPending}
-                                    className="px-4 py-2 text-white bg-amber-600 hover:bg-amber-700 rounded-lg font-medium transition-colors disabled:opacity-50"
+                                    className="px-4 py-2 club-btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {createPendingMatchMutation.isPending ? tr('Registrando...', 'Erregistratzen...') : tr('Registrar resultado', 'Emaitza erregistratu')}
                                 </button>
@@ -876,5 +876,3 @@ export default function MatchHistory() {
         </div>
     );
 }
-
-

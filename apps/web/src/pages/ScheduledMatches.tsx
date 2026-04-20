@@ -130,7 +130,7 @@ export default function ScheduledMatchesPage() {
   if (groupLoading || loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-club-yellow-600"></div>
       </div>
     );
   }
@@ -138,7 +138,7 @@ export default function ScheduledMatchesPage() {
   if (!currentGroup) {
     return (
       <div className="container mx-auto p-6 text-center">
-        <p className="text-gray-600">{t('scheduledMatches.noActiveGroup')}</p>
+        <p className="text-club-black-600">{t('scheduledMatches.noActiveGroup')}</p>
       </div>
     );
   }
@@ -148,8 +148,8 @@ export default function ScheduledMatchesPage() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">{t('scheduledMatches.title')}</h1>
-        <p className="text-gray-600">{currentGroup.name}</p>
+        <h1 className="text-3xl font-bold text-club-black-900 mb-2">{t('scheduledMatches.title')}</h1>
+        <p className="text-club-black-600">{currentGroup.name}</p>
       </div>
 
       <div className="flex gap-3 mb-6">
@@ -159,8 +159,8 @@ export default function ScheduledMatchesPage() {
             onClick={() => setFilterStatus(status)}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               filterStatus === status
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+                ? 'bg-club-black-900 text-club-yellow-300'
+                : 'bg-amber-100 text-club-black-800 hover:bg-amber-200'
             }`}
           >
             {status === 'all' && t('scheduledMatches.filterAll')}
@@ -171,8 +171,8 @@ export default function ScheduledMatchesPage() {
       </div>
 
       {filteredMatches.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-md p-8 text-center">
-          <p className="text-gray-600 text-lg">
+        <div className="bg-white rounded-lg shadow-md border border-amber-200 p-8 text-center">
+          <p className="text-club-black-600 text-lg">
             {filterStatus === 'upcoming'
               ? t('scheduledMatches.emptyUpcoming')
               : filterStatus === 'past'
@@ -191,17 +191,17 @@ export default function ScheduledMatchesPage() {
             return (
               <div
                 key={match.id}
-                className={`bg-white rounded-lg shadow-md p-6 border-l-4 transition-all ${
-                  isPast ? 'border-gray-400 opacity-75' : 'border-blue-500'
+                className={`bg-white rounded-lg shadow-md border border-amber-200 p-6 border-l-4 transition-all ${
+                  isPast ? 'border-gray-400 opacity-75' : 'border-club-yellow-500'
                 }`}
               >
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-1">
-                    <h3 className="font-semibold text-gray-800 text-lg mb-2">
+                    <h3 className="font-semibold text-club-black-900 text-lg mb-2">
                       {match.player1.name}
                     </h3>
-                    <p className="text-gray-600 text-center mb-2">vs</p>
-                    <h3 className="font-semibold text-gray-800 text-lg">
+                    <p className="text-club-black-600 text-center mb-2">vs</p>
+                    <h3 className="font-semibold text-club-black-900 text-lg">
                       {match.player2.name}
                     </h3>
                   </div>
@@ -210,7 +210,7 @@ export default function ScheduledMatchesPage() {
                     {isEditing ? (
                       <>
                         <div>
-                          <label className="text-sm font-medium text-gray-700">{t('scheduledMatches.fieldDateTime')}</label>
+                          <label className="text-sm font-medium text-club-black-700">{t('scheduledMatches.fieldDateTime')}</label>
                           <input
                             type="datetime-local"
                             value={editFormData.scheduledDate}
@@ -220,11 +220,11 @@ export default function ScheduledMatchesPage() {
                                 scheduledDate: e.target.value,
                               }))
                             }
-                            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg"
+                            className="w-full mt-1 px-3 py-2 border border-amber-200 rounded-lg"
                           />
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-700">{t('scheduledMatches.fieldLocation')}</label>
+                          <label className="text-sm font-medium text-club-black-700">{t('scheduledMatches.fieldLocation')}</label>
                           <input
                             type="text"
                             value={editFormData.location}
@@ -234,32 +234,32 @@ export default function ScheduledMatchesPage() {
                                 location: e.target.value,
                               }))
                             }
-                            className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg"
+                            className="w-full mt-1 px-3 py-2 border border-amber-200 rounded-lg"
                           />
                         </div>
                       </>
                     ) : (
                       <>
                         <div className="flex items-center gap-2">
-                          <span className="text-gray-600">📅</span>
+                          <span className="text-club-black-600">📅</span>
                           <div>
-                            <p className="text-sm text-gray-600">{t('scheduledMatches.fieldDateTime')}</p>
-                            <p className="font-semibold text-gray-800">
+                            <p className="text-sm text-club-black-600">{t('scheduledMatches.fieldDateTime')}</p>
+                            <p className="font-semibold text-club-black-900">
                               {format(matchDate, 'EEEE d MMMM yyyy HH:mm', { locale: dateFnsLocale })}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-gray-600">📍</span>
+                          <span className="text-club-black-600">📍</span>
                           <div>
-                            <p className="text-sm text-gray-600">{t('scheduledMatches.fieldLocation')}</p>
-                            <p className="font-semibold text-gray-800">{match.location}</p>
+                            <p className="text-sm text-club-black-600">{t('scheduledMatches.fieldLocation')}</p>
+                            <p className="font-semibold text-club-black-900">{match.location}</p>
                           </div>
                         </div>
                         {match.googleEventId && (
                           <div className="flex items-center gap-2">
-                            <span className="text-gray-600">🔗</span>
-                            <p className="text-sm text-blue-600">{t('scheduledMatches.googleSync')}</p>
+                            <span className="text-club-black-600">🔗</span>
+                            <p className="text-sm text-club-yellow-700">{t('scheduledMatches.googleSync')}</p>
                           </div>
                         )}
                       </>
@@ -273,13 +273,13 @@ export default function ScheduledMatchesPage() {
                       <>
                         <button
                           onClick={() => handleSaveEdit(match.id)}
-                          className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                          className="flex-1 bg-club-yellow-500 text-club-black-900 py-2 rounded-lg hover:bg-club-yellow-400 transition-colors font-medium"
                         >
                           {t('scheduledMatches.save')}
                         </button>
                         <button
                           onClick={() => setEditingMatchId(null)}
-                          className="flex-1 bg-gray-400 text-white py-2 rounded-lg hover:bg-gray-500 transition-colors font-medium"
+                          className="flex-1 bg-gray-300 text-club-black-800 py-2 rounded-lg hover:bg-gray-400 transition-colors font-medium"
                         >
                           {t('scheduledMatches.cancelEdit')}
                         </button>
@@ -288,7 +288,7 @@ export default function ScheduledMatchesPage() {
                       <>
                         <button
                           onClick={() => handleEditClick(match)}
-                          className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                          className="flex-1 bg-club-black-900 text-club-yellow-300 py-2 rounded-lg hover:bg-club-black-800 transition-colors font-medium"
                         >
                           {t('scheduledMatches.edit')}
                         </button>
@@ -310,30 +310,32 @@ export default function ScheduledMatchesPage() {
 
       {matches.length > 0 && (
         <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-blue-50 rounded-lg p-4 text-center">
-            <p className="text-3xl font-bold text-blue-600">{matches.length}</p>
-            <p className="text-gray-600 text-sm">{t('scheduledMatches.totalMatches')}</p>
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-center">
+            <p className="text-3xl font-bold text-club-black-900">{matches.length}</p>
+            <p className="text-club-black-600 text-sm">{t('scheduledMatches.totalMatches')}</p>
           </div>
-          <div className="bg-green-50 rounded-lg p-4 text-center">
-            <p className="text-3xl font-bold text-green-600">
+          <div className="bg-club-yellow-50 border border-club-yellow-200 rounded-lg p-4 text-center">
+            <p className="text-3xl font-bold text-club-yellow-700">
               {matches.filter(m => new Date(m.scheduledDate) >= new Date()).length}
             </p>
-            <p className="text-gray-600 text-sm">{t('scheduledMatches.totalUpcoming')}</p>
+            <p className="text-club-black-600 text-sm">{t('scheduledMatches.totalUpcoming')}</p>
           </div>
-          <div className="bg-purple-50 rounded-lg p-4 text-center">
-            <p className="text-3xl font-bold text-purple-600">
+          <div className="bg-gray-100 border border-amber-200 rounded-lg p-4 text-center">
+            <p className="text-3xl font-bold text-club-black-700">
               {matches.filter(m => new Date(m.scheduledDate) < new Date()).length}
             </p>
-            <p className="text-gray-600 text-sm">{t('scheduledMatches.totalPast')}</p>
+            <p className="text-club-black-600 text-sm">{t('scheduledMatches.totalPast')}</p>
           </div>
-          <div className="bg-orange-50 rounded-lg p-4 text-center">
-            <p className="text-3xl font-bold text-orange-600">
+          <div className="bg-club-black-900 rounded-lg p-4 text-center">
+            <p className="text-3xl font-bold text-club-yellow-300">
               {matches.filter(m => m.googleEventId).length}
             </p>
-            <p className="text-gray-600 text-sm">{t('scheduledMatches.totalGoogle')}</p>
+            <p className="text-club-yellow-100 text-sm">{t('scheduledMatches.totalGoogle')}</p>
           </div>
         </div>
       )}
     </div>
   );
 }
+
+

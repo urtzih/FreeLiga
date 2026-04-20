@@ -35,46 +35,46 @@ export default function PublicHistoricalStats() {
     }
 
     return (
-        <div className="bg-gradient-to-r from-slate-50 to-amber-50 rounded-xl shadow-lg p-3 sm:p-6 mb-6 sm:mb-8">
-            <h2 className="text-lg sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-6 text-center">
+        <div className="bg-gradient-to-r from-club-black-900 to-club-black-800 rounded-xl shadow-lg border border-club-yellow-700/40 p-3 sm:p-6 mb-6 sm:mb-8">
+            <h2 className="text-lg sm:text-2xl font-bold text-club-yellow-200 mb-3 sm:mb-6 text-center">
                 📚 {t('public.historical.title')}
             </h2>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-6">
-                <div className="bg-white rounded-lg p-2 sm:p-6 text-center border-b-4 border-amber-500 hover:shadow-lg transition-shadow">
-                    <div className="text-2xl sm:text-4xl font-bold text-amber-600 mb-1 sm:mb-2">
+                <div className="bg-white/95 rounded-lg p-2 sm:p-6 text-center border-b-4 border-club-yellow-500 hover:shadow-lg transition-shadow">
+                    <div className="text-2xl sm:text-4xl font-bold text-club-black-900 mb-1 sm:mb-2">
                         {stats.totalPlayedMatches}
                     </div>
-                    <p className="text-xs sm:text-base text-gray-600 font-medium">🎾 {t('public.historical.totalMatches')}</p>
-                    <p className="hidden sm:block text-xs text-gray-500 mt-2">{t('public.historical.totalMatchesNote')}</p>
+                    <p className="text-xs sm:text-base text-club-black-700 font-medium">🎾 {t('public.historical.totalMatches')}</p>
+                    <p className="hidden sm:block text-xs text-club-black-500 mt-2">{t('public.historical.totalMatchesNote')}</p>
                 </div>
 
-                <div className="bg-white rounded-lg p-2 sm:p-6 text-center border-b-4 border-amber-500 hover:shadow-lg transition-shadow">
-                    <div className="text-2xl sm:text-4xl font-bold text-amber-600 mb-1 sm:mb-2">
+                <div className="bg-white/95 rounded-lg p-2 sm:p-6 text-center border-b-4 border-club-yellow-500 hover:shadow-lg transition-shadow">
+                    <div className="text-2xl sm:text-4xl font-bold text-club-black-900 mb-1 sm:mb-2">
                         {stats.totalSeasons}
                     </div>
-                    <p className="text-xs sm:text-base text-gray-600 font-medium">🗓️ {t('public.historical.seasons')}</p>
-                    <p className="hidden sm:block text-xs text-gray-500 mt-2">{t('public.historical.seasonsNote')}</p>
+                    <p className="text-xs sm:text-base text-club-black-700 font-medium">🗓️ {t('public.historical.seasons')}</p>
+                    <p className="hidden sm:block text-xs text-club-black-500 mt-2">{t('public.historical.seasonsNote')}</p>
                 </div>
 
-                <div className="bg-white rounded-lg p-2 sm:p-6 text-center border-b-4 border-amber-500 hover:shadow-lg transition-shadow">
-                    <div className="text-2xl sm:text-4xl font-bold text-amber-600 mb-1 sm:mb-2">
+                <div className="bg-white/95 rounded-lg p-2 sm:p-6 text-center border-b-4 border-club-yellow-500 hover:shadow-lg transition-shadow">
+                    <div className="text-2xl sm:text-4xl font-bold text-club-black-900 mb-1 sm:mb-2">
                         {stats.totalGroups}
                     </div>
-                    <p className="text-xs sm:text-base text-gray-600 font-medium">🏆 {t('public.historical.groups')}</p>
-                    <p className="hidden sm:block text-xs text-gray-500 mt-2">{t('public.historical.groupsNote')}</p>
+                    <p className="text-xs sm:text-base text-club-black-700 font-medium">🏆 {t('public.historical.groups')}</p>
+                    <p className="hidden sm:block text-xs text-club-black-500 mt-2">{t('public.historical.groupsNote')}</p>
                 </div>
 
-                <div className="bg-white rounded-lg p-2 sm:p-6 text-center border-b-4 border-emerald-500 hover:shadow-lg transition-shadow">
-                    <div className="text-2xl sm:text-4xl font-bold text-emerald-600 mb-1 sm:mb-2">
+                <div className="bg-white/95 rounded-lg p-2 sm:p-6 text-center border-b-4 border-club-yellow-500 hover:shadow-lg transition-shadow">
+                    <div className="text-2xl sm:text-4xl font-bold text-club-black-900 mb-1 sm:mb-2">
                         {stats.activePlayers + stats.inactivePlayers}
                     </div>
-                    <p className="text-xs sm:text-base text-gray-600 font-medium">👥 {t('public.historical.players')}</p>
-                    <p className="hidden sm:block text-xs text-gray-500 mt-2">{t('public.historical.playersNote')}</p>
+                    <p className="text-xs sm:text-base text-club-black-700 font-medium">👥 {t('public.historical.players')}</p>
+                    <p className="hidden sm:block text-xs text-club-black-500 mt-2">{t('public.historical.playersNote')}</p>
                 </div>
             </div>
             {stats.cached && (
-                <p className="text-xs text-gray-500 text-center mt-4">
+                <p className="text-xs text-amber-100/75 text-center mt-4">
                     {t('common.weeklyDataUpdated', { date: formatDateTime(stats.updatedAt) })}
                 </p>
             )}

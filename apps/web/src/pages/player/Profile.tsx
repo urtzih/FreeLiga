@@ -308,9 +308,9 @@ export default function Profile() {
     <div className="space-y-6">
       {/* Encabezado */}
       {showBanner && (
-        <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-2xl p-8 text-white shadow-lg transition-all duration-300">
+        <div className="club-page-hero p-8 transition-all duration-300">
           <h1 className="text-3xl font-bold mb-2">Mi perfil</h1>
-          <p className="text-amber-100">Gestiona tu información personal</p>
+          <p className="club-page-hero-subtitle">Gestiona tu información personal</p>
         </div>
       )}
 
@@ -321,7 +321,7 @@ export default function Profile() {
           {!isEditing && (
             <button
               onClick={() => setIsEditing(true)}
-              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors text-sm font-medium"
+              className="px-4 py-2 text-sm club-btn-yellow"
             >
               ✏️ Editar
             </button>
@@ -504,7 +504,7 @@ export default function Profile() {
                 <button
                   type="submit"
                   disabled={updateMutation.isPending}
-                  className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg font-medium transition-colors"
+                  className="flex-1 px-6 py-3 club-btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {updateMutation.isPending ? 'Guardando...' : '💾 Guardar Cambios'}
                 </button>
@@ -512,7 +512,7 @@ export default function Profile() {
                   type="button"
                   onClick={handleCancel}
                   disabled={updateMutation.isPending}
-                  className="flex-1 px-6 py-3 bg-slate-300 hover:bg-slate-400 dark:bg-slate-600 dark:hover:bg-slate-500 text-slate-900 dark:text-white rounded-lg font-medium transition-colors"
+                  className="flex-1 px-6 py-3 club-btn-subtle"
                 >
                   ❌ Cancelar
                 </button>
@@ -532,7 +532,7 @@ export default function Profile() {
           {!isEditingEmail && (
             <button
               onClick={() => setIsEditingEmail(true)}
-              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors text-sm font-medium"
+              className="px-4 py-2 text-sm club-btn-yellow"
             >
               🔑 Cambiar Email
             </button>
@@ -571,7 +571,7 @@ export default function Profile() {
                 <button
                   type="submit"
                   disabled={updateEmailMutation.isPending}
-                  className="flex-1 px-6 py-3 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white rounded-lg font-medium transition-colors"
+                  className="flex-1 px-6 py-3 club-btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {updateEmailMutation.isPending ? 'Actualizando...' : '✓ Confirmar Cambio'}
                 </button>
@@ -579,7 +579,7 @@ export default function Profile() {
                   type="button"
                   onClick={handleEmailCancel}
                   disabled={updateEmailMutation.isPending}
-                  className="flex-1 px-6 py-3 bg-slate-300 hover:bg-slate-400 dark:bg-slate-600 dark:hover:bg-slate-500 text-slate-900 dark:text-white rounded-lg font-medium transition-colors"
+                  className="flex-1 px-6 py-3 club-btn-subtle"
                 >
                   ❌ Cancelar
                 </button>
@@ -605,7 +605,7 @@ export default function Profile() {
           {!isEditingPassword && (
             <button
               onClick={() => setIsEditingPassword(true)}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm font-medium"
+              className="px-4 py-2 text-sm club-btn-yellow"
             >
               🔐 Cambiar Contraseña
             </button>
@@ -672,7 +672,7 @@ export default function Profile() {
                 <button
                   type="submit"
                   disabled={updatePasswordMutation.isPending}
-                  className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg font-medium transition-colors"
+                  className="flex-1 px-6 py-3 club-btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {updatePasswordMutation.isPending ? 'Actualizando...' : '✓ Confirmar Cambio'}
                 </button>
@@ -680,7 +680,7 @@ export default function Profile() {
                   type="button"
                   onClick={handlePasswordCancel}
                   disabled={updatePasswordMutation.isPending}
-                  className="flex-1 px-6 py-3 bg-slate-300 hover:bg-slate-400 dark:bg-slate-600 dark:hover:bg-slate-500 text-slate-900 dark:text-white rounded-lg font-medium transition-colors"
+                  className="flex-1 px-6 py-3 club-btn-subtle"
                 >
                   ❌ Cancelar
                 </button>
@@ -710,4 +710,6 @@ export default function Profile() {
     </div>
   );
 }
+
+
 

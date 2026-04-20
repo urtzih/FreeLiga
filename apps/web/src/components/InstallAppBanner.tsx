@@ -31,7 +31,6 @@ export default function InstallAppBanner() {
     const {
         visible,
         canInstall,
-        canShowIosInstructions,
         isInstalled,
         install,
         dismiss,
@@ -126,10 +125,17 @@ export default function InstallAppBanner() {
     };
 
     return (
-        <div className="bg-gradient-to-r from-emerald-700 via-yellow-700 to-yellow-700 text-white px-3 py-3">
+        <div className="bg-gradient-to-r from-zinc-100 via-white to-zinc-100 text-club-black-900 px-3 py-3 border-y border-club-yellow-500/50">
             <div className="max-w-5xl mx-auto">
-                <div className="rounded-2xl border border-white/25 bg-white/10 backdrop-blur-md px-4 py-3 shadow-lg">
-                    <div className="flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
+                <div className="relative rounded-2xl border border-yellow-200/35 bg-black/65 text-white backdrop-blur-md px-4 py-3 shadow-[0_14px_28px_rgba(0,0,0,0.35)]">
+                    <button
+                        onClick={dismiss}
+                        aria-label="Cerrar"
+                        className="absolute top-2 right-2 z-10 h-8 w-8 rounded-lg bg-black/40 border border-white/15 text-zinc-100 hover:bg-black/55 transition-colors inline-flex items-center justify-center text-lg leading-none"
+                    >
+                        ×
+                    </button>
+                    <div className="pr-10 sm:pr-12 flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
                         <div className="flex items-center gap-3">
                             <img
                                 src="/logo.jpg"
@@ -137,12 +143,12 @@ export default function InstallAppBanner() {
                                 className="h-11 w-11 rounded-xl object-cover ring-2 ring-white/60 shadow-md"
                             />
                             <div>
-                                <p className="text-[11px] uppercase tracking-wide text-emerald-100 font-semibold">
+                                <p className="text-[11px] uppercase tracking-wide text-yellow-200 font-semibold">
                                     FreeLiga App
                                 </p>
                                 <p className="text-sm sm:text-base">
                                     {!notificationsGranted && supportsNotifications
-                                        ? 'Activa notificaciones para recibir avisos de torneos, temporada y recordatorios.'
+                                        ? 'Activa notificaciones para recibir avisos de torneos, partidos y recordatorios.'
                                         : isMobile && canInstall
                                           ? 'Instala FreeLiga en tu movil para acceder rapido y recibir avisos.'
                                           : 'En iPhone: pulsa Compartir y luego Anadir a pantalla de inicio.'}
@@ -155,7 +161,7 @@ export default function InstallAppBanner() {
                                 <button
                                     onClick={handleEnableAll}
                                     disabled={isEnabling}
-                                    className="px-4 py-2 rounded-xl bg-white text-emerald-700 font-semibold shadow-lg shadow-emerald-900/30 ring-2 ring-white/70 hover:bg-emerald-50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                                    className="px-4 py-2 rounded-xl bg-yellow-400 text-black font-semibold shadow-lg shadow-black/30 ring-2 ring-yellow-200/80 hover:bg-yellow-300 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                                 >
                                     {isEnabling
                                         ? 'Activando...'
@@ -169,25 +175,11 @@ export default function InstallAppBanner() {
                             {isMobile && canInstall && !supportsNotifications && (
                                 <button
                                     onClick={install}
-                                    className="px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 transition-colors"
+                                    className="px-3 py-2 rounded-xl bg-zinc-800/75 border border-yellow-200/30 text-yellow-50 hover:bg-zinc-700/75 transition-colors"
                                 >
                                     Instalar app
                                 </button>
                             )}
-                            {canShowIosInstructions && (
-                                <button
-                                    onClick={() => showToast('En iPhone usa Compartir > Anadir a pantalla de inicio', 'info')}
-                                    className="px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 transition-colors"
-                                >
-                                    Ver pasos
-                                </button>
-                            )}
-                            <button
-                                onClick={dismiss}
-                                className="px-3 py-2 rounded-xl bg-black/20 hover:bg-black/30 transition-colors"
-                            >
-                                Ahora no
-                            </button>
                         </div>
                     </div>
                 </div>

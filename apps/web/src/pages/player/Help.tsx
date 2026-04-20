@@ -33,9 +33,9 @@ export default function Help() {
 
     return (
         <div className="max-w-4xl mx-auto space-y-8">
-            <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-2xl p-8 text-white shadow-lg">
+            <div className="club-page-hero p-8">
                 <h1 className="text-3xl font-bold mb-2">{tr('Manual de jugador', 'Jokalari gida')}</h1>
-                <p className="text-amber-100">
+                <p className="club-page-hero-subtitle">
                     {tr(
                         'Gu\u00EDa r\u00E1pida y actualizada para usar FreeSquash Liga.',
                         'FreeSquash Liga erabiltzeko gida azkar eta eguneratua.',
@@ -151,23 +151,24 @@ export default function Help() {
                 </div>
                 <div>
                     <h3 className="font-semibold text-slate-900 dark:text-white mb-1">{tr('La web va lenta o no carga', 'Weba motel dabil edo ez du kargatzen')}</h3>
-                    <p>{tr('Haz recarga dura (Ctrl+F5). Si sigue, reporta bug.', 'Egin karga gogorra (Ctrl+F5). Jarraitzen badu, bug bat bidali.')}</p>
+                    <p>{tr('Haz recarga dura (Ctrl+F5). Si sigue, envia un bug o sugerencia.', 'Egin karga gogorra (Ctrl+F5). Jarraitzen badu, bidali akatsa edo iradokizuna.')}</p>
                 </div>
             </Section>
 
-            <Section title={tr('Reportar un problema', 'Arazo bat bidali')} tone="success">
+            <Section title={tr('Buzon de bugs y sugerencias', 'Akats eta iradokizunen postontzia')} tone="success">
                 <p>
                     {tr(
-                        'Si encuentras un error, env\u00EDa un reporte con pasos claros: qu\u00E9 hiciste, qu\u00E9 esperabas y qu\u00E9 pas\u00F3.',
-                        'Errore bat aurkitzen baduzu, bidali txosten bat pauso argiekin: zer egin duzun, zer espero zenuen eta zer gertatu den.',
+                        'Si encuentras un error o tienes una mejora en mente, envia un mensaje con contexto claro.',
+                        'Errore bat aurkitzen baduzu edo hobekuntza bat baduzu buruan, bidali mezu bat testuinguru argiarekin.',
                     )}
                 </p>
                 <div>
                     <Link to="/report-bug" className="text-green-700 dark:text-green-300 font-semibold hover:underline">
-                        {tr('Ir a Reportar bug', 'Joan Bug-a bidaltzera')}
+                        {tr('Ir al buzon', 'Joan postontzira')}
                     </Link>
                 </div>
             </Section>
         </div>
     );
 }
+

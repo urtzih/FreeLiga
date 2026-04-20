@@ -4,48 +4,48 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 45 35% 97%;
+    --foreground: 220 18% 8%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 220 18% 8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --popover-foreground: 220 18% 8%;
+    --primary: 45 100% 50%;
+    --primary-foreground: 220 18% 8%;
+    --secondary: 44 70% 90%;
+    --secondary-foreground: 220 20% 10%;
+    --muted: 45 30% 93%;
+    --muted-foreground: 220 10% 35%;
+    --accent: 45 96% 52%;
+    --accent-foreground: 220 20% 8%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --border: 42 42% 78%;
+    --input: 42 42% 84%;
+    --ring: 45 100% 50%;
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --background: 220 20% 7%;
+    --foreground: 45 100% 91%;
+    --card: 220 18% 10%;
+    --card-foreground: 45 95% 90%;
+    --popover: 220 18% 10%;
+    --popover-foreground: 45 95% 90%;
+    --primary: 45 100% 52%;
+    --primary-foreground: 220 20% 8%;
+    --secondary: 220 10% 18%;
+    --secondary-foreground: 46 65% 86%;
+    --muted: 220 10% 16%;
+    --muted-foreground: 45 25% 68%;
+    --accent: 45 90% 42%;
+    --accent-foreground: 220 20% 8%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --border: 45 30% 28%;
+    --input: 220 10% 18%;
+    --ring: 45 96% 52%;
   }
 }
 
@@ -55,6 +55,105 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(circle at top, hsl(45 100% 52% / 0.16), transparent 40%),
+      linear-gradient(180deg, hsl(var(--background)), hsl(var(--background)));
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  .club-hero-pattern {
+    background-image:
+      radial-gradient(circle at 20% -10%, hsl(45 100% 50% / 0.42), transparent 48%),
+      linear-gradient(180deg, hsl(45 92% 52%) 0%, hsl(45 94% 48%) 36%, hsl(225 16% 9%) 100%);
+  }
+
+  .club-dither-overlay {
+    pointer-events: none;
+    background-image:
+      radial-gradient(circle at 50% 120%, hsl(220 20% 7% / 0.78) 0%, hsl(220 20% 7% / 0.62) 30%, transparent 62%),
+      repeating-radial-gradient(circle at 50% 100%, hsl(220 20% 7% / 0.18) 0 1px, transparent 1px 5px);
+  }
+
+  .club-surface {
+    @apply bg-white border border-amber-200/70 rounded-xl shadow-lg;
+  }
+
+  .club-cta {
+    @apply inline-block px-8 py-3 text-sm sm:text-base font-semibold rounded-lg transition-all;
+    @apply bg-yellow-500 text-black hover:bg-yellow-400 shadow-md hover:shadow-lg;
+  }
+
+  .club-btn-yellow {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-200;
+    @apply bg-yellow-400 text-black border-2 border-black/90 shadow-lg;
+    @apply hover:bg-yellow-300 hover:-translate-y-0.5 hover:shadow-xl;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 focus-visible:ring-offset-2;
+  }
+
+  .club-btn-dark {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-all duration-200;
+    @apply bg-zinc-900 text-amber-200 border-2 border-amber-500/75 shadow-[0_6px_16px_rgba(0,0,0,0.2)];
+    @apply hover:bg-zinc-800 hover:border-amber-400 hover:text-amber-100 hover:-translate-y-0.5;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 focus-visible:ring-offset-amber-50;
+  }
+
+  .club-btn-primary {
+    @apply club-btn-yellow;
+  }
+
+  .club-btn-secondary {
+    @apply club-btn-dark;
+  }
+
+  .club-btn-subtle {
+    @apply inline-flex items-center justify-center rounded-lg font-medium transition-colors duration-200;
+    @apply border border-black/20 bg-white text-zinc-700;
+    @apply hover:bg-zinc-50 hover:border-black/35;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 focus-visible:ring-offset-2;
+  }
+
+  .club-btn-tertiary {
+    @apply inline-flex items-center justify-center rounded-lg font-medium transition-colors duration-200;
+    @apply border border-yellow-300/80 bg-yellow-100 text-zinc-800;
+    @apply hover:bg-yellow-200 hover:border-yellow-400;
+    @apply dark:bg-zinc-800 dark:text-amber-100 dark:border-amber-500/35 dark:hover:bg-zinc-700;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 focus-visible:ring-offset-2;
+  }
+
+  .club-step-card {
+    @apply rounded-2xl border border-amber-100/30 bg-black/40 backdrop-blur-sm px-4 py-5;
+    @apply shadow-[0_14px_30px_rgba(0,0,0,0.34)];
+  }
+
+  .club-reading-panel {
+    @apply rounded-3xl border border-amber-100/35 bg-black/45 backdrop-blur-md;
+    @apply px-4 py-6 sm:px-8 sm:py-10 shadow-[0_20px_40px_rgba(0,0,0,0.42)];
+  }
+
+  .club-page-hero {
+    @apply rounded-2xl border border-amber-400/45 bg-gradient-to-r from-zinc-900 to-zinc-800 text-white shadow-lg;
+  }
+
+  .club-page-hero-subtitle {
+    @apply text-amber-100;
+  }
+}
+
+@media (max-width: 640px) {
+  .club-page-hero.p-8 {
+    padding: 1.25rem;
+  }
+
+  .club-page-hero h1 {
+    font-size: 1.5rem;
+    line-height: 2rem;
+    margin-bottom: 0.375rem;
+  }
+
+  .club-page-hero .club-page-hero-subtitle {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
   }
 }

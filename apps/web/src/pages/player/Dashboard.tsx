@@ -82,9 +82,9 @@ export default function Dashboard() {
     return (
         <div className="space-y-3 md:space-y-6">
             {showBanner && (
-                <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-xl md:rounded-2xl p-4 md:p-8 text-white shadow-lg transition-all duration-300">
+                <div className="club-page-hero rounded-xl md:rounded-2xl p-4 md:p-8 text-white shadow-lg transition-all duration-300">
                     <h1 className="text-xl md:text-3xl font-bold mb-1 md:mb-2">{t('dashboard.welcomeBack', { name: user?.player?.name ?? '' })}</h1>
-                    <p className="text-sm md:text-base text-amber-100">{t('dashboard.subtitle')}</p>
+                    <p className="text-sm md:text-base club-page-hero-subtitle">{t('dashboard.subtitle')}</p>
                 </div>
             )}
 
@@ -99,8 +99,7 @@ export default function Dashboard() {
                             <p className="text-white/90 text-sm md:text-lg">
                                 {playerStats.currentStreak > 0
                                     ? t('dashboard.streakWins', { count: Math.abs(playerStats.currentStreak) })
-                                    : t('dashboard.streakLosses', { count: Math.abs(playerStats.currentStreak) })}{' '}
-                                {playerStats.currentStreak > 0 ? '🔥' : '💧'}
+                                    : t('dashboard.streakLosses', { count: Math.abs(playerStats.currentStreak) })}
                             </p>
                         </div>
                         <div className="text-4xl md:text-6xl">
@@ -163,9 +162,9 @@ export default function Dashboard() {
             <div className="md:hidden">
                 <Link
                     to="/matches/record"
-                    className="flex items-center justify-center w-full px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl shadow-lg border border-green-600 hover:from-green-600 hover:to-green-700 transition-colors font-semibold"
+                    className="flex items-center justify-center w-full px-4 py-3 club-btn-primary"
                 >
-                    🎾 {t('dashboard.recordMatch')}
+                    {t('dashboard.recordMatch')}
                 </Link>
             </div>
 
@@ -194,7 +193,7 @@ export default function Dashboard() {
                             </div>
                             <Link
                                 to={`/groups/${currentGroup.id}`}
-                                className="inline-flex items-center px-3 md:px-4 py-2 text-sm md:text-base bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+                                className="inline-flex items-center px-3 md:px-4 py-2 text-sm md:text-base club-btn-yellow"
                             >
                                 {t('dashboard.viewDetails')} →
                             </Link>
@@ -304,7 +303,13 @@ export default function Dashboard() {
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="text-base md:text-lg font-bold text-slate-900 dark:text-white flex-shrink-0">
+                                    <div
+                                        className={`text-base md:text-lg font-bold flex-shrink-0 ${
+                                            match.winnerId === user?.player?.id
+                                                ? 'text-green-700 dark:text-green-300'
+                                                : 'text-red-600 dark:text-red-400'
+                                        }`}
+                                    >
                                         {match.player1Id === user?.player?.id
                                             ? `${match.gamesP1}-${match.gamesP2}`
                                             : `${match.gamesP2}-${match.gamesP1}`}
@@ -460,22 +465,22 @@ function GlobalStatsVisual({
         <div className="relative overflow-hidden rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg">
             <div className="absolute inset-0 opacity-40 pointer-events-none bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.16),transparent_40%),radial-gradient(circle_at_80%_20%,rgba(245,158,11,0.18),transparent_35%),radial-gradient(circle_at_50%_100%,rgba(59,130,246,0.12),transparent_40%)]" />
             <div className="relative p-4 md:p-6 grid md:grid-cols-2 gap-4 md:gap-6 items-stretch">
-                <div className="md:col-span-2 flex items-center justify-between gap-3">
-                    <h2 className="text-base md:text-lg font-bold text-slate-900 dark:text-white">{globalTitle}</h2>
+                <div className="md:col-span-2 flex items-center justify-between gap-2 md:gap-3 overflow-x-auto">
+                    <h2 className="text-sm md:text-lg font-bold text-slate-900 dark:text-white whitespace-nowrap shrink-0">{globalTitle}</h2>
                     <Link
                         to="/matches/history"
-                        className="inline-flex items-center px-3 md:px-4 py-2 text-sm md:text-base bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+                        className="inline-flex items-center px-3 md:px-4 py-2 text-xs md:text-base club-btn-yellow whitespace-nowrap shrink-0"
                     >
                         {historyLabel} →
                     </Link>
                 </div>
                 <div className="h-full flex flex-col items-center justify-center gap-2 py-2 md:py-3">
-                    <div className="relative w-full max-w-[220px] md:max-w-[260px] aspect-square rounded-full p-2.5 md:p-3 shadow-inner ring-1 ring-slate-300 dark:ring-slate-600" style={ringStyle}>
+                    <div className="relative w-full max-w-[180px] md:max-w-[260px] aspect-square rounded-full p-2 md:p-3 shadow-inner ring-1 ring-slate-300 dark:ring-slate-600" style={ringStyle}>
                         <div className="h-full w-full rounded-full bg-white dark:bg-slate-900 flex flex-col items-center justify-center text-center">
-                            <p className="text-2xl md:text-4xl font-black text-slate-900 dark:text-white leading-none">
+                            <p className="text-xl md:text-4xl font-black text-slate-900 dark:text-white leading-none">
                                 {hasMatchData ? `${winRate.toFixed(0)}%` : '0%'}
                             </p>
-                            <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-1.5">
+                            <p className="text-[11px] md:text-sm text-slate-500 dark:text-slate-400 mt-1">
                                 {winLossLabel}
                             </p>
                         </div>

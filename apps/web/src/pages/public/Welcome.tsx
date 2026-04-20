@@ -244,7 +244,7 @@ export default function Welcome() {
                         <div className="text-center mt-8">
                             <Link 
                                 to="/login" 
-                                className="inline-block px-8 py-4 bg-amber-600 hover:bg-amber-700 text-white font-bold text-lg rounded-xl shadow-lg transition-colors"
+                                className="inline-block px-8 py-4 text-lg club-btn-primary"
                             >
                                 {tr('Iniciar sesión →', 'Hasi saioa →')}
                             </Link>
@@ -292,4 +292,5 @@ export default function Welcome() {
         </div>
     );
 }
+
 

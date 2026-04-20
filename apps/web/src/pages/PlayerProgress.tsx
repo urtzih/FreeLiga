@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+﻿import { useQuery } from '@tanstack/react-query';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useMemo } from 'react';
@@ -214,9 +214,9 @@ export default function PlayerProgress() {
 
   return (
     <div className="space-y-8">
-      <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-2xl p-4 md:p-8 text-white shadow-lg">
+      <div className="club-page-hero p-4 md:p-8">
         <h1 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">{tr('Progreso del Jugador', 'Jokalariaren Aurrerapena')}</h1>
-        <p className="text-sm md:text-base text-amber-100">{tr('Evolución de resultados y movimientos entre grupos', 'Emaitzen bilakaera eta taldeen arteko mugimenduak')}</p>
+        <p className="text-sm md:text-base club-page-hero-subtitle">{tr('Evolución de resultados y movimientos entre grupos', 'Emaitzen bilakaera eta taldeen arteko mugimenduak')}</p>
       </div>
 
       {/* Selector de rango de fechas */}
@@ -290,7 +290,7 @@ export default function PlayerProgress() {
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6">
         <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4">{tr('Evolución de Grupo por Temporada', 'Taldearen Bilakaera Denboraldika')}</h2>
         {isAdmin && fallbackSeasons.length > 0 && (
-          <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-100">
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-100">
             <p className="text-sm font-semibold">{tr('Aviso para administradores', 'Administratzaileentzako oharra')}</p>
             <p className="text-sm mt-1">
               {tr(
@@ -304,7 +304,7 @@ export default function PlayerProgress() {
                 {tr('Revisa el estado en', 'Egoera hemen berrikusi')}{' '}
                 <Link
                   to="/admin/seasons"
-                  className="underline text-amber-900 dark:text-amber-100 hover:text-amber-700 dark:hover:text-amber-200"
+                    className="underline text-amber-900 dark:text-amber-100 hover:text-amber-700 dark:hover:text-amber-200"
                 >
                   {tr('Gestionar temporadas', 'Denboraldiak kudeatu')}
                 </Link>
@@ -425,4 +425,6 @@ export default function PlayerProgress() {
     </div>
   );
 }
+
+
 

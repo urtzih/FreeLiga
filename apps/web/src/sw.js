@@ -9,6 +9,9 @@ precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
 registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html')));
 
+const DEFAULT_NOTIFICATION_ICON = '/icon-192.png';
+const DEFAULT_NOTIFICATION_BADGE = '/icon-maskable-192.png';
+
 self.addEventListener('push', (event) => {
     let notificationData = {
         title: 'FreeLiga',
@@ -29,8 +32,8 @@ self.addEventListener('push', (event) => {
     const {
         title = 'FreeLiga',
         body = 'Nueva notificacion',
-        icon = '/logo.jpg',
-        badge = '/logo.jpg',
+        icon = DEFAULT_NOTIFICATION_ICON,
+        badge = DEFAULT_NOTIFICATION_BADGE,
         tag = 'default',
         data = {},
         requireInteraction = true,

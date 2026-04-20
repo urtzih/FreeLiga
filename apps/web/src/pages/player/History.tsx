@@ -62,9 +62,9 @@ export default function History() {
 
     return (
         <div className="space-y-6">
-            <div className="bg-gradient-to-r from-pink-500 to-pink-600 rounded-2xl p-4 md:p-8 text-white shadow-lg">
+            <div className="club-page-hero p-4 md:p-8">
                 <h1 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">{tr('Historia', 'Historia')}</h1>
-                <p className="text-sm md:text-base text-pink-100">
+                <p className="text-sm md:text-base club-page-hero-subtitle">
                     {tr(
                         'Explora rendimiento acumulado en cualquier rango temporal o temporada.',
                         'Aztertu metatutako errendimendua edozein denbora tarte edo denboralditan.',

@@ -33,6 +33,9 @@ FreeLiga es una aplicacion full-stack para gestionar una liga de squash con grup
 - Validaciones de entrada con Zod en rutas.
 - Logging con `logger` (Pino). Evitar `console.*` en rutas productivas.
 - Mantener compatibilidad de contratos de API y esquemas de BD.
+- Todo copy nuevo o modificado en frontend debe quedar en multidioma (`es` + `eu`) usando el sistema de i18n (sin literales sueltos en componentes).
+- Excepcion de idioma: panel/admin solo en espanol.
+- La palabra reservada `average` no se traduce (ni en espanol ni en euskera).
 
 ## Convenciones de nombres
 
