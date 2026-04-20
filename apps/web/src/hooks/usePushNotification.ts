@@ -103,8 +103,8 @@ export function usePushNotification(): UsePushNotificationReturn {
 
         // Fallback for dev/tunnel contexts: dev SW in Vite and prod SW script.
         const candidateScripts = import.meta.env.DEV
-            ? ['/dev-sw.js?dev-sw', '/sw.js']
-            : ['/sw.js', '/dev-sw.js?dev-sw'];
+            ? ['/dev-sw.js?dev-sw']
+            : ['/sw.js'];
 
         for (const scriptUrl of candidateScripts) {
             try {

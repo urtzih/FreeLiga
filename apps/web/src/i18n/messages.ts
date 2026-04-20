@@ -4,7 +4,7 @@ const es = {
     'app.loadingModule': 'Cargando modulo...',
 
     'language.label': 'Idioma',
-    'language.es': 'Espanol',
+    'language.es': 'Español',
     'language.eu': 'Euskera',
 
     'footer.platform': 'Plataforma de gestion de liga de squash',

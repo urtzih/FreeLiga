@@ -137,17 +137,19 @@ export function useInstallPrompt() {
 
     const visible = useMemo(() => {
         if (Date.now() < dismissUntil) return false;
-        if (supportsNotifications && !notificationsGranted) return true;
-        if (notificationsGranted) return false;
         if (installed) return false;
-        return !!deferredPrompt || canShowIosInstructions;
+
+        if (!!deferredPrompt || canShowIosInstructions) return true;
+        if (supportsNotifications && !notificationsGranted) return true;
+
+        return false;
     }, [
         dismissUntil,
-        supportsNotifications,
-        notificationsGranted,
         installed,
         deferredPrompt,
         canShowIosInstructions,
+        supportsNotifications,
+        notificationsGranted,
     ]);
 
     return {
@@ -163,3 +165,4 @@ export function useInstallPrompt() {
         isInstalled: installed,
     };
 }
+

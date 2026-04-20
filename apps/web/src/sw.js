@@ -7,7 +7,12 @@ self.skipWaiting();
 clientsClaim();
 precacheAndRoute(self.__WB_MANIFEST);
 cleanupOutdatedCaches();
-registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html')));
+try {
+    // In Vite dev SW, /index.html may not be in precache and Workbox throws.
+    registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html')));
+} catch (error) {
+    console.warn('[PWA] Navigation fallback not registered', error);
+}
 
 const DEFAULT_NOTIFICATION_ICON = '/icon-192.png';
 const DEFAULT_NOTIFICATION_BADGE = '/icon-maskable-192.png';

@@ -21,7 +21,6 @@ if ('serviceWorker' in navigator) {
         // In dev+tunnel, dev SW script is ESM and must be registered as module.
         navigator.serviceWorker
             .register('/dev-sw.js?dev-sw', { scope: '/', type: 'module' })
-            .catch(() => navigator.serviceWorker.register('/sw.js', { scope: '/' }))
             .catch((error) => {
                 console.warn('[PushDebug] initial SW registration failed', error);
             });

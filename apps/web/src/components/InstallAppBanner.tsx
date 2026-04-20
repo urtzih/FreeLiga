@@ -41,6 +41,7 @@ export default function InstallAppBanner() {
     } = useInstallPrompt();
     const isMobile = isMobileClient();
     const isIOS = isIOSClient();
+    const showPrimaryAction = (isMobile && canInstall) || (supportsNotifications && !notificationsGranted);
 
     useEffect(() => {
         if (!supportsNotifications || notificationPermission !== 'granted') return;
@@ -77,6 +78,7 @@ export default function InstallAppBanner() {
     const handleEnableAll = async () => {
         if (isEnabling) return;
         setIsEnabling(true);
+        let installOutcome: 'accepted' | 'dismissed' | 'unavailable' = 'unavailable';
         try {
             if (!canUseWebPushSecureContext()) {
                 showToast('Para notificaciones en movil necesitas HTTPS (o localhost). Con IP local por http no funciona.', 'warning');
@@ -84,7 +86,14 @@ export default function InstallAppBanner() {
             }
 
             if (isMobile && !isInstalled && canInstall) {
-                await install();
+                installOutcome = await install();
+            }
+
+            if (!supportsNotifications) {
+                if (installOutcome === 'accepted') {
+                    showToast('Aplicacion instalada correctamente', 'success');
+                }
+                return;
             }
 
             if (notificationPermission === 'denied') {
@@ -135,8 +144,8 @@ export default function InstallAppBanner() {
                     >
                         ×
                     </button>
-                    <div className="pr-10 sm:pr-12 flex flex-col items-center gap-3 text-center sm:flex-row sm:justify-between sm:text-left">
-                        <div className="flex items-center gap-3">
+                    <div className="px-10 sm:px-12 flex flex-col items-center gap-3 text-center">
+                        <div className="flex items-center gap-3 -ml-4 sm:-ml-6">
                             <img
                                 src="/logo.jpg"
                                 alt="FreeLiga"
@@ -157,7 +166,7 @@ export default function InstallAppBanner() {
                         </div>
 
                         <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2">
-                            {!notificationsGranted && supportsNotifications && (
+                            {showPrimaryAction && (
                                 <button
                                     onClick={handleEnableAll}
                                     disabled={isEnabling}
@@ -165,19 +174,15 @@ export default function InstallAppBanner() {
                                 >
                                     {isEnabling
                                         ? 'Activando...'
+                                        : isMobile && canInstall && !isInstalled && supportsNotifications && !notificationsGranted
+                                          ? 'Instalar app + activar notificaciones'
+                                          : isMobile && canInstall && !isInstalled
+                                            ? 'Instalar app'
                                         : notificationPermission === 'denied'
                                           ? 'Desbloquear notificaciones'
                                           : isMobile && canInstall
                                             ? 'Activar app + notificaciones'
                                             : 'Activar notificaciones'}
-                                </button>
-                            )}
-                            {isMobile && canInstall && !supportsNotifications && (
-                                <button
-                                    onClick={install}
-                                    className="px-3 py-2 rounded-xl bg-zinc-800/75 border border-yellow-200/30 text-yellow-50 hover:bg-zinc-700/75 transition-colors"
-                                >
-                                    Instalar app
                                 </button>
                             )}
                         </div>
