@@ -13,7 +13,7 @@ import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider } from './contexts/ToastContext';
-import { LanguageProvider } from './contexts/LanguageContext';
+import { LanguageProvider } from './contexts/LanguageProvider';
 import './index.css';
 
 if ('serviceWorker' in navigator) {

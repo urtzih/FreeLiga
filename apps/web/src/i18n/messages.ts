@@ -36,7 +36,7 @@ const es = {
 
     'nav.player.home': 'Inicio',
     'nav.player.calendar': 'Calendario',
-    'nav.player.record': 'Registrar',
+    'nav.player.record': 'Registrar partido',
     'nav.player.recordMatch': 'Registrar partido',
     'nav.player.progress': 'Progreso',
     'nav.player.groupsSummary': 'Resumen grupos',
@@ -395,7 +395,7 @@ const eu: { [K in keyof typeof es]: string } = {
 
     'nav.player.home': 'Hasiera',
     'nav.player.calendar': 'Egutegia',
-    'nav.player.record': 'Erregistratu',
+    'nav.player.record': 'Partida erregistratu',
     'nav.player.recordMatch': 'Partida erregistratu',
     'nav.player.progress': 'Aurrerapena',
     'nav.player.groupsSummary': 'Taldeen laburpena',
