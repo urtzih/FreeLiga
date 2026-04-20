@@ -17,6 +17,15 @@ FreeLiga es una aplicacion full-stack para gestionar una liga de squash con grup
 - Si un cambio toca BBDD, hacer validacion local completa y desplegar en produccion con backup previo y plan de rollback.
 - Para push/notificaciones, usar despliegue en 2 fases: primero con scheduler desactivado, luego activar tras smoke test en produccion.
 
+## Lecciones de deploy (Railway/Vercel) - Abril 2026
+
+- Railway API tiene `watchPatterns` en `"/apps/api/**"`: si un commit solo toca Prisma/docs/scripts fuera de `apps/api`, puede no desplegarse automaticamente.
+- Si el cambio requiere deploy y no toca `apps/api`, forzar deploy manual en Railway o incluir un cambio minimo no funcional dentro de `apps/api`.
+- Todas las migraciones Prisma deben quedar versionadas en `packages/database/prisma/migrations/**/migration.sql` (no ignorarlas por `*.sql` global).
+- Antes de desplegar cambios de BBDD: comprobar que `prisma migrate deploy` puede ejecutarse en produccion y que no hay entradas fallidas en `_prisma_migrations`.
+- Si aparece `P3009`/`P3018`, resolver estado con `prisma migrate resolve --rolled-back <migration>` y volver a desplegar con SQL compatible con la version real de MySQL.
+- Para invalidar cache publico tras deploy: usar `POST /api/public/cache/invalidate` con header `x-cache-token`; definir `CACHE_INVALIDATE_TOKEN` en Railway (evitar fallback `dev-token` en produccion).
+
 ## Estructura de carpetas
 
 - `apps/api`: API Fastify, rutas y servicios.
