@@ -469,7 +469,7 @@ function GlobalStatsVisual({
                     <h2 className="text-sm md:text-lg font-bold text-slate-900 dark:text-white whitespace-nowrap shrink-0">{globalTitle}</h2>
                     <Link
                         to="/matches/history"
-                        className="inline-flex items-center px-3 md:px-4 py-2 text-xs md:text-base club-btn-yellow whitespace-nowrap shrink-0"
+                        className="inline-flex items-center px-3 md:px-4 py-2 text-xs md:text-base club-btn-yellow hover:!translate-y-0 hover:!shadow-lg whitespace-nowrap shrink-0"
                     >
                         {historyLabel} →
                     </Link>

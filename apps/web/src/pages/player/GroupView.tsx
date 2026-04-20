@@ -7,7 +7,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import Loader from '../../components/Loader';
 
 interface ClassificationRow {
-    playerId: number;
+    playerId: string;
     playerName: string;
     wins: number;
     losses: number;
@@ -110,15 +110,15 @@ export default function GroupView() {
         (match.matchStatus === 'PLAYED' && match.gamesP1 !== null && match.gamesP2 !== null) ||
         match.matchStatus === 'INJURY';
 
-    const getClassificationProgress = (playerId: number) => {
+    const getClassificationProgress = (playerId: string) => {
         const completedOpponents = new Set<string>();
         const injuryOpponents = new Set<string>();
 
         group.matches.forEach((match: any) => {
             if (!isClosedMatchForClassification(match)) return;
 
-            const isPlayer1 = String(match.player1Id) === String(playerId);
-            const isPlayer2 = String(match.player2Id) === String(playerId);
+            const isPlayer1 = String(match.player1Id) === playerId;
+            const isPlayer2 = String(match.player2Id) === playerId;
             if (!isPlayer1 && !isPlayer2) return;
 
             const opponentId = isPlayer1 ? match.player2Id : match.player1Id;
@@ -140,14 +140,14 @@ export default function GroupView() {
     const classificationProgressByPlayer = new Map<string, { remaining: number; injuries: number }>();
     let maxInjuriesInGroup = 0;
     (classification ?? []).forEach((row) => {
-        const progress = getClassificationProgress(Number(row.playerId));
+        const progress = getClassificationProgress(row.playerId);
         classificationProgressByPlayer.set(String(row.playerId), progress);
         if (progress.injuries > maxInjuriesInGroup) {
             maxInjuriesInGroup = progress.injuries;
         }
     });
 
-    const isActuallyInjuredPlayer = (playerId: number | string) => {
+    const isActuallyInjuredPlayer = (playerId: string) => {
         const progress = classificationProgressByPlayer.get(String(playerId));
         if (!progress) return false;
         return progress.injuries > 0 && progress.remaining === 0 && progress.injuries === maxInjuriesInGroup;
@@ -409,7 +409,7 @@ export default function GroupView() {
                                     </thead>
                                     <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                                         {classification.map((row, idx) => {
-                                            const progress = classificationProgressByPlayer.get(String(row.playerId)) ?? getClassificationProgress(Number(row.playerId));
+                                            const progress = classificationProgressByPlayer.get(String(row.playerId)) ?? getClassificationProgress(row.playerId);
                                             const remaining = progress.remaining;
                                             const injuries = progress.injuries;
                                             const isInjuredPlayer = isActuallyInjuredPlayer(row.playerId);
@@ -467,13 +467,13 @@ export default function GroupView() {
                                             <th className="px-2 py-2">{tr('Jugador', 'Jokalaria')}</th>
                                             <th className="px-2 py-2 text-center">G</th>
                                             <th className="px-2 py-2 text-center">P</th>
-                                            <th className="px-2 py-2 text-center">Average</th>
+                                            <th className="px-2 py-2 text-center">AVG</th>
                                             <th className="px-2 py-2 text-center">R</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                                         {classification.map((row, idx) => {
-                                            const progress = classificationProgressByPlayer.get(String(row.playerId)) ?? getClassificationProgress(Number(row.playerId));
+                                            const progress = classificationProgressByPlayer.get(String(row.playerId)) ?? getClassificationProgress(row.playerId);
                                             const remaining = progress.remaining;
                                             const isInjuredPlayer = isActuallyInjuredPlayer(row.playerId);
                                             const isCurrentUser = String(row.playerId) === String(user?.player?.id);
@@ -636,29 +636,31 @@ export default function GroupView() {
                                                 {index >= 2 && index < totalPlayers - 2 && <span className="text-sm font-bold text-slate-500">#{gp.rankingPosition}</span>}
                                             </div>
                                             <div className="flex-1">
-                                                <p className={`font-semibold text-sm ${isCurrentUser ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}>
-                                                    #{gp.rankingPosition} {gp.player.name} {isCurrentUser && tr('(Tu)', '(Zu)')}
-                                                </p>
-                                                {gp.player.nickname && (
-                                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">"{gp.player.nickname}"</p>
-                                                )}
-                                                {!isCurrentUser && (
-                                                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                                                        {showScoreBadge ? (
-                                                            <>
-                                                                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${resultStatusTone}`}>
-                                                                    {resultStatusText}
-                                                                </span>
-                                                                <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-sm font-extrabold leading-none ${resultBadgeTone}`}>
+                                                <div className="flex items-start justify-between gap-2">
+                                                    <p className={`font-semibold text-sm ${isCurrentUser ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}>
+                                                        #{gp.rankingPosition} {gp.player.name} {isCurrentUser && tr('(Tu)', '(Zu)')}
+                                                    </p>
+                                                    {!isCurrentUser && (
+                                                        <div className="flex flex-wrap justify-end items-center gap-1.5 shrink-0">
+                                                            {showScoreBadge ? (
+                                                                <>
+                                                                    <span className={`inline-flex items-center rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wide ${resultStatusTone}`}>
+                                                                        {resultStatusText}
+                                                                    </span>
+                                                                    <span className={`inline-flex items-center rounded-lg border px-2 py-1 text-sm font-extrabold leading-none ${resultBadgeTone}`}>
+                                                                        {resultText}
+                                                                    </span>
+                                                                </>
+                                                            ) : (
+                                                                <span className={`inline-flex items-center rounded-lg border px-2 py-1 text-xs font-bold uppercase tracking-wide ${resultBadgeTone}`}>
                                                                     {resultText}
                                                                 </span>
-                                                            </>
-                                                        ) : (
-                                                            <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-xs font-bold uppercase tracking-wide ${resultBadgeTone}`}>
-                                                                {resultText}
-                                                            </span>
-                                                        )}
-                                                    </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                {gp.player.nickname && (
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">"{gp.player.nickname}"</p>
                                                 )}
                                             </div>
                                         </div>
