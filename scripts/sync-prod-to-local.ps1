@@ -247,11 +247,26 @@ if ($fileSize -gt 5000) {
         
         if ($LASTEXITCODE -eq 0) {
             if (Test-Path $decompressed) { Remove-Item $decompressed }
+
+            Write-Output ""
+            Write-ColorOutput Yellow "4. Alineando esquema local con la rama actual (Prisma)..."
+            # Tras sincronizar datos de PROD, reaplicar schema local evita que falten columnas/tablas nuevas de desarrollo.
+            $env:DATABASE_URL = $DATABASE_URL
+            $schemaPath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\packages\database\prisma\schema.prisma"))
+            npx prisma db push --schema "$schemaPath" --skip-generate 2>&1 | Out-Null
+
+            if ($LASTEXITCODE -ne 0) {
+                Write-ColorOutput Red "[ERROR] Restauracion OK, pero fallo al alinear schema Prisma."
+                Write-Output "Ejecuta manualmente: npm run db:push"
+                Write-Output "Backup guardado: $backupFile"
+                exit 1
+            }
             
             Write-Output ""
             Write-ColorOutput Green "COMPLETADO!"
             Write-Output ""
             Write-ColorOutput Green "TU BD LOCAL TIENE DATOS FRESCOS DE PRODUCCION"
+            Write-ColorOutput Green "Y EL ESQUEMA LOCAL ACTUALIZADO CON LOS CAMBIOS DE TU RAMA"
             Write-Output ""
             Write-Host "Puedes:"
             Write-Host "  1. Trabajar en desarrollo con datos reales"

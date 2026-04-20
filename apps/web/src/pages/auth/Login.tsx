@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -10,6 +11,7 @@ export default function Login() {
     });
     const [loading, setLoading] = useState(false);
     const { login, user } = useAuth();
+    const { t } = useLanguage();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -17,7 +19,7 @@ export default function Login() {
         if (storedError) {
             setError(storedError);
         }
-        
+
         return () => {
             if (user) {
                 sessionStorage.removeItem('loginError');
@@ -42,8 +44,8 @@ export default function Login() {
         try {
             await login(email, password);
         } catch (err: any) {
-            const errorMessage = err.response?.data?.error || 'Error al iniciar sesión. Verifica tus credenciales.';
-            
+            const errorMessage = err.response?.data?.error || t('login.defaultError');
+
             sessionStorage.setItem('loginError', errorMessage);
             setError(errorMessage);
             setLoading(false);
@@ -56,7 +58,7 @@ export default function Login() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 px-4">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-amber-50 to-amber-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 px-4">
             <div className="max-w-md w-full">
                 <div className="text-center mb-8">
                     <Link to="/" className="inline-block">
@@ -66,8 +68,8 @@ export default function Login() {
                             className="mx-auto w-24 h-24 rounded-full object-cover border-4 border-white dark:border-slate-700 shadow-lg mb-4 hover:scale-105 transition-transform cursor-pointer"
                         />
                     </Link>
-                    <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Bienvenido de nuevo</h2>
-                    <p className="text-slate-600 dark:text-slate-400 mt-2">Inicia sesión en FreeSquash League</p>
+                    <h2 className="text-3xl font-bold text-slate-900 dark:text-white">{t('login.welcomeBack')}</h2>
+                    <p className="text-slate-600 dark:text-slate-400 mt-2">{t('login.subtitle')}</p>
                 </div>
 
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 border border-slate-200 dark:border-slate-700">
@@ -79,14 +81,14 @@ export default function Login() {
                                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                                     </svg>
                                     <div className="flex-1">
-                                        <p className="text-base font-bold text-red-800 dark:text-red-300 mb-1">⚠️ Error de inicio de sesión</p>
+                                        <p className="text-base font-bold text-red-800 dark:text-red-300 mb-1">⚠️ {t('login.errorTitle')}</p>
                                         <p className="text-sm text-red-700 dark:text-red-200 leading-relaxed">{error}</p>
                                     </div>
                                 </div>
                                 <button
                                     onClick={clearError}
                                     className="ml-4 flex-shrink-0 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors"
-                                    aria-label="Cerrar mensaje de error"
+                                    aria-label={t('login.errorCloseAria')}
                                 >
                                     <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                                         <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -99,7 +101,7 @@ export default function Login() {
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Correo Electrónico
+                                {t('login.email')}
                             </label>
                             <input
                                 id="email"
@@ -107,14 +109,14 @@ export default function Login() {
                                 required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
                                 placeholder="tu@email.com"
                             />
                         </div>
 
                         <div>
                             <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                Contraseña
+                                {t('login.password')}
                             </label>
                             <input
                                 id="password"
@@ -122,7 +124,7 @@ export default function Login() {
                                 required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
                                 placeholder="••••••••"
                             />
                         </div>
@@ -130,14 +132,14 @@ export default function Login() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full px-4 py-3 text-white font-medium rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                            className="w-full px-4 py-3 text-black font-semibold rounded-lg bg-yellow-400 border-2 border-black/90 hover:bg-yellow-300 focus:outline-none focus:ring-2 focus:ring-yellow-300 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                         >
-                            {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                            {loading ? t('login.signingIn') : t('login.signIn')}
                         </button>
                     </form>
 
                     <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
-                        ¿No tienes cuenta? Contacta con el administrador de la liga
+                        {t('login.noAccount')}
                     </p>
                 </div>
             </div>

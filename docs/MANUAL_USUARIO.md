@@ -1,4 +1,4 @@
-# 📖 Manual de Usuario - FreeSquash League
+# 📖 Manual de Usuario - FreeSquash Liga
 
 ## Índice
 1. [Introducción](#introducción)
@@ -11,9 +11,9 @@
 
 ## Introducción
 
-### ¿Qué es FreeSquash League?
+### ¿Qué es FreeSquash Liga?
 
-FreeSquash League es una plataforma web para gestionar ligas de squash con grupos clasificatorios. Permite:
+FreeSquash Liga es una plataforma web para gestionar ligas de squash con grupos clasificatorios. Permite:
 
 ✅ Registro y seguimiento de partidos  
 ✅ Clasificaciones automáticas con algoritmo de desempate  

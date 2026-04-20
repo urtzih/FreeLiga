@@ -1,4 +1,4 @@
-export default function Terms() {
+﻿export default function Terms() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-8">
@@ -71,7 +71,7 @@ export default function Terms() {
           {/* 6. Pagos y cuotas */}
           <section>
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">6. Pagos y Cuotas Anuales</h2>
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 space-y-3">
+            <div className="bg-amber-50 border-l-4 border-amber-500 p-4 space-y-3">
               <ul className="list-disc list-inside text-gray-700 space-y-2">
                 <li><strong>Responsabilidad:</strong> Cada jugador es responsable de sus propios pagos</li>
                 <li><strong>Registro:</strong> Los pagos son registrados en el sistema</li>
@@ -79,8 +79,8 @@ export default function Terms() {
                 <li><strong>No reembolsable:</strong> Las cuotas pagadas no son reembolsables (excepto devolución legal)</li>
               </ul>
               
-              <div className="mt-4 pt-4 border-t border-blue-200">
-                <p className="text-gray-700 font-semibold mb-2">⚖️ <strong>Pago = Aceptación de Términos</strong></p>
+              <div className="mt-4 pt-4 border-t border-amber-200">
+                <p className="text-gray-700 font-semibold mb-2">⚠️ <strong>Pago = Aceptación de Términos</strong></p>
                 <p className="text-gray-700 text-sm">
                   Al realizar el pago de la cuota anual del club, <strong>aceptas automáticamente estos Términos y Condiciones y la Política de Privacidad</strong>. 
                   El pago constituye acuerdo contractual explícito con todas las disposiciones descritas en este documento.
@@ -172,3 +172,4 @@ export default function Terms() {
     </div>
   );
 }
+

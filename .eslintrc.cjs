@@ -40,6 +40,7 @@ module.exports = {
     'backups/',
     '.vercel/',
     'apps/**/dist/',
+    'apps/**/dev-dist/',
     'packages/**/dist/',
     'docs/archive/',
     '*.sql',

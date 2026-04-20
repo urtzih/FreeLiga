@@ -49,9 +49,12 @@ lerna-debug.log*
 backups/
 *.sql
 *.sql.gz
+!packages/database/prisma/migrations/**/migration.sql
+!packages/database/prisma/migrations/migration_lock.toml
 
 # Prisma
 .env.production.example
 docs/freesquash_liga.sql
 .vercel
 .env.production.bak
+.tmp_groupview_head.tsx

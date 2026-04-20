@@ -10,6 +10,13 @@ FreeLiga es una aplicacion full-stack para gestionar una liga de squash con grup
 - Frontend: React 18, Vite, TypeScript, TailwindCSS, React Query, React Router.
 - Infra: Docker/Docker Compose, Railway (API + DB), Vercel (web), scripts PowerShell/Bash para backups.
 
+## Entornos disponibles
+
+- No hay entorno de staging dedicado en este proyecto.
+- Validacion previa a produccion: siempre en local (build + pruebas manuales end-to-end).
+- Si un cambio toca BBDD, hacer validacion local completa y desplegar en produccion con backup previo y plan de rollback.
+- Para push/notificaciones, usar despliegue en 2 fases: primero con scheduler desactivado, luego activar tras smoke test en produccion.
+
 ## Estructura de carpetas
 
 - `apps/api`: API Fastify, rutas y servicios.
@@ -26,6 +33,9 @@ FreeLiga es una aplicacion full-stack para gestionar una liga de squash con grup
 - Validaciones de entrada con Zod en rutas.
 - Logging con `logger` (Pino). Evitar `console.*` en rutas productivas.
 - Mantener compatibilidad de contratos de API y esquemas de BD.
+- Todo copy nuevo o modificado en frontend debe quedar en multidioma (`es` + `eu`) usando el sistema de i18n (sin literales sueltos en componentes).
+- Excepcion de idioma: panel/admin solo en espanol.
+- La palabra reservada `average` no se traduce (ni en espanol ni en euskera).
 
 ## Convenciones de nombres
 
@@ -40,6 +50,25 @@ FreeLiga es una aplicacion full-stack para gestionar una liga de squash con grup
 - API standalone: `npm run dev:api`.
 - Web standalone: `npm run dev:web`.
 - Prisma: `npm run db:generate`, `npm run db:push`, `npm run db:studio`.
+
+## Comandos operativos frecuentes
+
+- Instalar dependencias: `npm install --workspaces`.
+- Arrancar proyecto en local (API + Web): `npm run dev`.
+- Arrancar por separado:
+  - API: `npm run dev:api`.
+  - Web: `npm run dev:web`.
+- Validacion antes de dar por bueno:
+  - Build: `npm run build --workspaces`.
+  - Lint: `npm run lint`.
+- Traer copia de produccion a local (sync completo): `npm run sync`.
+- Backup local completo: `npm run backup`.
+- Backup rapido antes de cambios sensibles: `npm run backup:quick`.
+- Restaurar backup en local: `npm run restore`.
+
+Notas:
+- `npm run sync` ejecuta `scripts/sync-prod-to-local.ps1` (descarga de Railway + restore en MySQL local + backup en `backups/`).
+- Para `sync` se requiere `.env` con `DATABASE_URL_PROD` y `DATABASE_URL` validas, y Docker/MySQL local operativo.
 
 ## Ejecutar, testear, lint y build
 

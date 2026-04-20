@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+﻿import { useState, useMemo } from 'react';
 import { z } from 'zod';
 
 interface Player {
@@ -170,7 +170,7 @@ export default function ScheduleMatchForm({
           name="player2Id"
           value={formData.player2Id}
           onChange={handleChange}
-          className="w-full px-4 py-3 border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-500 transition-all font-medium"
+          className="w-full px-4 py-3 border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:focus:border-amber-500 transition-all font-medium"
         >
           <option value="">Selecciona un contrincante</option>
           {availableOpponents.map(player => (
@@ -210,7 +210,7 @@ export default function ScheduleMatchForm({
               // Auto-abrir el calendar picker en navegadores que lo soportan
               (e.target as HTMLInputElement).showPicker?.();
             }}
-            className="w-full px-3 py-2.5 border-2 border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-600 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-500 transition-all text-sm cursor-pointer"
+            className="w-full px-3 py-2.5 border-2 border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-600 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:focus:border-amber-500 transition-all text-sm cursor-pointer"
           />
         </div>
 
@@ -221,7 +221,7 @@ export default function ScheduleMatchForm({
             <select
               value={timeHour}
               onChange={(e) => handleTimeChange(e.target.value, timeMinute)}
-              className="w-full px-3 py-2.5 border-2 border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-600 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-500 transition-all text-sm font-medium"
+              className="w-full px-3 py-2.5 border-2 border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-600 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:focus:border-amber-500 transition-all text-sm font-medium"
             >
               {Array.from({ length: 14 }, (_, i) => {
                 const hour = i + 8;
@@ -239,7 +239,7 @@ export default function ScheduleMatchForm({
             <select
               value={timeMinute}
               onChange={(e) => handleTimeChange(timeHour, e.target.value)}
-              className="w-full px-3 py-2.5 border-2 border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-600 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-500 transition-all text-sm font-medium"
+              className="w-full px-3 py-2.5 border-2 border-slate-300 dark:border-slate-500 bg-white dark:bg-slate-600 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:focus:border-amber-500 transition-all text-sm font-medium"
             >
               <option value="00">00</option>
               <option value="30">30</option>
@@ -261,7 +261,7 @@ export default function ScheduleMatchForm({
           name="location"
           value={formData.location}
           onChange={handleChange}
-          className="w-full px-4 py-3 border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-500 transition-all text-sm"
+          className="w-full px-4 py-3 border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:focus:border-amber-500 transition-all text-sm"
         >
           <option value="">Selecciona una ubicación</option>
           <option value="FRONTONES BETI-JAI">FRONTONES BETI-JAI</option>
@@ -283,7 +283,7 @@ export default function ScheduleMatchForm({
           onChange={handleChange}
           placeholder="Ej: Pista 05, entrada por la puerta sur..."
           rows={2}
-          className="w-full px-4 py-3 border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-500 transition-all text-sm resize-none"
+          className="w-full px-4 py-3 border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:focus:border-amber-500 transition-all text-sm resize-none"
         />
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Máximo 200 caracteres</p>
       </div>
@@ -301,3 +301,4 @@ export default function ScheduleMatchForm({
     </form>
   );
 }
+

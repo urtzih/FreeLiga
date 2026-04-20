@@ -1,4 +1,4 @@
-interface SpinnerProps {
+﻿interface SpinnerProps {
     size?: 'sm' | 'md' | 'lg';
     className?: string;
 }
@@ -15,7 +15,7 @@ export default function Spinner({ size = 'md', className = '' }: SpinnerProps) {
     return (
         <div className={`inline-block ${className}`} role="status" aria-label="Cargando">
             <svg
-                className={`${sizeClass} animate-spin text-blue-600`}
+                className={`${sizeClass} animate-spin text-amber-600`}
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
@@ -38,3 +38,4 @@ export default function Spinner({ size = 'md', className = '' }: SpinnerProps) {
         </div>
     );
 }
+

@@ -1,4 +1,4 @@
-﻿# FreeSquash League - MVP
+﻿# FreeSquash Liga - MVP
 
 A full-stack web application for managing a squash league with ranked groups, advanced ranking algorithms, match recording, and global classification.
 
@@ -531,4 +531,4 @@ This is an MVP. Future contributions should follow the feature roadmap in the im
 
 ---
 
-Built with love for the FreeSquash League by Urtzi Diaz Arberas
+Built with love for the FreeSquash Liga by Urtzi Diaz Arberas

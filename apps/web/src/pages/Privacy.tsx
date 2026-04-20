@@ -1,4 +1,4 @@
-export default function Privacy() {
+﻿export default function Privacy() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-8">
@@ -20,17 +20,18 @@ export default function Privacy() {
           {/* 2. ¿Qué datos recopilamos? */}
           <section>
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">2. Datos que Recopilamos</h2>
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
+            <div className="bg-amber-50 border-l-4 border-amber-500 p-4 mb-4">
               <h3 className="font-semibold text-gray-800 mb-2">Datos que proporcionas directamente:</h3>
               <ul className="list-disc list-inside text-gray-700 space-y-2">
                 <li><strong>Email y contraseña</strong> - Para autenticación en la plataforma</li>
                 <li><strong>Nombre completo y apodo</strong> - Para registros de competición</li>
                 <li><strong>Teléfono</strong> - Para coordinación de partidos y contacto</li>
                 <li><strong>Información del calendario</strong> - Si autorizas acceso a Google Calendar</li>
+                <li><strong>Suscripción a notificaciones push</strong> - Si activas las notificaciones en tu perfil (incluye endpoint de navegador e información de suscripción)</li>
               </ul>
             </div>
 
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
+            <div className="bg-amber-50 border-l-4 border-amber-500 p-4">
               <h3 className="font-semibold text-gray-800 mb-2">Datos generados automáticamente:</h3>
               <ul className="list-disc list-inside text-gray-700 space-y-2">
                 <li><strong>Resultados de partidos</strong> - Para estadísticas y rankings</li>
@@ -66,6 +67,10 @@ export default function Privacy() {
                   <td className="border p-3">Consentimiento explícito (puedes revocar)</td>
                 </tr>
                 <tr className="bg-gray-50">
+                  <td className="border p-3">Notificaciones Push</td>
+                  <td className="border p-3">Consentimiento (activadas por defecto al pagar cuota, puedes desactivar en tu perfil)</td>
+                </tr>
+                <tr>
                   <td className="border p-3">Reportes de bugs</td>
                   <td className="border p-3">Consentimiento (opcional)</td>
                 </tr>
@@ -101,9 +106,13 @@ export default function Privacy() {
                 <li>Los Términos y Condiciones</li>
                 <li>El procesamiento de tus datos personales necesario para la liga</li>
                 <li>El uso de tus datos para estadísticas y rankings</li>
+                 <li>La activación por defecto de notificaciones push (puedes desactivarlas en tu perfil en cualquier momento)</li>
               </ul>
+               <p className="text-gray-700 text-xs mt-3">
+                 <strong>Notificaciones Push:</strong> Al pagar tu cuota, las notificaciones push se activan automáticamente por defecto. Sin embargo, puedes desactivarlas en cualquier momento desde tu perfil. Las notificaciones te mantienen informado sobre nuevas temporadas, partidos y actualizaciones importantes.
+               </p>
               <p className="text-gray-700 text-xs mt-3 italic">
-                Esta acepta se registra para cumplimiento legal y auditoría.
+                 Esta aceptación se registra para cumplimiento legal y auditoría.
               </p>
             </div>
           </section>
@@ -183,3 +192,4 @@ export default function Privacy() {
     </div>
   );
 }
+

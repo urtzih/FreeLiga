@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+﻿import { useQuery } from '@tanstack/react-query';
 import api from '../lib/api';
 import { useState, useMemo } from 'react';
 
@@ -103,8 +103,8 @@ export default function Blacklist() {
   };
 
   const getSortIndicator = (key: SortKey) => {
-    if (sortKey !== key) return ' ↕️';
-    return sortDirection === 'asc' ? ' ↑' : ' ↓';
+    if (sortKey !== key) return ` ${String.fromCodePoint(0x2195)}`;
+    return sortDirection === 'asc' ? ` ${String.fromCodePoint(0x2191)}` : ` ${String.fromCodePoint(0x2193)}`;
   };
 
   const getUnplayedPercentage = (player: BlacklistPlayer) => {
@@ -144,15 +144,15 @@ export default function Blacklist() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-amber-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            ⚠️ Lista Negra
+        <div className="club-page-hero p-8 mb-8">
+          <h1 className="text-3xl font-bold mb-2">
+            {`${String.fromCodePoint(0x26A0)} Lista Negra`}
           </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            Jugadores con menos participación en la liga
+          <p className="club-page-hero-subtitle">
+            {'Jugadores con menos participaci\u00F3n en la liga'}
           </p>
         </div>
 
@@ -162,7 +162,7 @@ export default function Blacklist() {
             onClick={() => setActiveTab('current')}
             className={`px-6 py-3 font-semibold transition-all ${
               activeTab === 'current'
-                ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                ? 'text-amber-600 dark:text-amber-400 border-b-2 border-amber-600 dark:border-amber-400'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-300'
             }`}
           >
@@ -172,7 +172,7 @@ export default function Blacklist() {
             onClick={() => setActiveTab('history')}
             className={`px-6 py-3 font-semibold transition-all ${
               activeTab === 'history'
-                ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                ? 'text-amber-600 dark:text-amber-400 border-b-2 border-amber-600 dark:border-amber-400'
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-300'
             }`}
           >
@@ -373,7 +373,7 @@ export default function Blacklist() {
                 <span className="font-semibold">{sortedData.length}</span> jugador(es)
                 {activeTab === 'current' && (
                   <>
-                    {' '}con restantes ⚠️
+                    {` con restantes ${String.fromCodePoint(0x26A0)}`}
                   </>
                 )}
               </p>
@@ -384,3 +384,4 @@ export default function Blacklist() {
     </div>
   );
 }
+

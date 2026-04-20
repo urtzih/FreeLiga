@@ -21,7 +21,7 @@ interface UpdateMatchData {
 }
 
 interface EditMatchModalProps {
-    match: Match;
+    match: Match | null;
     isOpen: boolean;
     onClose: () => void;
 }
@@ -29,6 +29,7 @@ interface EditMatchModalProps {
 export default function EditMatchModal({ match, isOpen, onClose }: EditMatchModalProps) {
     const queryClient = useQueryClient();
     const { showToast } = useToast();
+    const closedSeasonMessage = 'Solo puedes editar partidos de la temporada activa';
     const [formData, setFormData] = useState({
         gamesP1: 0,
         gamesP2: 0,
@@ -51,6 +52,9 @@ export default function EditMatchModal({ match, isOpen, onClose }: EditMatchModa
     const mutation = useMutation({
         mutationFn: async (data: UpdateMatchData) => {
             try {
+                if (!match) {
+                    throw new Error('Match not found');
+                }
                 const response = await api.put(`/matches/${match.id}`, data);
                 return response.data;
             } catch (error) {
@@ -74,7 +78,8 @@ export default function EditMatchModal({ match, isOpen, onClose }: EditMatchModa
             } else if (typeof errorData === 'object' && errorData !== null) {
                 setError(JSON.stringify(errorData));
             } else {
-                setError(String(errorData) || 'Error al actualizar el partido');
+                const rawMessage = String(errorData) || 'Error al actualizar el partido';
+                setError(rawMessage.includes('temporada activa') ? closedSeasonMessage : rawMessage);
             }
         },
     });
@@ -198,7 +203,7 @@ export default function EditMatchModal({ match, isOpen, onClose }: EditMatchModa
                         <button
                             type="submit"
                             disabled={mutation.isPending}
-                            className="flex-1 px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors disabled:opacity-50"
+                            className="flex-1 px-4 py-2 text-white bg-amber-600 hover:bg-amber-700 rounded-lg font-medium transition-colors disabled:opacity-50"
                         >
                             {mutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
                         </button>
@@ -208,3 +213,4 @@ export default function EditMatchModal({ match, isOpen, onClose }: EditMatchModa
         </div>
     );
 }
+

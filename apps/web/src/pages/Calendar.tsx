@@ -12,6 +12,7 @@ interface Match {
   id: string;
   player1: { id: string; name: string };
   player2: { id: string; name: string };
+  group?: { season?: { isActive?: boolean } };
   scheduledDate: string;
   date?: string;
   location: string;
@@ -230,10 +231,17 @@ export default function CalendarPage() {
     return match.player1.id === user?.player?.id || match.player2.id === user?.player?.id;
   };
 
+  const isMatchInActiveSeason = (match: Match) => match.group?.season?.isActive === true;
+
+  const canManageMatch = (match: Match) => {
+    const isAdmin = user?.role === 'ADMIN';
+    return isAdmin || (isPlayerInMatch(match) && isMatchInActiveSeason(match));
+  };
+
   if (groupLoading || loading) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
       </div>
     );
   }
@@ -291,7 +299,7 @@ export default function CalendarPage() {
                       </p>
                     </div>
                     {match.googleEventId && (
-                      <div className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded whitespace-nowrap">
+                      <div className="text-xs bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 px-2 py-1 rounded whitespace-nowrap">
                         📅 Google
                       </div>
                     )}
@@ -357,14 +365,22 @@ export default function CalendarPage() {
             >
               <MatchDetail
                 match={selectedMatch}
-                isPlayer={isPlayerInMatch(selectedMatch)}
+                isPlayer={canManageMatch(selectedMatch)}
                 currentUserId={user?.player?.id}
                 onCancel={() => setShowDetail(false)}
                 onEdit={() => {
+                  if (!canManageMatch(selectedMatch)) {
+                    toast.error('Solo puedes editar partidos de la temporada activa');
+                    return;
+                  }
                   setShowDetail(false);
                   setShowEditModal(true);
                 }}
                 onDelete={async () => {
+                  if (!canManageMatch(selectedMatch)) {
+                    toast.error('Solo puedes editar partidos de la temporada activa');
+                    return;
+                  }
                   try {
                     await api.delete(`/matches/${selectedMatch.id}`);
                     setMatches(prev => prev.filter(m => m.id !== selectedMatch.id));
@@ -394,7 +410,7 @@ export default function CalendarPage() {
                 const oppGames = userIsP1 ? match.gamesP2 : userIsP2 ? match.gamesP1 : match.gamesP2;
                 const icon = userIsP1 || userIsP2
                   ? (userGames ?? 0) > (oppGames ?? 0) ? '✅' : (userGames ?? 0) === (oppGames ?? 0) ? '➖' : '❌'
-                  : '🏅';
+                  : '🏆';
                 const resultText = `${match.gamesP1 ?? '-'}-${match.gamesP2 ?? '-'}`;
                 const displayDate = new Date(match.date || match.scheduledDate).toLocaleDateString('es-ES');
 
@@ -431,11 +447,11 @@ export default function CalendarPage() {
             <button
               onClick={isGoogleConnected ? handleDisconnectGoogle : handleConnectGoogle}
               disabled={isConnectingGoogle}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap text-sm ${
+              className={`px-4 py-2 whitespace-nowrap text-sm ${
                 isGoogleConnected
-                  ? 'bg-gray-400 text-white hover:bg-gray-500'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-              } disabled:bg-gray-300`}
+                  ? 'club-btn-subtle'
+                  : 'club-btn-primary'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {isConnectingGoogle ? 'Conectando...' : isGoogleConnected ? 'Desconectar' : 'Conectar'}
             </button>
@@ -484,3 +500,4 @@ export default function CalendarPage() {
     </div>
   );
 }
+

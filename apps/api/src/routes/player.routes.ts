@@ -131,8 +131,7 @@ export async function playerRoutes(fastify: FastifyInstance) {
             // Get the player's current group (based on active season)
             const currentGroup = await getPlayerCurrentGroup(id);
             
-            // Build the where clause - filter by current group if player is in one
-            const matchWhere: any = {
+            const baseMatchWhere: any = {
                 OR: [
                     { player1Id: id },
                     { player2Id: id },
@@ -142,20 +141,35 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 gamesP2: { not: null }, // Only matches with results
             };
 
+            // Build the where clause - filter by current group if player is in one
+            const activeSeasonMatchWhere: any = { ...baseMatchWhere };
+
             // If player has a current group, filter only for that group's matches
             if (currentGroup) {
-                matchWhere.groupId = currentGroup.id;
+                activeSeasonMatchWhere.groupId = currentGroup.id;
             }
 
-            // Get all matches for this player in the active season
-            const matches = await prisma.match.findMany({
-                where: matchWhere,
-                include: {
-                    player1: true,
-                    player2: true,
-                    winner: true,
-                },
-            });
+            // Get active-season matches and global matches
+            const [matches, globalMatches] = await Promise.all([
+                prisma.match.findMany({
+                    where: activeSeasonMatchWhere,
+                    include: {
+                        player1: true,
+                        player2: true,
+                        winner: true,
+                    },
+                }),
+                prisma.match.findMany({
+                    where: baseMatchWhere,
+                    select: {
+                        player1Id: true,
+                        player2Id: true,
+                        winnerId: true,
+                        gamesP1: true,
+                        gamesP2: true,
+                    },
+                }),
+            ]);
 
             // Calculate statistics
             const wins = matches.filter(m => m.winnerId === id).length;
@@ -181,6 +195,28 @@ export async function playerRoutes(fastify: FastifyInstance) {
             });
 
             const average = setsWon - setsLost;
+
+            const globalWins = globalMatches.filter(m => m.winnerId === id).length;
+            const globalLosses = globalMatches.filter(m => m.winnerId && m.winnerId !== id).length;
+            const globalTotalMatches = globalWins + globalLosses;
+            const globalWinPercentage = globalTotalMatches > 0 ? (globalWins / globalTotalMatches) * 100 : 0;
+
+            let globalSetsWon = 0;
+            let globalSetsLost = 0;
+
+            globalMatches.forEach(match => {
+                if (match.gamesP1 !== null && match.gamesP2 !== null) {
+                    if (match.player1Id === id) {
+                        globalSetsWon += match.gamesP1;
+                        globalSetsLost += match.gamesP2;
+                    } else {
+                        globalSetsWon += match.gamesP2;
+                        globalSetsLost += match.gamesP1;
+                    }
+                }
+            });
+
+            const globalAverage = globalSetsWon - globalSetsLost;
 
             // Calculate current streak
             const sortedMatches = matches
@@ -236,6 +272,15 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 injuryMatchesActiveSeason,
                 remainingMatchesActiveSeason,
                 isInjuredActiveSeason,
+                globalStats: {
+                    totalMatches: globalTotalMatches,
+                    wins: globalWins,
+                    losses: globalLosses,
+                    winPercentage: parseFloat(globalWinPercentage.toFixed(2)),
+                    setsWon: globalSetsWon,
+                    setsLost: globalSetsLost,
+                    average: globalAverage,
+                },
             };
             cacheService.set(cacheKey, response, 24);
             return response;

@@ -665,4 +665,5 @@ export async function userRoutes(fastify: FastifyInstance) {
             return reply.status(500).send({ error: 'Internal server error' });
         }
     });
+
 }

@@ -415,6 +415,13 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 include: {
                     player1: true,
                     player2: true,
+                    group: {
+                        include: {
+                            season: {
+                                select: { isActive: true },
+                            },
+                        },
+                    },
                 },
             });
 
@@ -426,6 +433,9 @@ export async function matchRoutes(fastify: FastifyInstance) {
             if (decoded.role !== 'ADMIN') {
                 if (!decoded.playerId || (decoded.playerId !== existingMatch.player1Id && decoded.playerId !== existingMatch.player2Id)) {
                     return reply.status(403).send({ error: 'No tienes permiso para editar este partido' });
+                }
+                if (!existingMatch.group?.season?.isActive) {
+                    return reply.status(403).send({ error: 'Solo puedes editar partidos de la temporada activa' });
                 }
             }
 
@@ -675,7 +685,7 @@ export async function matchRoutes(fastify: FastifyInstance) {
         }
     });
 
-    // Delete match (admin or player from their active group)
+    // Delete match (admin only)
     fastify.delete('/:id', {
         onRequest: [fastify.authenticate],
     }, async (request, reply) => {
@@ -696,17 +706,8 @@ export async function matchRoutes(fastify: FastifyInstance) {
             }
 
             const isAdmin = decoded.role === 'ADMIN';
-            const isPlayerInMatch = match.player1Id === decoded.playerId || match.player2Id === decoded.playerId;
-
-            if (!isAdmin && !isPlayerInMatch) {
-                return reply.status(403).send({ error: 'No tienes permiso para eliminar este partido' });
-            }
-
             if (!isAdmin) {
-                const currentGroupId = await getPlayerCurrentGroupId(decoded.playerId);
-                if (!currentGroupId || match.groupId !== currentGroupId) {
-                    return reply.status(403).send({ error: 'Solo puedes eliminar partidos de tu grupo activo' });
-                }
+                return reply.status(403).send({ error: 'No tienes permiso para eliminar este partido' });
             }
 
             const groupId = match.groupId;

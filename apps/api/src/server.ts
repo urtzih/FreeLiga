@@ -1,5 +1,5 @@
 /**
- * FreeSQuash League - API Server
+ * FreeSQuash Liga - API Server
  * 
  * @author Urtzi Diaz Arberas
  * @copyright © 2024-2026 Urtzi Diaz Arberas. All rights reserved.
@@ -26,8 +26,12 @@ import { userRoutes } from './routes/user.routes';
 import { adminRoutes } from './routes/admin.routes';
 import { bugRoutes } from './routes/bug.routes';
 import { publicRoutes } from './routes/public.routes';
+import { registerPushRoutes } from './routes/push.routes';
+import { notificationAdminRoutes } from './routes/notification-admin.routes';
 import { logger, logBusinessEvent } from './utils/logger';
 import { registerHttpLogging, httpErrorHook } from './utils/httpLogger';
+import { initializePushNotifications } from './services/push-notification.service';
+import { startNotificationScheduler, stopNotificationScheduler } from './services/notification-scheduler.service';
 
 // Load root-level .env so running from apps/api picks up shared config
 const rootEnvPath = path.resolve(process.cwd(), '..', '..', '.env');
@@ -49,6 +53,10 @@ const fastify = Fastify({
 
 async function start() {
     try {
+        // Initialize push notifications
+        initializePushNotifications();
+        startNotificationScheduler();
+        
         // Validate critical environment variables
         logger.info('Starting application initialization');
         const jwtSecret = process.env.JWT_SECRET;
@@ -186,7 +194,9 @@ async function start() {
         await fastify.register(classificationRoutes, { prefix: '/api/classification' });
         await fastify.register(userRoutes, { prefix: '/api/users' });
         await fastify.register(adminRoutes, { prefix: '/api/admin' });
+        await fastify.register(notificationAdminRoutes, { prefix: '/api/admin' });
         await fastify.register(bugRoutes, { prefix: '/api/bugs' });
+        await fastify.register(registerPushRoutes, { prefix: '/api' });
 
         // Start server
         const port = parseInt(process.env.PORT || '3001');
@@ -212,6 +222,14 @@ process.on('uncaughtException', (error: unknown) => {
     logger.fatal({ error }, 'Uncaught Exception - shutting down');
     logBusinessEvent('uncaught_exception', { error: String(error) });
     process.exit(1);
+});
+
+process.on('SIGTERM', () => {
+    stopNotificationScheduler();
+});
+
+process.on('SIGINT', () => {
+    stopNotificationScheduler();
 });
 
 start();
