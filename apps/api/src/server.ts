@@ -33,7 +33,7 @@ import { registerHttpLogging, httpErrorHook } from './utils/httpLogger';
 import { initializePushNotifications } from './services/push-notification.service';
 import { startNotificationScheduler, stopNotificationScheduler } from './services/notification-scheduler.service';
 
-// Load root-level .env so running from apps/api picks up shared config.
+// Load root-level .env so running from apps/api picks up shared config consistently.
 const rootEnvPath = path.resolve(process.cwd(), '..', '..', '.env');
 if (fs.existsSync(rootEnvPath)) {
     dotenv.config({ path: rootEnvPath });
