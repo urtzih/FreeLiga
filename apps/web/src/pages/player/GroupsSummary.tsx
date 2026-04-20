@@ -108,15 +108,20 @@ export default function GroupsSummary() {
 
     return (
         <div className="space-y-6">
-            <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div>
-                    <p className="text-sm text-slate-500">{tr('Temporada activa', 'Denboraldi aktiboa')}</p>
-                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{activeSeason.name}</h1>
-                </div>
-                <div className="flex gap-2 text-sm text-slate-600 dark:text-slate-300">
-                    <span className="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                        {groups.length} {tr('grupos', 'talde')}
-                    </span>
+            <header className="club-page-hero p-4 md:p-8">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <p className="text-xs md:text-sm uppercase tracking-wide text-amber-200/90">{tr('Temporada activa', 'Denboraldi aktiboa')}</p>
+                        <h1 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">{activeSeason.name}</h1>
+                        <p className="text-sm md:text-base club-page-hero-subtitle">
+                            {tr('Resumen y progreso actual de todos los grupos', 'Talde guztien laburpena eta uneko aurrerapena')}
+                        </p>
+                    </div>
+                    <div className="flex gap-2 text-sm">
+                        <span className="px-3 py-1 rounded-full border border-amber-300/60 bg-amber-200/10 text-amber-100">
+                            {groups.length} {tr('grupos', 'talde')}
+                        </span>
+                    </div>
                 </div>
             </header>
 

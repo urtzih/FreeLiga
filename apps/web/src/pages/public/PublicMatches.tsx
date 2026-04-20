@@ -41,16 +41,16 @@ export default function PublicMatches() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-amber-50">
-            <div className="bg-gradient-to-r from-amber-600 to-amber-600 text-white py-8 sm:py-12">
+            <div className="bg-gradient-to-r from-club-black-900 to-club-black-800 text-white py-8 sm:py-12">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <h1 className="text-2xl sm:text-4xl font-bold mb-2 break-words">🎾 {t('publicMatches.title')}</h1>
-                            <p className="club-page-hero-subtitle text-sm sm:text-base break-words">{t('publicMatches.subtitle')}</p>
+                            <h1 className="text-2xl sm:text-4xl font-bold mb-2 break-words text-club-yellow-300">🎾 {t('publicMatches.title')}</h1>
+                            <p className="text-club-yellow-100 text-sm sm:text-base break-words">{t('publicMatches.subtitle')}</p>
                         </div>
                         <Link
                             to="/"
-                            className="w-full sm:w-auto self-start px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base bg-white text-amber-600 font-semibold rounded-lg hover:bg-amber-50 transition-colors text-center"
+                            className="w-full sm:w-auto self-start px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base bg-club-yellow-300 text-club-black-900 font-semibold rounded-lg hover:bg-club-yellow-200 transition-colors text-center"
                         >
                             ← {t('public.page.back')}
                         </Link>
@@ -61,7 +61,7 @@ export default function PublicMatches() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12">
                 {isLoading && (
                     <div className="flex justify-center py-12">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600"></div>
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-club-yellow-600"></div>
                     </div>
                 )}
 
@@ -82,9 +82,9 @@ export default function PublicMatches() {
                         {matches.map((match) => (
                             <div
                                 key={match.id}
-                                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow overflow-hidden border-l-4 border-amber-500"
+                                className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow overflow-hidden border-l-4 border-club-yellow-500"
                             >
-                                <div className="bg-gradient-to-r from-amber-50 to-amber-50 p-3 sm:p-4 border-b border-gray-200">
+                                <div className="bg-gradient-to-r from-club-yellow-50 to-club-yellow-50 p-3 sm:p-4 border-b border-gray-200">
                                     <p className="text-sm text-gray-600 break-words">
                                         📍 {match.group.name}
                                     </p>
@@ -94,29 +94,23 @@ export default function PublicMatches() {
                                 </div>
 
                                 <div className="p-4 sm:p-6">
-                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="flex items-center gap-2 sm:gap-4">
                                         <div className="flex-1 min-w-0">
-                                            <p className={`font-bold text-base sm:text-lg break-words ${match.winner?.id === match.player1.id ? 'text-green-600' : 'text-gray-900'}`}>
-                                                {match.player1.name}
+                                            <p className={`font-bold text-base sm:text-lg truncate ${match.winner?.id === match.player1.id ? 'text-green-700' : 'text-gray-900'}`}>
+                                                {match.player1.name}{match.winner?.id === match.player1.id ? ' 🏆' : ''}
                                             </p>
-                                            {match.winner?.id === match.player1.id && (
-                                                <p className="text-sm text-green-600 font-semibold">🏆 {t('publicMatches.winner')}</p>
-                                            )}
                                         </div>
 
-                                        <div className="text-center sm:mx-4">
-                                            <div className="inline-flex bg-gradient-to-r from-amber-500 to-amber-500 text-white rounded-lg px-4 py-2.5 sm:py-3 font-bold text-lg sm:text-xl">
+                                        <div className="shrink-0 text-center">
+                                            <div className="inline-flex bg-gradient-to-r from-club-yellow-500 to-club-yellow-600 text-club-black-900 rounded-lg px-3 sm:px-4 py-2 sm:py-2.5 font-extrabold text-base sm:text-xl">
                                                 {match.gamesP1}-{match.gamesP2}
                                             </div>
                                         </div>
 
-                                        <div className="flex-1 min-w-0 text-left sm:text-right">
-                                            <p className={`font-bold text-base sm:text-lg break-words ${match.winner?.id === match.player2.id ? 'text-green-600' : 'text-gray-900'}`}>
-                                                {match.player2.name}
+                                        <div className="flex-1 min-w-0 text-right">
+                                            <p className={`font-bold text-base sm:text-lg truncate ${match.winner?.id === match.player2.id ? 'text-green-700' : 'text-gray-900'}`}>
+                                                {match.winner?.id === match.player2.id ? '🏆 ' : ''}{match.player2.name}
                                             </p>
-                                            {match.winner?.id === match.player2.id && (
-                                                <p className="text-sm text-green-600 font-semibold">🏆 {t('publicMatches.winner')}</p>
-                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -124,7 +118,7 @@ export default function PublicMatches() {
                                 <div className="bg-gray-50 px-4 sm:px-6 py-3 border-t border-gray-200">
                                     <Link
                                         to={`/public/group/${match.group.id}`}
-                                        className="text-amber-600 hover:text-amber-700 text-sm font-medium break-words"
+                                        className="text-club-black-900 hover:text-club-yellow-700 text-sm font-medium break-words"
                                     >
                                         {t('publicMatches.viewGroupClassification', { groupName: match.group.name })} →
                                     </Link>
@@ -134,9 +128,9 @@ export default function PublicMatches() {
                     </div>
                 )}
 
-                <div className="mt-10 sm:mt-12 bg-amber-50 border border-amber-200 rounded-xl p-4 sm:p-6 text-center">
+                <div className="mt-10 sm:mt-12 bg-club-yellow-50 border border-club-yellow-200 rounded-xl p-4 sm:p-6 text-center">
                     <p className="text-gray-700 text-sm sm:text-base">
-                        {t('publicMatches.moreDetails')} <Link to="/login" className="text-amber-600 font-semibold hover:underline">{t('public.page.signIn')}</Link> {t('publicMatches.signInFullPanel')}
+                        {t('publicMatches.moreDetails')} <Link to="/login" className="text-club-black-900 font-semibold hover:text-club-yellow-700 hover:underline">{t('public.page.signIn')}</Link> {t('publicMatches.signInFullPanel')}
                     </p>
                 </div>
             </div>

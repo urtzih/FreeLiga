@@ -21,6 +21,8 @@ FreeLiga es una aplicacion full-stack para gestionar una liga de squash con grup
 
 - Railway API tiene `watchPatterns` en `"/apps/api/**"`: si un commit solo toca Prisma/docs/scripts fuera de `apps/api`, puede no desplegarse automaticamente.
 - Si el cambio requiere deploy y no toca `apps/api`, forzar deploy manual en Railway o incluir un cambio minimo no funcional dentro de `apps/api`.
+- Si no aparece boton `Deploy latest commit`, usar `Deployments` -> menu `...` del ultimo deploy -> `Redeploy` (o CLI: `railway deployment up` / `railway redeploy`).
+- Verificar siempre proyecto y servicio antes de desplegar (`superb-balance` + `@freesquash/api`) para no redeployar otro servicio por error.
 - Todas las migraciones Prisma deben quedar versionadas en `packages/database/prisma/migrations/**/migration.sql` (no ignorarlas por `*.sql` global).
 - Antes de desplegar cambios de BBDD: comprobar que `prisma migrate deploy` puede ejecutarse en produccion y que no hay entradas fallidas en `_prisma_migrations`.
 - Si aparece `P3009`/`P3018`, resolver estado con `prisma migrate resolve --rolled-back <migration>` y volver a desplegar con SQL compatible con la version real de MySQL.

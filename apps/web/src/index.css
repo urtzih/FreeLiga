@@ -139,6 +139,14 @@
   .club-page-hero-subtitle {
     @apply text-amber-100;
   }
+
+  .club-hero-title {
+    @apply text-club-yellow-300;
+    text-shadow:
+      0 2px 0 rgba(23, 23, 23, 0.7),
+      0 10px 24px rgba(0, 0, 0, 0.45);
+    -webkit-text-stroke: 1px rgba(23, 23, 23, 0.28);
+  }
 }
 
 @media (max-width: 640px) {

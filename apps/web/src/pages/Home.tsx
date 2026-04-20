@@ -25,7 +25,7 @@ export default function Home() {
                             />
                         </div>
 
-                        <h1 className="text-3xl sm:text-6xl lg:text-7xl leading-[1.1] font-extrabold text-club-yellow-300 mb-3 sm:mb-6">
+                        <h1 className="text-3xl sm:text-6xl lg:text-7xl leading-[1.1] font-extrabold club-hero-title mb-3 sm:mb-6">
                             {t('home.hero.title')}
                         </h1>
                         <p className="text-base sm:text-2xl text-white/95 mb-2 sm:mb-4 max-w-3xl mx-auto">

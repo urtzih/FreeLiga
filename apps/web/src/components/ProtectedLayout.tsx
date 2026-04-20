@@ -264,7 +264,7 @@ export default function ProtectedLayout() {
                                 </>
                             )}
 
-                            <div className="pt-4 mt-4 border-t border-amber-500/30">
+                            <div className="pt-4 mt-4">
                                 <Link to="/profile" onClick={closeMobileMenu} className="block px-3 py-2 hover:bg-zinc-900 rounded-md transition-colors">
                                     <div className="text-sm font-medium text-amber-100">
                                         {user?.player?.name || user?.email}

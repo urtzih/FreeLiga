@@ -58,21 +58,25 @@ export default function Login() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-amber-50 via-amber-50 to-amber-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 px-4">
-            <div className="max-w-md w-full">
+        <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-amber-50 via-slate-50 to-amber-100/70 dark:from-[#0f0f0f] dark:via-[#151515] dark:to-[#201908]">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(250,204,21,0.22),transparent_36%),radial-gradient(circle_at_88%_8%,rgba(0,0,0,0.09),transparent_40%),linear-gradient(180deg,rgba(255,255,255,0.45),rgba(255,255,255,0))] dark:bg-[radial-gradient(circle_at_15%_0%,rgba(250,204,21,0.14),transparent_34%),radial-gradient(circle_at_85%_0%,rgba(250,204,21,0.08),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0))]"></div>
+            <div className="pointer-events-none absolute inset-0 opacity-[0.04] dark:opacity-[0.06] bg-[url('/logo.jpg')] bg-[length:240px_240px] bg-repeat [mask-image:radial-gradient(circle_at_center,black,transparent_80%)]"></div>
+
+            <div className="relative min-h-screen flex items-center justify-center px-4 py-8">
+                <div className="max-w-md w-full">
                 <div className="text-center mb-8">
                     <Link to="/" className="inline-block">
                         <img
                             src="/logo.jpg"
                             alt="FreeSquash Logo"
-                            className="mx-auto w-24 h-24 rounded-full object-cover border-4 border-white dark:border-slate-700 shadow-lg mb-4 hover:scale-105 transition-transform cursor-pointer"
+                            className="mx-auto w-24 h-24 rounded-full object-cover border-4 border-white dark:border-zinc-700 shadow-lg mb-4 hover:scale-105 transition-transform cursor-pointer"
                         />
                     </Link>
                     <h2 className="text-3xl font-bold text-slate-900 dark:text-white">{t('login.welcomeBack')}</h2>
                     <p className="text-slate-600 dark:text-slate-400 mt-2">{t('login.subtitle')}</p>
                 </div>
 
-                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8 border border-slate-200 dark:border-slate-700">
+                    <div className="bg-white/95 dark:bg-zinc-900/90 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-amber-200 dark:border-amber-500/20">
                     {error && (
                         <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/30 border-l-4 border-red-600 dark:border-red-500 rounded-lg shadow-md">
                             <div className="flex items-start justify-between">
@@ -142,6 +146,7 @@ export default function Login() {
                         {t('login.noAccount')}
                     </p>
                 </div>
+            </div>
             </div>
         </div>
     );
