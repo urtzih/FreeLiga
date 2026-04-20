@@ -28,6 +28,15 @@ export default function Dashboard() {
         enabled: !!user?.player?.id,
     });
 
+    const globalStats = playerStats?.globalStats ?? {
+        wins: playerStats?.wins ?? 0,
+        losses: playerStats?.losses ?? 0,
+        setsWon: playerStats?.setsWon ?? 0,
+        setsLost: playerStats?.setsLost ?? 0,
+        average: playerStats?.average ?? 0,
+        totalMatches: playerStats?.totalMatches ?? 0,
+    };
+
     const { data: upcomingMatches } = useQuery({
         queryKey: ['upcomingMatches', user?.player?.id],
         queryFn: async () => {
@@ -331,12 +340,12 @@ export default function Dashboard() {
 
             <GlobalStatsVisual
                 loading={statsLoading}
-                wins={playerStats?.globalStats?.wins || 0}
-                losses={playerStats?.globalStats?.losses || 0}
-                setsWon={playerStats?.globalStats?.setsWon || 0}
-                setsLost={playerStats?.globalStats?.setsLost || 0}
-                average={playerStats?.globalStats?.average || 0}
-                totalMatches={playerStats?.globalStats?.totalMatches || 0}
+                wins={globalStats.wins}
+                losses={globalStats.losses}
+                setsWon={globalStats.setsWon}
+                setsLost={globalStats.setsLost}
+                average={globalStats.average}
+                totalMatches={globalStats.totalMatches}
                 injuredMatches={playerStats?.injuryMatchesActiveSeason || 0}
                 showInjured={Boolean(playerStats?.isInjuredActiveSeason)}
                 globalTitle={t('dashboard.globalStats')}
