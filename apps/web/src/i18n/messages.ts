@@ -39,7 +39,7 @@ const es = {
     'nav.player.record': 'Registrar partido',
     'nav.player.recordMatch': 'Registrar partido',
     'nav.player.progress': 'Progreso',
-    'nav.player.groupsSummary': 'Resumen grupos',
+    'nav.player.groupsSummary': 'Todos los grupos',
     'nav.player.matchHistory': 'Historial de partidos',
     'nav.player.general': 'General',
     'nav.player.blacklist': 'Lista negra',
