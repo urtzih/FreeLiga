@@ -11,6 +11,8 @@ export default function Dashboard() {
     const { t, formatDate, formatDateTime } = useLanguage();
     const [showBanner, setShowBanner] = useState(true);
     const calendarEnabled = user?.player?.calendarEnabled ?? false;
+    const currentGroupFromAuth = user?.player?.currentGroup;
+    const currentGroupId = currentGroupFromAuth?.id;
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -56,7 +58,16 @@ export default function Dashboard() {
         enabled: !!user?.player?.id && calendarEnabled,
     });
 
-    const currentGroup = user?.player?.currentGroup;
+    const { data: currentGroupLive } = useQuery({
+        queryKey: ['group', currentGroupId],
+        queryFn: async () => {
+            const { data } = await api.get(`/groups/${currentGroupId}`);
+            return data;
+        },
+        enabled: !!currentGroupId,
+    });
+
+    const currentGroup = currentGroupLive ?? currentGroupFromAuth;
 
     const myRanking = currentGroup?.groupPlayers?.find(
         (gp: any) => gp.playerId === user?.player?.id

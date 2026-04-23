@@ -93,6 +93,24 @@ export default function GroupView() {
         return <div className="text-center py-12 text-red-600">{tr('Error cargando clasificacion', 'Errorea sailkapena kargatzean')}</div>;
     }
 
+    const rankingPositionByPlayer = new Map<string, number>(
+        (group.groupPlayers ?? []).map((gp: any) => [
+            String(gp.playerId),
+            Number(gp.rankingPosition) || Number.MAX_SAFE_INTEGER,
+        ]),
+    );
+
+    const classificationRows = (classification ?? [])
+        .slice()
+        .sort((a, b) => {
+            const aRanking = rankingPositionByPlayer.get(String(a.playerId)) ?? Number.MAX_SAFE_INTEGER;
+            const bRanking = rankingPositionByPlayer.get(String(b.playerId)) ?? Number.MAX_SAFE_INTEGER;
+
+            if (aRanking !== bRanking) return aRanking - bRanking;
+
+            return a.playerName.localeCompare(b.playerName, localeCode);
+        });
+
     const totalPlayers = group.groupPlayers.length;
     const completedMatches = group.matches.filter((m: any) =>
         (m.matchStatus === 'PLAYED' && m.gamesP1 !== null && m.gamesP2 !== null) || m.matchStatus === 'INJURY'
@@ -139,7 +157,7 @@ export default function GroupView() {
 
     const classificationProgressByPlayer = new Map<string, { remaining: number; injuries: number }>();
     let maxInjuriesInGroup = 0;
-    (classification ?? []).forEach((row) => {
+    classificationRows.forEach((row) => {
         const progress = getClassificationProgress(row.playerId);
         classificationProgressByPlayer.set(String(row.playerId), progress);
         if (progress.injuries > maxInjuriesInGroup) {
@@ -380,14 +398,14 @@ export default function GroupView() {
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white">{tr('Estadisticas del Grupo', 'Taldearen Estatistikak')}</h2>
-                    {classification && classification.length > 0 && (
+                    {classificationRows.length > 0 && (
                         <span className="text-xs text-slate-500 dark:text-slate-400">
-                            {classification.length} {tr('jugadores', 'jokalari')}
+                            {classificationRows.length} {tr('jugadores', 'jokalari')}
                         </span>
                     )}
                 </div>
                 <div className="p-3 md:p-6 space-y-0 md:space-y-6">
-                    {!classification || classification.length === 0 ? (
+                    {classificationRows.length === 0 ? (
                         <p className="text-sm text-slate-600 dark:text-slate-400">{tr('Sin partidos registrados todavia.', 'Oraindik ez dago partidarik erregistratuta.')}</p>
                     ) : (
                         <>
@@ -408,7 +426,7 @@ export default function GroupView() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                                        {classification.map((row, idx) => {
+                                        {classificationRows.map((row, idx) => {
                                             const progress = classificationProgressByPlayer.get(String(row.playerId)) ?? getClassificationProgress(row.playerId);
                                             const remaining = progress.remaining;
                                             const injuries = progress.injuries;
@@ -472,7 +490,7 @@ export default function GroupView() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                                        {classification.map((row, idx) => {
+                                        {classificationRows.map((row, idx) => {
                                             const progress = classificationProgressByPlayer.get(String(row.playerId)) ?? getClassificationProgress(row.playerId);
                                             const remaining = progress.remaining;
                                             const isInjuredPlayer = isActuallyInjuredPlayer(row.playerId);
