@@ -291,6 +291,10 @@ export async function publicRoutes(fastify: FastifyInstance) {
                 id: groupPlayer.player.id,
                 name: groupPlayer.player.name,
             }));
+            const activePlayerIds = new Set(players.map((player) => player.id));
+            const injuryMatchesInCurrentRoster = injuryMatches.filter((match) =>
+                activePlayerIds.has(match.player1Id) && activePlayerIds.has(match.player2Id),
+            );
 
             const hasPlayedBetween = (playerAId: string, playerBId: string) => {
                 const played = playedMatches.some((match) => (
@@ -298,7 +302,7 @@ export async function publicRoutes(fastify: FastifyInstance) {
                     (match.player1Id === playerBId && match.player2Id === playerAId)
                 ));
                 if (played) return true;
-                return injuryMatches.some((match) => (
+                return injuryMatchesInCurrentRoster.some((match) => (
                     (match.player1Id === playerAId && match.player2Id === playerBId) ||
                     (match.player1Id === playerBId && match.player2Id === playerAId)
                 ));

@@ -21,6 +21,46 @@ export async function playerRoutes(fastify: FastifyInstance) {
         cacheService.invalidate(keys.movements);
     };
 
+    const legacyExposureKey = (groupId: string, playerId: string) => `${groupId}:${playerId}`;
+
+    const buildLegacyInjuryExposure = (
+        matches: Array<{ matchStatus: string; player1Id: string; player2Id: string; winnerId: string | null; groupId: string }>
+    ) => {
+        const exposure = new Map<string, number>();
+        matches.forEach((match) => {
+            if (match.matchStatus !== 'INJURY' || match.winnerId) return;
+            const p1Key = legacyExposureKey(match.groupId, match.player1Id);
+            const p2Key = legacyExposureKey(match.groupId, match.player2Id);
+            exposure.set(p1Key, (exposure.get(p1Key) ?? 0) + 1);
+            exposure.set(p2Key, (exposure.get(p2Key) ?? 0) + 1);
+        });
+        return exposure;
+    };
+
+    const isPlayerInjuredInMatch = (
+        match: { matchStatus: string; groupId: string; player1Id: string; player2Id: string; winnerId: string | null },
+        playerId: string,
+        legacyExposure?: Map<string, number>,
+    ) => {
+        if (match.matchStatus !== 'INJURY') return false;
+        if (match.winnerId) {
+            return (match.player1Id === playerId || match.player2Id === playerId) && match.winnerId !== playerId;
+        }
+        // Compatibilidad con datos antiguos sin winnerId en INJURY:
+        // inferir lesionado por mayor exposicion legacy dentro del grupo.
+        if (legacyExposure) {
+            const p1Count = legacyExposure.get(legacyExposureKey(match.groupId, match.player1Id)) ?? 0;
+            const p2Count = legacyExposure.get(legacyExposureKey(match.groupId, match.player2Id)) ?? 0;
+            const inferredInjured = p1Count === p2Count
+                ? match.player1Id
+                : p1Count > p2Count
+                    ? match.player1Id
+                    : match.player2Id;
+            return inferredInjured === playerId;
+        }
+        return match.player1Id === playerId;
+    };
+
     // Get all players
     fastify.get('/', {
         onRequest: [fastify.authenticate],
@@ -244,18 +284,27 @@ export async function playerRoutes(fastify: FastifyInstance) {
             let isInjuredActiveSeason = false;
             if (currentGroup) {
                 const expectedMatches = Math.max(currentGroup.groupPlayers.length - 1, 0);
-                injuryMatchesActiveSeason = await prisma.match.count({
+                const injuryMatchesInGroup = await prisma.match.findMany({
                     where: {
                         groupId: currentGroup.id,
-                        OR: [
-                            { player1Id: id },
-                            { player2Id: id },
-                        ],
                         matchStatus: 'INJURY',
                     },
+                    select: {
+                        groupId: true,
+                        matchStatus: true,
+                        player1Id: true,
+                        player2Id: true,
+                        winnerId: true,
+                    },
                 });
+                const legacyExposure = buildLegacyInjuryExposure(injuryMatchesInGroup);
+                injuryMatchesActiveSeason = injuryMatchesInGroup
+                    .filter((match) => match.player1Id === id || match.player2Id === id)
+                    .filter((match) => isPlayerInjuredInMatch(match, id, legacyExposure))
+                    .length;
                 remainingMatchesActiveSeason = Math.max(expectedMatches - wins - losses - injuryMatchesActiveSeason, 0);
-                isInjuredActiveSeason = injuryMatchesActiveSeason > 0 && remainingMatchesActiveSeason === 0;
+                const seasonInjuryThreshold = Math.min(2, expectedMatches);
+                isInjuredActiveSeason = injuryMatchesActiveSeason >= seasonInjuryThreshold && remainingMatchesActiveSeason === 0;
             }
 
             const response = {
@@ -924,6 +973,20 @@ export async function playerRoutes(fastify: FastifyInstance) {
             }
 
             const playersInActiveSeason = Array.from(playersMap.values());
+            const injuryMatchesInActiveSeason = await prisma.match.findMany({
+                where: {
+                    groupId: { in: groupIds },
+                    matchStatus: 'INJURY',
+                },
+                select: {
+                    groupId: true,
+                    matchStatus: true,
+                    player1Id: true,
+                    player2Id: true,
+                    winnerId: true,
+                },
+            });
+            const legacyExposureActiveSeason = buildLegacyInjuryExposure(injuryMatchesInActiveSeason);
 
             // Calculate played/injury matches for each player in active season
             const blacklistData = await Promise.all(
@@ -941,18 +1004,16 @@ export async function playerRoutes(fastify: FastifyInstance) {
                         },
                     });
 
-                    const injuredMatches = await prisma.match.count({
-                        where: {
-                            groupId: { in: groupIds },
-                            OR: [
-                                { player1Id: player.id },
-                                { player2Id: player.id },
-                            ],
-                            matchStatus: 'INJURY',
-                        },
-                    });
+                    const injuredMatches = injuryMatchesInActiveSeason
+                        .filter((match) => match.player1Id === player.id || match.player2Id === player.id)
+                        .filter((match) => isPlayerInjuredInMatch(match, player.id, legacyExposureActiveSeason))
+                        .length;
 
-                    const remainingMatches = Math.max(player.expectedMatches - playedMatches - injuredMatches, 0);
+                    const injuryClosedMatches = injuryMatchesInActiveSeason
+                        .filter((match) => match.player1Id === player.id || match.player2Id === player.id)
+                        .length;
+
+                    const remainingMatches = Math.max(player.expectedMatches - playedMatches - injuryClosedMatches, 0);
 
                     return {
                         id: player.id,
@@ -1045,6 +1106,20 @@ export async function playerRoutes(fastify: FastifyInstance) {
             }
 
             const playersInHistory = Array.from(playersMap.values());
+            const injuryMatchesInHistory = await prisma.match.findMany({
+                where: {
+                    groupId: { in: allGroupIds },
+                    matchStatus: 'INJURY',
+                },
+                select: {
+                    groupId: true,
+                    matchStatus: true,
+                    player1Id: true,
+                    player2Id: true,
+                    winnerId: true,
+                },
+            });
+            const legacyExposureHistory = buildLegacyInjuryExposure(injuryMatchesInHistory);
 
             const blacklistData = await Promise.all(
                 playersInHistory.map(async (player) => {
@@ -1061,18 +1136,16 @@ export async function playerRoutes(fastify: FastifyInstance) {
                         },
                     });
 
-                    const injuredMatches = await prisma.match.count({
-                        where: {
-                            groupId: { in: allGroupIds },
-                            OR: [
-                                { player1Id: player.id },
-                                { player2Id: player.id },
-                            ],
-                            matchStatus: 'INJURY',
-                        },
-                    });
+                    const injuredMatches = injuryMatchesInHistory
+                        .filter((match) => match.player1Id === player.id || match.player2Id === player.id)
+                        .filter((match) => isPlayerInjuredInMatch(match, player.id, legacyExposureHistory))
+                        .length;
 
-                    const remainingMatches = Math.max(player.expectedMatches - playedMatches - injuredMatches, 0);
+                    const injuryClosedMatches = injuryMatchesInHistory
+                        .filter((match) => match.player1Id === player.id || match.player2Id === player.id)
+                        .length;
+
+                    const remainingMatches = Math.max(player.expectedMatches - playedMatches - injuryClosedMatches, 0);
 
                     return {
                         id: player.id,

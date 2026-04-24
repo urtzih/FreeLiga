@@ -1223,9 +1223,9 @@ export default function ManageUsers() {
  <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Confirmar lesión</h3>
  <div className="space-y-3 text-slate-700 dark:text-slate-300 text-sm">
  <p>Jugador: <strong>{injuryTarget.player.name}</strong></p>
- <p>Si se marca como lesionado, todos los partidos restantes de la temporada activa se marcarán como lesión y no se podrán jugar.</p>
- <p>Si NO ha jugado más de la mitad de los partidos esperados, también se marcarán como lesión los partidos ya jugados en la temporada activa.</p>
- <p>Esto cerrará los partidos pendientes para sus rivales.</p>
+ <p>Si se marca como lesionado, los enfrentamientos pendientes de la temporada activa se cerrarán por lesión.</p>
+ <p>Si ha jugado la mitad o menos, también se neutralizarán los ya jugados y no sumarán victoria/derrota para ninguno.</p>
+ <p>Los marcadores se conservan para poder retomar la liga más adelante si se recupera.</p>
  </div>
  <div className="flex space-x-3 mt-6">
  <button

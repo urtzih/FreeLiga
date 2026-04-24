@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '@freesquash/database';
 import { getPlayerCurrentGroup } from '../utils/playerHelpers';
 import { cacheService } from '../services/cache.service';
+import { getGroupRankings } from '../services/ranking.service';
 
 export async function classificationRoutes(fastify: FastifyInstance) {
     // Get global classification with filters
@@ -27,6 +28,128 @@ export async function classificationRoutes(fastify: FastifyInstance) {
             const cached = cacheService.get<any>(cacheKey);
             if (cached) {
                 return cached;
+            }
+
+            // Group standings (no extra filters): use the same ranking algorithm
+            // as rankingPosition (wins -> tie-breakers) to keep all UIs aligned.
+            if (groupId && !opponentId && !startDate && !endDate) {
+                const [groupPlayers, matches, rankings] = await Promise.all([
+                    prisma.groupPlayer.findMany({
+                        where: {
+                            groupId,
+                            player: {
+                                user: {
+                                    isActive: true,
+                                },
+                            },
+                        },
+                        include: {
+                            player: true,
+                        },
+                    }),
+                    prisma.match.findMany({
+                        where: {
+                            groupId,
+                            matchStatus: 'PLAYED',
+                            gamesP1: { not: null },
+                            gamesP2: { not: null },
+                            player1: {
+                                user: {
+                                    isActive: true,
+                                },
+                            },
+                            player2: {
+                                user: {
+                                    isActive: true,
+                                },
+                            },
+                        },
+                    }),
+                    getGroupRankings(groupId),
+                ]);
+
+                const rankingIndex = new Map<string, number>();
+                rankings.forEach((row, index) => {
+                    rankingIndex.set(row.id, index);
+                });
+
+                const statsByPlayer = new Map<string, {
+                    totalMatches: number;
+                    wins: number;
+                    losses: number;
+                    setsWon: number;
+                    setsLost: number;
+                }>();
+
+                groupPlayers.forEach((groupPlayer) => {
+                    statsByPlayer.set(groupPlayer.playerId, {
+                        totalMatches: 0,
+                        wins: 0,
+                        losses: 0,
+                        setsWon: 0,
+                        setsLost: 0,
+                    });
+                });
+
+                matches.forEach((match) => {
+                    const player1Stats = statsByPlayer.get(match.player1Id);
+                    const player2Stats = statsByPlayer.get(match.player2Id);
+
+                    if (player1Stats) {
+                        player1Stats.totalMatches += 1;
+                        if (match.winnerId === match.player1Id) player1Stats.wins += 1;
+                        if (match.winnerId === match.player2Id) player1Stats.losses += 1;
+                        player1Stats.setsWon += match.gamesP1 ?? 0;
+                        player1Stats.setsLost += match.gamesP2 ?? 0;
+                    }
+
+                    if (player2Stats) {
+                        player2Stats.totalMatches += 1;
+                        if (match.winnerId === match.player2Id) player2Stats.wins += 1;
+                        if (match.winnerId === match.player1Id) player2Stats.losses += 1;
+                        player2Stats.setsWon += match.gamesP2 ?? 0;
+                        player2Stats.setsLost += match.gamesP1 ?? 0;
+                    }
+                });
+
+                const response = groupPlayers
+                    .map((groupPlayer) => {
+                        const stats = statsByPlayer.get(groupPlayer.playerId) ?? {
+                            totalMatches: 0,
+                            wins: 0,
+                            losses: 0,
+                            setsWon: 0,
+                            setsLost: 0,
+                        };
+                        const average = stats.setsWon - stats.setsLost;
+                        const winPercentage = stats.totalMatches > 0
+                            ? (stats.wins / stats.totalMatches) * 100
+                            : 0;
+
+                        return {
+                            playerId: groupPlayer.playerId,
+                            playerName: groupPlayer.player.name,
+                            nickname: groupPlayer.player.nickname,
+                            currentGroup: null,
+                            totalMatches: stats.totalMatches,
+                            wins: stats.wins,
+                            losses: stats.losses,
+                            draws: 0,
+                            winPercentage: parseFloat(winPercentage.toFixed(2)),
+                            setsWon: stats.setsWon,
+                            setsLost: stats.setsLost,
+                            average,
+                        };
+                    })
+                    .sort((a, b) => {
+                        const aIdx = rankingIndex.get(a.playerId) ?? Number.MAX_SAFE_INTEGER;
+                        const bIdx = rankingIndex.get(b.playerId) ?? Number.MAX_SAFE_INTEGER;
+                        if (aIdx !== bIdx) return aIdx - bIdx;
+                        return a.playerName.localeCompare(b.playerName);
+                    });
+
+                cacheService.set(cacheKey, response, 24);
+                return response;
             }
 
             // Build match filter

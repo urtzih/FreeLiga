@@ -59,8 +59,8 @@ export default function Blacklist() {
       if (sortKey === 'unplayedPercentage') {
         const aTotal = a.totalMatches || 0;
         const bTotal = b.totalMatches || 0;
-        aValue = aTotal > 0 ? (((a.remainingMatches || 0) + (a.injuredMatches || 0)) / aTotal) * 100 : 0;
-        bValue = bTotal > 0 ? (((b.remainingMatches || 0) + (b.injuredMatches || 0)) / bTotal) * 100 : 0;
+        aValue = aTotal > 0 ? ((a.remainingMatches || 0) / aTotal) * 100 : 0;
+        bValue = bTotal > 0 ? ((b.remainingMatches || 0) / bTotal) * 100 : 0;
       } else {
         aValue = a[sortKey];
         bValue = b[sortKey];
@@ -110,9 +110,8 @@ export default function Blacklist() {
   const getUnplayedPercentage = (player: BlacklistPlayer) => {
     const total = player.totalMatches || 0;
     if (total <= 0) return 0;
-    const injured = player.injuredMatches || 0;
     const remaining = player.remainingMatches || 0;
-    const value = ((injured + remaining) / total) * 100;
+    const value = (remaining / total) * 100;
     return Math.max(0, Math.min(100, value));
   };
 

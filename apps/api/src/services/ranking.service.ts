@@ -4,9 +4,13 @@ interface PlayerStanding {
     playerId: string;
     playerName: string;
     matchesWon: number;
+    losses: number;
     setsWon: number;
     setsLost: number;
     average: number;
+    injuryAsSelf: number;
+    remainingPlayable: number;
+    fairLosses: number;
     internalWins?: number;
     internalAverage?: number;
 }
@@ -23,20 +27,106 @@ export interface RankingResult {
 }
 
 /**
- * Calculate group rankings using the 4-tier tie-breaking algorithm:
+ * Calculate group rankings using the tie-breaking algorithm:
  * 1. Matches won (primary)
- * 2. Head-to-head (for exactly 2 players tied)
- * 3. Mini-league (for 3+ players tied)
- *    - Internal wins
- *    - Internal sets averás
- * 4. Global sets averás
- * 5. Alphabetical order (last resort)
- * 
+ * 2. If all tied players have no playable matches left:
+ *    fewer adjusted losses first (losses + own injuries)
+ * 3. Head-to-head (for exactly 2 players tied)
+ * 4. Mini-league sets average (for 3+ players tied)
+ *    - Internal sets average (only matches among tied players)
+ * 5. Global sets average
+ * 6. Alphabetical order (last resort)
+ *
  * OPTIMIZED: Single DB call to get all data, batch updates
  */
+const isPlayedWithResult = (match: any) =>
+    match.matchStatus === 'PLAYED' && match.gamesP1 !== null && match.gamesP2 !== null;
+
+const isClosedForProgress = (match: any) =>
+    isPlayedWithResult(match) || match.matchStatus === 'INJURY';
+
+function buildLegacyInjuryExposure(matches: any[]): Map<string, number> {
+    const exposure = new Map<string, number>();
+    matches.forEach((match) => {
+        if (match.matchStatus !== 'INJURY' || match.winnerId) return;
+        exposure.set(match.player1Id, (exposure.get(match.player1Id) ?? 0) + 1);
+        exposure.set(match.player2Id, (exposure.get(match.player2Id) ?? 0) + 1);
+    });
+    return exposure;
+}
+
+function isPlayerInjuredInMatch(match: any, playerId: string, legacyExposure: Map<string, number>): boolean {
+    if (match.matchStatus !== 'INJURY') return false;
+    if (match.winnerId) {
+        return (match.player1Id === playerId || match.player2Id === playerId) && match.winnerId !== playerId;
+    }
+    const p1Count = legacyExposure.get(match.player1Id) ?? 0;
+    const p2Count = legacyExposure.get(match.player2Id) ?? 0;
+    if (p1Count === p2Count) return match.player1Id === playerId;
+    return (p1Count > p2Count ? match.player1Id : match.player2Id) === playerId;
+}
+
+function buildRankingContext(groupPlayers: any[], allGroupMatches: any[]) {
+    const activePlayerIds = new Set(groupPlayers.map((gp) => gp.playerId));
+    const matches = allGroupMatches.filter(
+        (match) => activePlayerIds.has(match.player1Id) && activePlayerIds.has(match.player2Id),
+    );
+    const playedMatches = matches.filter(isPlayedWithResult);
+    const legacyExposure = buildLegacyInjuryExposure(matches);
+    const expectedMatches = Math.max(groupPlayers.length - 1, 0);
+
+    const standings: PlayerStanding[] = groupPlayers.map((gp) => {
+        const playerId = gp.playerId;
+        const playerMatches = matches.filter((m) => m.player1Id === playerId || m.player2Id === playerId);
+        const playedByPlayer = playedMatches.filter((m) => m.player1Id === playerId || m.player2Id === playerId);
+        const matchesWon = playedByPlayer.filter((m) => m.winnerId === playerId).length;
+        const losses = playedByPlayer.filter((m) => m.winnerId && m.winnerId !== playerId).length;
+        const injuryAsSelf = playerMatches
+            .filter((m) => m.matchStatus === 'INJURY')
+            .filter((m) => isPlayerInjuredInMatch(m, playerId, legacyExposure))
+            .length;
+
+        let setsWon = 0;
+        let setsLost = 0;
+        playedByPlayer.forEach((match) => {
+            if (match.player1Id === playerId) {
+                setsWon += match.gamesP1;
+                setsLost += match.gamesP2;
+            } else {
+                setsWon += match.gamesP2;
+                setsLost += match.gamesP1;
+            }
+        });
+
+        const closedOpponents = new Set<string>();
+        playerMatches.forEach((match) => {
+            if (!isClosedForProgress(match)) return;
+            const opponentId = match.player1Id === playerId ? match.player2Id : match.player1Id;
+            closedOpponents.add(opponentId);
+        });
+
+        const remainingPlayable = Math.max(expectedMatches - closedOpponents.size, 0);
+
+        return {
+            playerId,
+            playerName: gp.player.name,
+            matchesWon,
+            losses,
+            setsWon,
+            setsLost,
+            average: setsWon - setsLost,
+            injuryAsSelf,
+            remainingPlayable,
+            fairLosses: losses + injuryAsSelf,
+        };
+    });
+
+    return { standings, playedMatches };
+}
+
 export async function calculateGroupRankings(groupId: string): Promise<void> {
     try {
-        // Single query to get all groupPlayers and all PLAYED matches at once
+        // Single query to get all active groupPlayers and their matches at once
         const [groupPlayers, matches] = await Promise.all([
             prisma.groupPlayer.findMany({
                 where: {
@@ -52,7 +142,10 @@ export async function calculateGroupRankings(groupId: string): Promise<void> {
             prisma.match.findMany({
                 where: {
                     groupId,
-                    matchStatus: 'PLAYED',
+                    OR: [
+                        { matchStatus: 'PLAYED' },
+                        { matchStatus: 'INJURY' },
+                    ],
                     player1: {
                         user: {
                             isActive: true,
@@ -64,36 +157,23 @@ export async function calculateGroupRankings(groupId: string): Promise<void> {
                         },
                     },
                 },
-                include: { player1: true, player2: true },
-            })
+                select: {
+                    id: true,
+                    player1Id: true,
+                    player2Id: true,
+                    matchStatus: true,
+                    gamesP1: true,
+                    gamesP2: true,
+                    winnerId: true,
+                },
+            }),
         ]);
 
         if (groupPlayers.length === 0) return;
 
-        // Calculate standings in-memory (no DB queries in loop)
-        const standings: PlayerStanding[] = groupPlayers.map(gp => {
-            const playerId = gp.playerId;
-            const playerMatches = matches.filter(m => m.player1Id === playerId || m.player2Id === playerId);
-            const matchesWon = playerMatches.filter(m => m.winnerId === playerId).length;
-            let setsWon = 0; 
-            let setsLost = 0;
-            playerMatches.forEach(match => {
-                // Solo contar partidos con resultado
-                if (match.gamesP1 !== null && match.gamesP2 !== null) {
-                    if (match.player1Id === playerId) { 
-                        setsWon += match.gamesP1; 
-                        setsLost += match.gamesP2; 
-                    } else { 
-                        setsWon += match.gamesP2; 
-                        setsLost += match.gamesP1; 
-                    }
-                }
-            });
-            return { playerId, playerName: gp.player.name, matchesWon, setsWon, setsLost, average: setsWon - setsLost };
-        });
-
-        const sorted = [...standings].sort((a, b) => b.matchesWon - a.matchesWon);
-        const rankedPlayers = resolveTies(sorted, matches);
+        const rankingContext = buildRankingContext(groupPlayers, matches);
+        const sorted = [...rankingContext.standings].sort((a, b) => b.matchesWon - a.matchesWon);
+        const rankedPlayers = resolveTies(sorted, rankingContext.playedMatches);
 
         // Batch update all positions at once instead of individual updates
         const updateOperations = rankedPlayers.map((player, index) =>
@@ -115,12 +195,49 @@ function resolveTies(standings: PlayerStanding[], matches: any[]): PlayerStandin
     while (i < standings.length) {
         const currentWins = standings[i].matchesWon; const tiedPlayers: PlayerStanding[] = []; let j = i;
         while (j < standings.length && standings[j].matchesWon === currentWins) { tiedPlayers.push(standings[j]); j++; }
-        if (tiedPlayers.length === 1) result.push(tiedPlayers[0]);
-        else if (tiedPlayers.length === 2) result.push(...resolveHeadToHead(tiedPlayers, matches));
-        else result.push(...resolveMiniLeague(tiedPlayers, matches));
+        if (tiedPlayers.length === 1) {
+            result.push(tiedPlayers[0]);
+        } else {
+            result.push(...resolveByFairLossesWhenNoRemaining(tiedPlayers, matches));
+        }
         i = j;
     }
     return result;
+}
+
+function resolveByFairLossesWhenNoRemaining(players: PlayerStanding[], matches: any[]): PlayerStanding[] {
+    if (!players.every((player) => player.remainingPlayable === 0)) {
+        return resolveByStandardTieBreak(players, matches);
+    }
+
+    const groupedByFairLoss = new Map<number, PlayerStanding[]>();
+    players.forEach((player) => {
+        const existing = groupedByFairLoss.get(player.fairLosses) ?? [];
+        existing.push(player);
+        groupedByFairLoss.set(player.fairLosses, existing);
+    });
+
+    const sortedFairLosses = [...groupedByFairLoss.keys()].sort((a, b) => a - b);
+    if (sortedFairLosses.length === 1) {
+        return resolveByStandardTieBreak(players, matches);
+    }
+
+    const resolved: PlayerStanding[] = [];
+    sortedFairLosses.forEach((fairLoss) => {
+        const bucket = groupedByFairLoss.get(fairLoss) ?? [];
+        if (bucket.length === 1) {
+            resolved.push(bucket[0]);
+            return;
+        }
+        resolved.push(...resolveByStandardTieBreak(bucket, matches));
+    });
+
+    return resolved;
+}
+
+function resolveByStandardTieBreak(players: PlayerStanding[], matches: any[]): PlayerStanding[] {
+    if (players.length === 2) return resolveHeadToHead(players, matches);
+    return resolveMiniLeague(players, matches);
 }
 
 function resolveHeadToHead(players: PlayerStanding[], matches: any[]): PlayerStanding[] {
@@ -188,12 +305,15 @@ function resolveHeadToHead(players: PlayerStanding[], matches: any[]): PlayerSta
 function resolveMiniLeague(players: PlayerStanding[], allMatches: any[]): PlayerStanding[] {
     const playerIds = players.map(p => p.playerId);
     const internalMatches = allMatches.filter(m => playerIds.includes(m.player1Id) && playerIds.includes(m.player2Id));
-    
-    // Calculate mini-league statistics
+
+    // Para 3+ empatados:
+    // 1) average en mini-liga (solo entre empatados)
+    // 2) average global
+    // 3) orden alfabetico
     const miniLeagueStandings = players.map(player => {
-        const internalWins = internalMatches.filter(m => m.winnerId === player.playerId).length;
         let internalSetsWon = 0;
         let internalSetsLost = 0;
+
         internalMatches.forEach(match => {
             if (match.player1Id === player.playerId) {
                 internalSetsWon += match.gamesP1;
@@ -203,49 +323,22 @@ function resolveMiniLeague(players: PlayerStanding[], allMatches: any[]): Player
                 internalSetsLost += match.gamesP1;
             }
         });
-        return { 
-            ...player, 
-            internalWins, 
-            internalAverage: internalSetsWon - internalSetsLost 
+
+        return {
+            ...player,
+            internalAverage: internalSetsWon - internalSetsLost,
         };
     });
-    
-    // Sort by internal wins first
-    const sortedByInternalWins = [...miniLeagueStandings].sort((a, b) => (b.internalWins ?? 0) - (a.internalWins ?? 0));
-    
-    // Recursively resolve ties using mini-league logic
-    const result: PlayerStanding[] = [];
-    let i = 0;
-    
-    while (i < sortedByInternalWins.length) {
-        const currentInternalWins = sortedByInternalWins[i].internalWins ?? 0;
-        const tiedByInternalWins: PlayerStanding[] = [];
-        let j = i;
-        
-        while (j < sortedByInternalWins.length && ((sortedByInternalWins[j].internalWins ?? 0) === currentInternalWins)) {
-            tiedByInternalWins.push(sortedByInternalWins[j]);
-            j++;
+
+    return [...miniLeagueStandings].sort((a, b) => {
+        if ((b.internalAverage ?? 0) !== (a.internalAverage ?? 0)) {
+            return (b.internalAverage ?? 0) - (a.internalAverage ?? 0);
         }
-        
-        // If only one player with this internal win count
-        if (tiedByInternalWins.length === 1) {
-            result.push(tiedByInternalWins[0]);
-        } else {
-            // Multiple players with same internal wins, sort by internal average
-            const sortedByInternalAverage = [...tiedByInternalWins].sort((a, b) => {
-                if ((b.internalAverage ?? 0) !== (a.internalAverage ?? 0)) return (b.internalAverage ?? 0) - (a.internalAverage ?? 0);
-                // If still tied on internal average, use global average
-                if (b.average !== a.average) return b.average - a.average;
-                // If still tied, use alphabetical order
-                return a.playerName.localeCompare(b.playerName);
-            });
-            result.push(...sortedByInternalAverage);
+        if (b.average !== a.average) {
+            return b.average - a.average;
         }
-        
-        i = j;
-    }
-    
-    return result;
+        return a.playerName.localeCompare(b.playerName);
+    });
 }
 
 function resolveByGlobalAverage(players: PlayerStanding[]): PlayerStanding[] {
@@ -399,7 +492,10 @@ export async function getGroupRankings(groupId: string): Promise<RankingResult[]
             prisma.match.findMany({
                 where: {
                     groupId,
-                    matchStatus: 'PLAYED',
+                    OR: [
+                        { matchStatus: 'PLAYED' },
+                        { matchStatus: 'INJURY' },
+                    ],
                     player1: {
                         user: {
                             isActive: true,
@@ -411,49 +507,31 @@ export async function getGroupRankings(groupId: string): Promise<RankingResult[]
                         },
                     },
                 },
-                include: { player1: true, player2: true },
-            })
+                select: {
+                    id: true,
+                    player1Id: true,
+                    player2Id: true,
+                    matchStatus: true,
+                    gamesP1: true,
+                    gamesP2: true,
+                    winnerId: true,
+                },
+            }),
         ]);
 
         if (groupPlayers.length === 0) return [];
 
-        // Calculate standings in-memory
-        const standings: PlayerStanding[] = groupPlayers.map(gp => {
-            const playerId = gp.playerId;
-            const playerMatches = matches.filter(m => m.player1Id === playerId || m.player2Id === playerId);
-            const matchesWon = playerMatches.filter(m => m.winnerId === playerId).length;
-            let setsWon = 0;
-            let setsLost = 0;
-            playerMatches.forEach(match => {
-                if (match.gamesP1 !== null && match.gamesP2 !== null) {
-                    if (match.player1Id === playerId) {
-                        setsWon += match.gamesP1;
-                        setsLost += match.gamesP2;
-                    } else {
-                        setsWon += match.gamesP2;
-                        setsLost += match.gamesP1;
-                    }
-                }
-            });
-            return {
-                playerId,
-                playerName: gp.player.name,
-                matchesWon,
-                setsWon,
-                setsLost,
-                average: setsWon - setsLost,
-            };
-        });
+        const rankingContext = buildRankingContext(groupPlayers, matches);
 
         // Sort by matches won first
-        const sorted = [...standings].sort((a, b) => b.matchesWon - a.matchesWon);
+        const sorted = [...rankingContext.standings].sort((a, b) => b.matchesWon - a.matchesWon);
 
         // Resolve ties using the same logic as calculateGroupRankings
-        const resolved = resolveTies(sorted, matches);
+        const resolved = resolveTies(sorted, rankingContext.playedMatches);
 
         // Format for API response
         return resolved.map((standing, index) => {
-            const totalMatches = matches.filter(m => 
+            const totalMatches = rankingContext.playedMatches.filter(m =>
                 m.player1Id === standing.playerId || m.player2Id === standing.playerId
             ).length;
             const winPercentage = totalMatches > 0 ? (standing.matchesWon / totalMatches) * 100 : 0;
@@ -474,3 +552,4 @@ export async function getGroupRankings(groupId: string): Promise<RankingResult[]
         throw error;
     }
 }
+

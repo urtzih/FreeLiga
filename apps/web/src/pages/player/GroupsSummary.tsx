@@ -3,6 +3,7 @@ import { useQueries, useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import Loader from '../../components/Loader';
 import ProgressBar from '../../components/ProgressBar';
+import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import api from '../../lib/api';
 
@@ -18,6 +19,7 @@ interface GroupDetail extends Group {
     matches: Array<{
         player1Id: string;
         player2Id: string;
+        winnerId?: string | null;
         gamesP1: number | null;
         gamesP2: number | null;
         matchStatus: string;
@@ -37,6 +39,7 @@ interface ClassificationRow {
 }
 
 export default function GroupsSummary() {
+    const { user } = useAuth();
     const { language } = useLanguage();
     const tr = (es: string, eu: string) => (language === 'eu' ? eu : es);
 
@@ -142,6 +145,31 @@ export default function GroupsSummary() {
                     const isClosedMatchForClassification = (match: GroupDetail['matches'][number]) =>
                         (match.matchStatus === 'PLAYED' && match.gamesP1 !== null && match.gamesP2 !== null) ||
                         match.matchStatus === 'INJURY';
+                    const activeGroupPlayerIds = new Set(
+                        group.groupPlayers.map((gp) => gp.playerId),
+                    );
+
+                    const legacyInjuryExposureByPlayer = new Map<string, number>();
+                    groupMatches.forEach((match) => {
+                        if (match.matchStatus !== 'INJURY' || match.winnerId) return;
+                        legacyInjuryExposureByPlayer.set(match.player1Id, (legacyInjuryExposureByPlayer.get(match.player1Id) ?? 0) + 1);
+                        legacyInjuryExposureByPlayer.set(match.player2Id, (legacyInjuryExposureByPlayer.get(match.player2Id) ?? 0) + 1);
+                    });
+
+                    const inferLegacyInjuredPlayerId = (match: GroupDetail['matches'][number]) => {
+                        const p1Count = legacyInjuryExposureByPlayer.get(match.player1Id) ?? 0;
+                        const p2Count = legacyInjuryExposureByPlayer.get(match.player2Id) ?? 0;
+                        if (p1Count === p2Count) return match.player1Id;
+                        return p1Count > p2Count ? match.player1Id : match.player2Id;
+                    };
+
+                    const isPlayerInjuredInMatch = (match: GroupDetail['matches'][number], playerId: string) => {
+                        if (match.matchStatus !== 'INJURY') return false;
+                        if (match.winnerId) {
+                            return (match.player1Id === playerId || match.player2Id === playerId) && match.winnerId !== playerId;
+                        }
+                        return inferLegacyInjuredPlayerId(match) === playerId;
+                    };
 
                     const getPlayerProgress = (playerId: string) => {
                         const completedOpponents = new Set<string>();
@@ -155,9 +183,11 @@ export default function GroupsSummary() {
                             if (!isPlayer1 && !isPlayer2) continue;
 
                             const opponentId = isPlayer1 ? match.player2Id : match.player1Id;
+                            // Ignorar cruces legacy contra jugadores fuera del grupo actual
+                            if (!activeGroupPlayerIds.has(opponentId)) continue;
                             completedOpponents.add(opponentId);
 
-                            if (match.matchStatus === 'INJURY') {
+                            if (isPlayerInjuredInMatch(match, playerId)) {
                                 injuryOpponents.add(opponentId);
                             }
                         }
@@ -215,39 +245,50 @@ export default function GroupsSummary() {
                                             <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                                                 {(() => {
                                                     const progressByPlayer = new Map<string, { remainingMatches: number; injuryCount: number }>();
-                                                    let maxInjuryCount = 0;
                                                     classification.forEach((playerRow) => {
                                                         const progress = getPlayerProgress(playerRow.playerId);
                                                         progressByPlayer.set(playerRow.playerId, progress);
-                                                        if (progress.injuryCount > maxInjuryCount) {
-                                                            maxInjuryCount = progress.injuryCount;
-                                                        }
                                                     });
 
                                                     return classification.slice(0, 8).map((row, idx) => {
                                                         const setsDiff = row.setsWon - row.setsLost;
                                                         const progress = progressByPlayer.get(row.playerId) ?? getPlayerProgress(row.playerId);
                                                         const remainingMatches = progress.remainingMatches;
+                                                        const seasonInjuryThreshold = Math.min(2, Math.max(players - 1, 0));
                                                         const isInjuredPlayer =
-                                                            progress.injuryCount > 0 &&
-                                                            remainingMatches === 0 &&
-                                                            progress.injuryCount === maxInjuryCount;
+                                                            progress.injuryCount >= seasonInjuryThreshold &&
+                                                            remainingMatches === 0;
+                                                        const isCurrentUser = String(row.playerId) === String(user?.player?.id);
 
+                                                        const isTopLeagueChampion = isFirstGroup && idx === 0;
                                                         const isPromotion = !isFirstGroup && idx < 2;
                                                         const isRelegation = !isLastGroup && idx >= 6;
 
-                                                        const rowClass = isPromotion
+                                                        const baseRowClass = isTopLeagueChampion
+                                                            ? 'bg-amber-50 dark:bg-amber-900/25 hover:bg-amber-100 dark:hover:bg-amber-900/35'
+                                                            : isPromotion
                                                             ? 'bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30'
                                                             : isRelegation
                                                                 ? 'bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30'
                                                                 : 'hover:bg-slate-50 dark:hover:bg-slate-900/60';
+                                                        const rowClass = `${baseRowClass} ${isCurrentUser ? 'outline outline-1 -outline-offset-1 outline-amber-400/70 dark:outline-amber-500/45' : ''}`;
 
                                                         return (
                                                             <tr key={row.playerId} className={rowClass}>
-                                                                <td className="px-2 py-2 text-slate-500">{idx + 1}</td>
-                                                                <td className="px-2 py-2 font-medium text-slate-900 dark:text-white">
+                                                                <td className={`px-2 py-2 ${isCurrentUser ? 'font-semibold text-slate-700 dark:text-slate-200' : isTopLeagueChampion ? 'font-semibold text-amber-700 dark:text-amber-300' : 'text-slate-500'}`}>{idx + 1}</td>
+                                                                <td className={`px-2 py-2 font-medium ${isCurrentUser ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-900 dark:text-white'}`}>
                                                                     <span className="inline-flex items-center gap-1">
+                                                                        {isTopLeagueChampion && (
+                                                                            <span className="text-amber-600 dark:text-amber-300" title={tr('Campeon de la mejor liga', 'Liga oneneko txapelduna')}>
+                                                                                {String.fromCodePoint(0x1F3C6)}
+                                                                            </span>
+                                                                        )}
                                                                         <span>{row.playerName}</span>
+                                                                        {isCurrentUser && (
+                                                                            <span className="text-[10px] px-1 py-0.5 rounded bg-amber-200 text-amber-900 dark:bg-amber-700/40 dark:text-amber-100 font-semibold">
+                                                                                {tr('Tu', 'Zu')}
+                                                                            </span>
+                                                                        )}
                                                                         {isInjuredPlayer && (
                                                                             <span className="text-[11px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
                                                                                 {String.fromCodePoint(0x1F915)} {tr('Lesionado', 'Lesionatua')}
@@ -259,7 +300,7 @@ export default function GroupsSummary() {
                                                                 <td className="px-2 py-2 text-center font-semibold text-red-600 dark:text-red-400">{row.losses}</td>
                                                                 <td
                                                                     className={`px-2 py-2 text-center font-semibold ${
-                                                                        setsDiff >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'
+                                                                        setsDiff >= 0 ? 'text-club-yellow-700 dark:text-club-yellow-300' : 'text-red-500 dark:text-red-400'
                                                                     }`}
                                                                 >
                                                                     {setsDiff}

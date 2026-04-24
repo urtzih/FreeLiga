@@ -67,12 +67,26 @@ export default function Dashboard() {
         enabled: !!currentGroupId,
     });
 
+    const { data: currentClassification } = useQuery({
+        queryKey: ['classification', currentGroupId],
+        queryFn: async () => {
+            const { data } = await api.get(`/classification?groupId=${currentGroupId}`);
+            return data as Array<{ playerId: string }>;
+        },
+        enabled: !!currentGroupId,
+    });
+
     const currentGroup = currentGroupLive ?? currentGroupFromAuth;
 
     const myRanking = currentGroup?.groupPlayers?.find(
         (gp: any) => gp.playerId === user?.player?.id
     );
-    const rankingPosition = myRanking?.rankingPosition;
+    const classificationPosition = currentClassification?.findIndex(
+        (row) => String(row.playerId) === String(user?.player?.id),
+    );
+    const rankingPosition = classificationPosition !== undefined && classificationPosition >= 0
+        ? classificationPosition + 1
+        : myRanking?.rankingPosition;
     const rankingHighlightClasses = rankingPosition && rankingPosition <= 2
         ? {
             number: 'text-green-600 dark:text-green-400',

@@ -207,10 +207,11 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 return reply.status(400).send({ error: 'Both players must be in the group' });
             }
 
-            // Check if match already exists between these two players in this group
-            // Allow if: (1) no match exists, (2) match is pending (for recording result), or (3) it's an admin recording a result
             const isAdmin = decoded.role === 'ADMIN';
-            const existingMatch = await prisma.match.findFirst({
+            const isRecordingResult = body.matchStatus === 'PLAYED' && body.gamesP1 !== undefined && body.gamesP2 !== undefined;
+            const isMarkingInjury = body.matchStatus === 'INJURY';
+
+            const existingMatches = await prisma.match.findMany({
                 where: {
                     groupId: body.groupId,
                     OR: [
@@ -219,32 +220,41 @@ export async function matchRoutes(fastify: FastifyInstance) {
                     ],
                 }
             });
+            const pendingMatch = existingMatches.find((match) =>
+                match.matchStatus === 'PLAYED' && match.gamesP1 === null && match.gamesP2 === null
+            ) ?? null;
+            const reopenableInjuryMatch = existingMatches.find((match) =>
+                match.matchStatus === 'INJURY'
+            ) ?? null;
+            const updatableMatch = pendingMatch ?? reopenableInjuryMatch;
+            const hasRecordedPlayedMatch = existingMatches.some((match) =>
+                match.matchStatus === 'PLAYED' && match.gamesP1 !== null && match.gamesP2 !== null
+            );
+            const hasCancelledMatch = existingMatches.some((match) => match.matchStatus === 'CANCELLED');
+            const hasClosedNonInjuryMatch = hasRecordedPlayedMatch || hasCancelledMatch;
+            const hasExistingInjuryMatch = existingMatches.some((match) => match.matchStatus === 'INJURY');
 
-            // If a match exists, check if it's pending and the request is to record a result
-            if (existingMatch) {
-                const isPendingMatch = !existingMatch.gamesP1 && !existingMatch.gamesP2;
-                const isRecordingResult = body.matchStatus === 'PLAYED' && body.gamesP1 !== undefined && body.gamesP2 !== undefined;
-                
-                // Allow: pending match being recorded OR admin creating new match entry
-                if (!isPendingMatch && !isAdmin) {
-                    return reply.status(400).send({ error: 'Ya existe un partido registrado entre estos jugadores en este grupo. Solo los administradores pueden crear múltiples partidos entre los mismos jugadores.' });
-                }
-                
-                // If recording result and there's a pending match, the update logic will reuse it
-                if (isPendingMatch && isRecordingResult) {
-                    // This is OK - we'll update the pending match below
-                } else if (!isPendingMatch && isAdmin) {
-                    // Admin can create a new match even if one exists with result
-                } else if (isPendingMatch && !isRecordingResult) {
-                    // This would create a duplicate, prevent it
-                    return reply.status(400).send({ error: 'Ya existe un partido pendiente entre estos jugadores. Registra el resultado del partido existente.' });
-                }
+            if (hasExistingInjuryMatch && isMarkingInjury && !updatableMatch) {
+                return reply.status(400).send({ error: 'Ya existe un partido por lesión entre estos jugadores en este grupo.' });
+            }
+
+            // Allow pending/injury match updates for score registration or injury closure.
+            if (updatableMatch && !(isRecordingResult || isMarkingInjury)) {
+                return reply.status(400).send({ error: 'Ya existe un partido pendiente entre estos jugadores. Registra el resultado del partido existente.' });
+            }
+
+            // Non-admins cannot create multiple closed matches between the same players.
+            if (
+                !isAdmin &&
+                hasClosedNonInjuryMatch &&
+                (!updatableMatch || updatableMatch.matchStatus === 'INJURY')
+            ) {
+                return reply.status(400).send({ error: 'Ya existe un partido registrado entre estos jugadores en este grupo. Solo los administradores pueden crear múltiples partidos entre los mismos jugadores.' });
             }
 
 
             // Determine winner (only for PLAYED matches with scores)
             let winnerId: string | null = null;
-            const isRecordingResult = body.matchStatus === 'PLAYED' && body.gamesP1 !== undefined && body.gamesP2 !== undefined;
 
             if (isRecordingResult) {
                 const gamesP1 = body.gamesP1 as number;
@@ -258,24 +268,6 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 } else if (gamesP2 > gamesP1) {
                     winnerId = body.player2Id;
                 }
-            }
-
-            // If result is being recorded, try to reuse an existing scheduled match (same players in the group without result)
-            let reusedScheduledMatch = null;
-            if (body.matchStatus === 'PLAYED' && body.gamesP1 !== undefined && body.gamesP2 !== undefined) {
-                reusedScheduledMatch = await prisma.match.findFirst({
-                    where: {
-                        groupId: body.groupId,
-                        isScheduled: true,
-                        gamesP1: null,
-                        gamesP2: null,
-                        OR: [
-                            { player1Id: body.player1Id, player2Id: body.player2Id },
-                            { player1Id: body.player2Id, player2Id: body.player1Id },
-                        ],
-                    },
-                    orderBy: [{ scheduledDate: 'asc' }],
-                });
             }
 
             // Determinar datos según si es programado o jugado
@@ -316,18 +308,35 @@ export async function matchRoutes(fastify: FastifyInstance) {
                     };
                 }
             }
+            if (isMarkingInjury) {
+                matchData.matchStatus = 'INJURY';
+                matchData.gamesP1 = null;
+                matchData.gamesP2 = null;
+                // Convencion: en INJURY, player1 es el lesionado y player2 el no lesionado.
+                matchData.winner = {
+                    connect: { id: body.player2Id }
+                };
+            }
 
-            // If there is a scheduled match, update it with the result instead of creating a new one
-            const match = reusedScheduledMatch
+            // If there is a pending/injury match, update it instead of creating a new one.
+            const isUpdatingInjuryToPlayed = isRecordingResult && updatableMatch?.matchStatus === 'INJURY';
+            const match = updatableMatch && (isRecordingResult || isMarkingInjury)
                 ? await prisma.match.update({
-                    where: { id: reusedScheduledMatch.id },
+                    where: { id: updatableMatch.id },
                     data: {
-                        gamesP1: body.gamesP1,
-                        gamesP2: body.gamesP2,
-                        winner: winnerId ? { connect: { id: winnerId } } : undefined,
+                        player1Id: (isMarkingInjury || isUpdatingInjuryToPlayed) ? body.player1Id : updatableMatch.player1Id,
+                        player2Id: (isMarkingInjury || isUpdatingInjuryToPlayed) ? body.player2Id : updatableMatch.player2Id,
+                        gamesP1: isRecordingResult ? body.gamesP1 : null,
+                        gamesP2: isRecordingResult ? body.gamesP2 : null,
+                        winnerId: isRecordingResult ? winnerId : isMarkingInjury ? body.player2Id : null,
                         matchStatus: body.matchStatus,
-                        date: body.date ? new Date(body.date) : reusedScheduledMatch.date,
+                        date: body.date ? new Date(body.date) : updatableMatch.date,
                         isScheduled: false,
+                        scheduledDate: null,
+                        location: null,
+                        notes: null,
+                        googleEventId: null,
+                        googleCalendarSyncStatus: null,
                     },
                     include: {
                         player1: true,
@@ -578,20 +587,24 @@ export async function matchRoutes(fastify: FastifyInstance) {
                 m.matchStatus === 'PLAYED' && m.gamesP1 !== null && m.gamesP2 !== null
             ).length;
 
-            const isPartialMode = playedMatches > expectedMatches / 2;
+            // Regla negocio:
+            // - Si ha jugado mas de la mitad: solo cerrar pendientes.
+            // - Si ha jugado la mitad o menos: neutralizar tambien los jugados (sin sumar W/L).
+            const shouldInvalidatePlayedMatches = playedMatches <= expectedMatches / 2;
+            const isPlayedWithResult = (m: typeof playerMatches[number]) =>
+                m.matchStatus === 'PLAYED' && m.gamesP1 !== null && m.gamesP2 !== null;
 
-            const matchesToUpdate = isPartialMode
-                ? playerMatches.filter((m) =>
-                    m.gamesP1 === null ||
-                    m.gamesP2 === null ||
-                    m.isScheduled ||
-                    !!m.scheduledDate ||
-                    !!m.googleEventId
-                )
-                : playerMatches;
+            const matchesToUpdate = playerMatches.filter((m) => {
+                if (m.matchStatus === 'INJURY') return false;
+                if (shouldInvalidatePlayedMatches) return true;
+                return !isPlayedWithResult(m);
+            });
+            const convertedPlayedMatches = matchesToUpdate.filter((m) => isPlayedWithResult(m)).length;
 
             let updatedCount = 0;
             for (const match of matchesToUpdate) {
+                const opponentId = match.player1Id === targetPlayerId ? match.player2Id : match.player1Id;
+
                 if (match.googleEventId) {
                     const candidateUserIds = [
                         decoded.id,
@@ -609,13 +622,19 @@ export async function matchRoutes(fastify: FastifyInstance) {
                     }
                 }
 
+                const preserveResultForPotentialRecovery = isPlayedWithResult(match);
+
                 await prisma.match.update({
                     where: { id: match.id },
                     data: {
+                        // Convencion INJURY: player1 lesionado, player2 no lesionado.
+                        player1Id: targetPlayerId,
+                        player2Id: opponentId,
                         matchStatus: 'INJURY',
-                        gamesP1: null,
-                        gamesP2: null,
-                        winnerId: null,
+                        // Si era un jugado y se neutraliza por regla de mitad, conservamos marcador.
+                        gamesP1: preserveResultForPotentialRecovery ? match.gamesP1 : null,
+                        gamesP2: preserveResultForPotentialRecovery ? match.gamesP2 : null,
+                        winnerId: opponentId,
                         isScheduled: false,
                         scheduledDate: null,
                         location: null,
@@ -647,7 +666,7 @@ export async function matchRoutes(fastify: FastifyInstance) {
                     matchStatus: 'INJURY' as const,
                     gamesP1: null,
                     gamesP2: null,
-                    winnerId: null,
+                    winnerId: opponentId,
                     isScheduled: false,
                     date: new Date(),
                 }));
@@ -658,23 +677,29 @@ export async function matchRoutes(fastify: FastifyInstance) {
 
             await calculateGroupRankings(group.id);
             await invalidateMatchRelatedCache(group.id);
+            invalidatePlayerCache(targetPlayerId);
+            group.groupPlayers
+                .map((gp) => gp.playerId)
+                .forEach((playerId) => invalidatePlayerCache(playerId));
 
             logger.info({
                 playerId: targetPlayerId,
                 groupId: group.id,
                 expectedMatches,
                 playedMatches,
-                mode: isPartialMode ? 'partial' : 'total',
                 updatedCount,
                 createdCount,
+                convertedPlayedMatches,
+                mode: shouldInvalidatePlayedMatches ? 'total' : 'partial',
             }, 'Player marked as injured');
 
             return {
-                mode: isPartialMode ? 'partial' : 'total',
+                mode: shouldInvalidatePlayedMatches ? 'total' : 'partial',
                 expectedMatches,
                 playedMatches,
                 updatedCount,
                 createdCount,
+                convertedPlayedMatches,
             };
         } catch (error) {
             if (error instanceof z.ZodError) {

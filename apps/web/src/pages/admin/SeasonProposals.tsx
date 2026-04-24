@@ -21,13 +21,35 @@ export default function SeasonProposals() {
  const groupMatches = Array.isArray(groupDetail?.matches) ? groupDetail.matches : [];
  const groupPlayers = Array.isArray(groupDetail?.groupPlayers) ? groupDetail.groupPlayers : [];
 
+ const legacyInjuryExposureByPlayer = new Map<string, number>();
+ groupMatches.forEach((match: any) => {
+ if (match.matchStatus !== 'INJURY' || match.winnerId) return;
+ legacyInjuryExposureByPlayer.set(match.player1Id, (legacyInjuryExposureByPlayer.get(match.player1Id) ?? 0) + 1);
+ legacyInjuryExposureByPlayer.set(match.player2Id, (legacyInjuryExposureByPlayer.get(match.player2Id) ?? 0) + 1);
+ });
+
+ const isPlayerInjuredInMatch = (match: any, playerId: string) => {
+ if (match.matchStatus !== 'INJURY') return false;
+ if (match.winnerId) {
+ return (match.player1Id === playerId || match.player2Id === playerId) && match.winnerId !== playerId;
+ }
+ const p1Count = legacyInjuryExposureByPlayer.get(match.player1Id) ?? 0;
+ const p2Count = legacyInjuryExposureByPlayer.get(match.player2Id) ?? 0;
+ const inferredInjuredPlayerId = p1Count === p2Count
+ ? match.player1Id
+ : p1Count > p2Count
+ ? match.player1Id
+ : match.player2Id;
+ return inferredInjuredPlayerId === playerId;
+ };
+
  const statsByPlayer: Record<string, { losses: number; remaining: number; injuries: number; setAverage: number }> = {};
 
  for (const gp of groupPlayers) {
  const playerId = gp.playerId;
  const playerMatches = groupMatches.filter((m: any) => m.player1Id === playerId || m.player2Id === playerId);
  const playedMatches = playerMatches.filter((m: any) => m.gamesP1 !== null && m.gamesP2 !== null && m.matchStatus !== 'INJURY');
- const injuredMatches = playerMatches.filter((m: any) => m.matchStatus === 'INJURY');
+ const injuredMatches = playerMatches.filter((m: any) => isPlayerInjuredInMatch(m, playerId));
  const losses = playedMatches.filter((m: any) => m.winnerId && m.winnerId !== playerId).length;
  const remaining = Math.max(expectedMatches - playedMatches.length - injuredMatches.length, 0);
 

@@ -93,36 +93,60 @@ export default function GroupView() {
         return <div className="text-center py-12 text-red-600">{tr('Error cargando clasificacion', 'Errorea sailkapena kargatzean')}</div>;
     }
 
-    const rankingPositionByPlayer = new Map<string, number>(
-        (group.groupPlayers ?? []).map((gp: any) => [
-            String(gp.playerId),
-            Number(gp.rankingPosition) || Number.MAX_SAFE_INTEGER,
-        ]),
+    const classificationRows = classification ?? [];
+    const positionByPlayerId = new Map<string, number>(
+        classificationRows.map((row, index) => [String(row.playerId), index + 1]),
     );
-
-    const classificationRows = (classification ?? [])
-        .slice()
-        .sort((a, b) => {
-            const aRanking = rankingPositionByPlayer.get(String(a.playerId)) ?? Number.MAX_SAFE_INTEGER;
-            const bRanking = rankingPositionByPlayer.get(String(b.playerId)) ?? Number.MAX_SAFE_INTEGER;
-
-            if (aRanking !== bRanking) return aRanking - bRanking;
-
-            return a.playerName.localeCompare(b.playerName, localeCode);
-        });
+    const orderedGroupPlayers = [...group.groupPlayers].sort((a: any, b: any) => {
+        const aPos = positionByPlayerId.get(String(a.playerId)) ?? Number.MAX_SAFE_INTEGER;
+        const bPos = positionByPlayerId.get(String(b.playerId)) ?? Number.MAX_SAFE_INTEGER;
+        if (aPos !== bPos) return aPos - bPos;
+        return a.player.name.localeCompare(b.player.name, localeCode);
+    });
+    const activeGroupPlayerIds = new Set(
+        orderedGroupPlayers.map((gp: any) => String(gp.playerId)),
+    );
 
     const totalPlayers = group.groupPlayers.length;
     const completedMatches = group.matches.filter((m: any) =>
         (m.matchStatus === 'PLAYED' && m.gamesP1 !== null && m.gamesP2 !== null) || m.matchStatus === 'INJURY'
     );
-    const playedMatches = group.matches.filter((m: any) => m.matchStatus === 'PLAYED' && m.gamesP1 !== null && m.gamesP2 !== null);
-
-    const recentPlayedMatches = [...playedMatches]
+    const recentClosedMatches = [...group.matches.filter((m: any) =>
+        (m.matchStatus === 'PLAYED' && m.gamesP1 !== null && m.gamesP2 !== null) ||
+        m.matchStatus === 'INJURY' ||
+        m.matchStatus === 'CANCELLED',
+    )]
         .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     const recentOpponentOptions = [...group.groupPlayers]
         .map((gp: any) => ({ id: String(gp.playerId), name: gp.player.name }))
         .sort((a, b) => a.name.localeCompare(b.name, localeCode));
+
+    const legacyInjuryExposureByPlayer = new Map<string, number>();
+    group.matches.forEach((match: any) => {
+        if (match.matchStatus !== 'INJURY' || match.winnerId) return;
+        const p1 = String(match.player1Id);
+        const p2 = String(match.player2Id);
+        legacyInjuryExposureByPlayer.set(p1, (legacyInjuryExposureByPlayer.get(p1) ?? 0) + 1);
+        legacyInjuryExposureByPlayer.set(p2, (legacyInjuryExposureByPlayer.get(p2) ?? 0) + 1);
+    });
+
+    const inferLegacyInjuredPlayerId = (match: any) => {
+        const p1 = String(match.player1Id);
+        const p2 = String(match.player2Id);
+        const p1Count = legacyInjuryExposureByPlayer.get(p1) ?? 0;
+        const p2Count = legacyInjuryExposureByPlayer.get(p2) ?? 0;
+        if (p1Count === p2Count) return p1;
+        return p1Count > p2Count ? p1 : p2;
+    };
+
+    const isPlayerInjuredInMatch = (match: any, playerId: string) => {
+        if (match.matchStatus !== 'INJURY') return false;
+        if (match.winnerId) {
+            return (String(match.player1Id) === playerId || String(match.player2Id) === playerId) && String(match.winnerId) !== playerId;
+        }
+        return inferLegacyInjuredPlayerId(match) === playerId;
+    };
 
     const isClosedMatchForClassification = (match: any) =>
         (match.matchStatus === 'PLAYED' && match.gamesP1 !== null && match.gamesP2 !== null) ||
@@ -139,11 +163,14 @@ export default function GroupView() {
             const isPlayer2 = String(match.player2Id) === playerId;
             if (!isPlayer1 && !isPlayer2) return;
 
-            const opponentId = isPlayer1 ? match.player2Id : match.player1Id;
-            completedOpponents.add(String(opponentId));
+            const opponentId = String(isPlayer1 ? match.player2Id : match.player1Id);
+            // Ignorar cruces legacy contra jugadores fuera del grupo actual
+            if (!activeGroupPlayerIds.has(opponentId)) return;
 
-            if (match.matchStatus === 'INJURY') {
-                injuryOpponents.add(String(opponentId));
+            completedOpponents.add(opponentId);
+
+            if (isPlayerInjuredInMatch(match, playerId)) {
+                injuryOpponents.add(opponentId);
             }
         });
 
@@ -156,24 +183,21 @@ export default function GroupView() {
     };
 
     const classificationProgressByPlayer = new Map<string, { remaining: number; injuries: number }>();
-    let maxInjuriesInGroup = 0;
     classificationRows.forEach((row) => {
         const progress = getClassificationProgress(row.playerId);
         classificationProgressByPlayer.set(String(row.playerId), progress);
-        if (progress.injuries > maxInjuriesInGroup) {
-            maxInjuriesInGroup = progress.injuries;
-        }
     });
 
     const isActuallyInjuredPlayer = (playerId: string) => {
         const progress = classificationProgressByPlayer.get(String(playerId));
         if (!progress) return false;
-        return progress.injuries > 0 && progress.remaining === 0 && progress.injuries === maxInjuriesInGroup;
+        const seasonInjuryThreshold = Math.min(2, Math.max(totalPlayers - 1, 0));
+        return progress.injuries >= seasonInjuryThreshold && progress.remaining === 0;
     };
 
     const filteredRecentMatches = selectedRecentOpponent === 'all'
-        ? recentPlayedMatches
-        : recentPlayedMatches.filter((match: any) =>
+        ? recentClosedMatches
+        : recentClosedMatches.filter((match: any) =>
             String(match.player1Id) === selectedRecentOpponent || String(match.player2Id) === selectedRecentOpponent
         );
 
@@ -209,12 +233,19 @@ export default function GroupView() {
         if (!directMatch) return defaultDisplay;
 
         if (directMatch.matchStatus === 'INJURY') {
+            const iAmInjured = isPlayerInjuredInMatch(directMatch, String(myPlayerId));
             return {
-                resultText: tr('Lesion', 'Lesioa'),
-                resultColor: 'text-orange-600 dark:text-orange-400 font-semibold',
-                resultStatusText: tr('Lesion', 'Lesioa'),
-                resultStatusTone: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
-                resultBadgeTone: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-700/50',
+                resultText: iAmInjured ? tr('Lesion', 'Lesioa') : tr('Rival lesionado', 'Aurkaria lesionatuta'),
+                resultColor: iAmInjured
+                    ? 'text-orange-600 dark:text-orange-400 font-semibold'
+                    : 'text-slate-600 dark:text-slate-300 font-semibold',
+                resultStatusText: iAmInjured ? tr('Lesion', 'Lesioa') : tr('Rival lesionado', 'Aurkaria lesionatuta'),
+                resultStatusTone: iAmInjured
+                    ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
+                    : 'bg-slate-100 text-slate-700 dark:bg-slate-700/50 dark:text-slate-300',
+                resultBadgeTone: iAmInjured
+                    ? 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-700/50'
+                    : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
                 showScoreBadge: false,
             };
         }
@@ -270,7 +301,7 @@ export default function GroupView() {
     };
 
     const remainingMatchesList: Array<{ id: string; player1Name: string; player2Name: string }> = [];
-    const players = [...group.groupPlayers].sort((a: any, b: any) => a.rankingPosition - b.rankingPosition);
+    const players = orderedGroupPlayers;
     for (let i = 0; i < players.length; i++) {
         for (let j = i + 1; j < players.length; j++) {
             const playerA = players[i];
@@ -300,11 +331,12 @@ export default function GroupView() {
             'Postua,Jokalaria,Irabazitako Partidak,Galdutako Partidak,Irabazitako Setak,Galdutako Setak,Mugimendua',
         ));
 
-        const sortedPlayers = [...group.groupPlayers].sort((a: any, b: any) => a.rankingPosition - b.rankingPosition);
-        sortedPlayers.forEach((gp: any) => {
-            const movement = gp.rankingPosition <= 2
+        const sortedPlayers = orderedGroupPlayers;
+        sortedPlayers.forEach((gp: any, index: number) => {
+            const displayPosition = index + 1;
+            const movement = displayPosition <= 2
                 ? tr('ASCENSO', 'IGOERA')
-                : gp.rankingPosition > totalPlayers - 2
+                : displayPosition > totalPlayers - 2
                     ? tr('DESCENSO', 'JAITSIERA')
                     : tr('MANTIENE', 'MANTENTZEN DA');
             const wins = group.matches.filter((m: any) => m.matchStatus === 'PLAYED' && m.winnerId === gp.playerId).length || 0;
@@ -323,7 +355,7 @@ export default function GroupView() {
                 }
             });
 
-            rows.push(`${gp.rankingPosition},"${gp.player.name}",${wins},${losses},${setsWon},${setsLost},"${movement}"`);
+            rows.push(`${displayPosition},"${gp.player.name}",${wins},${losses},${setsWon},${setsLost},"${movement}"`);
         });
 
         const csv = rows.join('\n');
@@ -421,6 +453,7 @@ export default function GroupView() {
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">{tr('Derrotas', 'Porrotak')}</th>
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">{tr('Restantes', 'Geratzen direnak')}</th>
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">{tr('Lesion', 'Lesioa')}</th>
+                                            <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">AVG</th>
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Sets +</th>
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Sets -</th>
                                         </tr>
@@ -431,7 +464,8 @@ export default function GroupView() {
                                             const remaining = progress.remaining;
                                             const injuries = progress.injuries;
                                             const isInjuredPlayer = isActuallyInjuredPlayer(row.playerId);
-                                            const displayInjuries = isInjuredPlayer ? injuries : 0;
+                                            const displayInjuries = injuries;
+                                            const setDifference = row.setsWon - row.setsLost;
                                             const isCurrentUser = String(row.playerId) === String(user?.player?.id);
                                             
                                             // Determinar ascenso/descenso
@@ -443,7 +477,7 @@ export default function GroupView() {
                                                 : isRelegation
                                                 ? "bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30"
                                                 : "hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors";
-                                            const rowClass = `${baseRowClass} ${isCurrentUser ? 'ring-1 ring-inset ring-amber-400/70 dark:ring-amber-500/45' : ''}`;
+                                            const rowClass = `${baseRowClass} ${isCurrentUser ? 'outline outline-1 -outline-offset-1 outline-amber-400/70 dark:outline-amber-500/45' : ''}`;
 
                                             return (
                                                 <tr key={row.playerId} className={rowClass}>
@@ -467,6 +501,9 @@ export default function GroupView() {
                                                     <td className="px-3 py-2 text-center font-semibold text-red-600 dark:text-red-400">{row.losses}</td>
                                                     <td className="px-3 py-2 text-center font-semibold text-slate-600 dark:text-slate-400">{remaining}</td>
                                                     <td className="px-3 py-2 text-center font-semibold text-orange-600 dark:text-orange-400">{displayInjuries}</td>
+                                                    <td className={`px-3 py-2 text-center font-semibold ${setDifference >= 0 ? 'text-club-yellow-700 dark:text-club-yellow-300' : 'text-red-500 dark:text-red-400'}`}>
+                                                        {setDifference > 0 ? '+' : ''}{setDifference}
+                                                    </td>
                                                     <td className="px-3 py-2 text-center">{row.setsWon}</td>
                                                     <td className="px-3 py-2 text-center">{row.setsLost}</td>
                                                 </tr>
@@ -508,7 +545,7 @@ export default function GroupView() {
                                                 : isRelegation
                                                 ? "bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30"
                                                 : "hover:bg-slate-50 dark:hover:bg-slate-900/60";
-                                            const rowClass = `${baseRowClass} ${isCurrentUser ? 'ring-1 ring-inset ring-amber-400/70 dark:ring-amber-500/45' : ''}`;
+                                            const rowClass = `${baseRowClass} ${isCurrentUser ? 'outline outline-1 -outline-offset-1 outline-amber-400/70 dark:outline-amber-500/45' : ''}`;
 
                                             return (
                                                 <tr key={row.playerId} className={rowClass}>
@@ -566,11 +603,12 @@ export default function GroupView() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                            {group.groupPlayers
+                            {orderedGroupPlayers
                                 .filter((gp: any) => gp.player.user?.role !== 'ADMIN')
                                 .map((gp: any, index: number) => {
                                     const isCurrentUser = gp.playerId === user?.player?.id;
                                     const { resultText, resultColor } = getDirectMatchDisplay(gp.playerId);
+                                    const displayPosition = index + 1;
                                     
                                     return (
                                         <tr 
@@ -590,7 +628,7 @@ export default function GroupView() {
                                                         </span>
                                                     )}
                                                     <span className="text-sm font-bold text-slate-600 dark:text-slate-400">
-                                                        #{gp.rankingPosition}
+                                                        #{displayPosition}
                                                     </span>
                                                     <div>
                                                         <p className={`font-medium ${isCurrentUser ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}>
@@ -627,11 +665,12 @@ export default function GroupView() {
 
             {/* Vista movil - Cards */}
                 <div className="md:hidden space-y-2 p-3">
-                    {group.groupPlayers
+                    {orderedGroupPlayers
                         .filter((gp: any) => gp.player.user?.role !== 'ADMIN')
                         .map((gp: any, index: number) => {
                             const isCurrentUser = gp.playerId === user?.player?.id;
                             const { resultText, resultStatusText, resultStatusTone, resultBadgeTone, showScoreBadge } = getDirectMatchDisplay(gp.playerId);
+                            const displayPosition = index + 1;
 
                             return (
                                 <div 
@@ -651,12 +690,12 @@ export default function GroupView() {
                                                         {String.fromCodePoint(0x2B07)} OUT
                                                     </span>
                                                 )}
-                                                {index >= 2 && index < totalPlayers - 2 && <span className="text-sm font-bold text-slate-500">#{gp.rankingPosition}</span>}
+                                                {index >= 2 && index < totalPlayers - 2 && <span className="text-sm font-bold text-slate-500">#{displayPosition}</span>}
                                             </div>
                                             <div className="flex-1">
                                                 <div className="flex items-start justify-between gap-2">
                                                     <p className={`font-semibold text-sm ${isCurrentUser ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}>
-                                                        #{gp.rankingPosition} {gp.player.name} {isCurrentUser && tr('(Tu)', '(Zu)')}
+                                                        #{displayPosition} {gp.player.name} {isCurrentUser && tr('(Tu)', '(Zu)')}
                                                     </p>
                                                     {!isCurrentUser && (
                                                         <div className="flex flex-wrap justify-end items-center gap-1.5 shrink-0">
@@ -695,7 +734,7 @@ export default function GroupView() {
             </div>
 
             {/* Partidos Recientes */}
-            {recentPlayedMatches.length > 0 && (
+            {recentClosedMatches.length > 0 && (
 
                 <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                     <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center sm:justify-between">
@@ -739,9 +778,15 @@ export default function GroupView() {
                                         </p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                                            {match.gamesP1} - {match.gamesP2}
-                                        </p>
+                                        {match.matchStatus === 'PLAYED' ? (
+                                            <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                                                {match.gamesP1} - {match.gamesP2}
+                                            </p>
+                                        ) : (
+                                            <p className="text-2xl font-bold text-slate-500 dark:text-slate-400">
+                                                -
+                                            </p>
+                                        )}
                                         {match.matchStatus !== 'PLAYED' && (
                                             <p className="text-xs text-orange-600 dark:text-orange-400 uppercase">
                                                 {match.matchStatus === 'INJURY' ? tr('LESION', 'LESIOA') : tr('CANCELADO', 'EZEZTATUA')}
@@ -825,6 +870,7 @@ export default function GroupView() {
                                 const opponentScore = isPlayer1 ? match.gamesP2 : match.gamesP1;
                                 const won = match.winnerId === user?.player?.id;
                                 const played = (match.matchStatus === 'PLAYED' && match.gamesP1 !== null && match.gamesP2 !== null) || match.matchStatus === 'INJURY';
+                                const iAmInjuredInThisMatch = match.matchStatus === 'INJURY' && isPlayerInjuredInMatch(match, String(user?.player?.id));
 
                                 return (
                                     <div key={match.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
@@ -833,7 +879,9 @@ export default function GroupView() {
                                                 <div className="flex items-center space-x-3">
                                                     {played && (
                                                         <span className="text-2xl">
-                                                            {match.matchStatus === 'INJURY' ? String.fromCodePoint(0x1F915) : won ? String.fromCodePoint(0x2705) : String.fromCodePoint(0x274C)}
+                                                            {match.matchStatus === 'INJURY'
+                                                                ? (iAmInjuredInThisMatch ? String.fromCodePoint(0x1F915) : String.fromCodePoint(0x2705))
+                                                                : won ? String.fromCodePoint(0x2705) : String.fromCodePoint(0x274C)}
                                                         </span>
                                                     )}
                                                     {!played && (
@@ -857,8 +905,8 @@ export default function GroupView() {
                                             <div className="text-right">
                                                 {played ? (
                                                     match.matchStatus === 'INJURY' ? (
-                                                        <p className="text-sm font-bold text-orange-600 dark:text-orange-400 uppercase">
-                                                            {tr('LESION', 'LESIOA')}
+                                                        <p className={`text-sm font-bold uppercase ${iAmInjuredInThisMatch ? 'text-orange-600 dark:text-orange-400' : 'text-slate-600 dark:text-slate-300'}`}>
+                                                            {iAmInjuredInThisMatch ? tr('LESION', 'LESIOA') : tr('RIVAL LESIONADO', 'AURKARIA LESIONATUTA')}
                                                         </p>
                                                     ) : (
                                                         <p className={`text-2xl font-bold ${won ? 'text-green-700 dark:text-green-300' : 'text-red-600 dark:text-red-400'}`}>

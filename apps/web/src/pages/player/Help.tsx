@@ -63,6 +63,73 @@ export default function Help() {
                 </ul>
             </Section>
 
+            <Section title={tr('Como se resuelven los empates', 'Berdinketak nola ebazten diren')} tone="info">
+                <p>
+                    {tr(
+                        'Cuando dos o mas jugadores terminan igual, se desempata siempre con estas reglas, en este orden.',
+                        'Bi jokalari edo gehiago berdin amaitzen dutenean, berdinketa beti arau hauekin hausten da, orden honetan.',
+                    )}
+                </p>
+                <ol className="list-decimal list-inside space-y-2">
+                    <li>
+                        {tr(
+                            'Primero: quien tenga mas victorias.',
+                            'Lehenik: garaipen gehiago duenak.',
+                        )}
+                    </li>
+                    <li>
+                        {tr(
+                            'Si los empatados ya no tienen partidos por jugar, se aplica una regla de lesion: queda por delante quien tuvo menos partidos perdidos por su parte (derrotas + lesiones propias).',
+                            'Berdinduek jokatzeko partidarik ez badute, lesio-arau bat aplikatzen da: aurretik geratzen da bere aldetik galdutako partida gutxien izan duena (porrotak + lesio propioak).',
+                        )}
+                    </li>
+                    <li>
+                        {tr(
+                            'Si aun siguen empatados:',
+                            'Oraindik berdinduta jarraitzen badute:',
+                        )}
+                        <ul className="list-disc list-inside mt-2 space-y-1">
+                            <li>
+                                {tr(
+                                    'Empate de 2 jugadores: primero el resultado entre ellos; si aun empatan, se mira el average de ese duelo.',
+                                    '2 jokalariren berdinketa: lehenik bien arteko emaitza; berdin jarraituz gero, duelo horretako average-a.',
+                                )}
+                            </li>
+                            <li>
+                                {tr(
+                                    'Empate de 3 o mas: se mira el average solo entre esos jugadores empatados.',
+                                    '3 jokalari edo gehiagoren berdinketa: berdinduta dauden jokalarien arteko average-a bakarrik begiratzen da.',
+                                )}
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        {tr(
+                            'Si sigue igual: average global.',
+                            'Berdin jarraitzen badu: average globala.',
+                        )}
+                    </li>
+                    <li>
+                        {tr(
+                            'Como ultimo criterio: orden alfabetico.',
+                            'Azken irizpide gisa: orden alfabetikoa.',
+                        )}
+                    </li>
+                </ol>
+                <p>
+                    {tr(
+                        'Importante: si un partido no se jugo porque se lesiono tu rival, eso no te perjudica en este desempate. Si no se jugo porque te lesionaste tu, entonces si cuenta en tu parte.',
+                        'Garrantzitsua: partida bat ez bada jokatu aurkaria lesionatu delako, horrek ez dizu kalterik egiten berdinketa honetan. Zuk lesionatuta ez bada jokatu, orduan bai kontatzen da zure aldean.',
+                    )}
+                </p>
+                <p>
+                    {tr(
+                        'Ejemplo rapido: si tu y otro jugador teneis las mismas victorias, y tu no pudiste jugar un cruce porque el otro se lesiono, no se te penaliza por ese caso.',
+                        'Adibide azkarra: zuk eta beste jokalari batek garaipen berdinak badituzue, eta gurutzaketa bat ez bada jokatu bestea lesionatu delako, kasu horrek ez zaitu zigortzen.',
+                    )}
+                </p>
+            </Section>
+
             <Section title={tr('C\u00F3mo registrar un partido', 'Nola erregistratu partida bat')}>
                 <ol className="list-decimal list-inside space-y-2">
                     <li>{tr('Entra en "Registrar partido".', '"Partida erregistratu" atalera sartu.')}</li>
@@ -72,8 +139,28 @@ export default function Help() {
                 </ol>
                 <p>
                     {tr(
-                        'Si hubo lesi\u00F3n de temporada, usa la opci\u00F3n de lesi\u00F3n en el formulario.',
-                        'Denboraldiko lesioa egon bada, erabili lesio aukera formularioan.',
+                        'En lesiones, tienes dos opciones diferentes en el formulario.',
+                        'Lesioetan, bi aukera desberdin dituzu formularioan.',
+                    )}
+                </p>
+                <ul className="list-disc list-inside space-y-1">
+                    <li>
+                        {tr(
+                            'Lesion de este partido: cierra solo ese cruce concreto (puedes marcar si te lesionaste tu o si se lesiono tu rival).',
+                            'Partida honetako lesioa: gurutzaketa zehatz hori bakarrik ixten du (zuk lesionatu zaren ala aurkaria lesionatu den markatu dezakezu).',
+                        )}
+                    </li>
+                    <li>
+                        {tr(
+                            'Lesion para el resto de la temporada: cierra tus cruces pendientes de la temporada activa.',
+                            'Denboraldi osorako lesioa: denboraldi aktiboko zure gurutzaketa pendienteak ixten ditu.',
+                        )}
+                    </li>
+                </ul>
+                <p>
+                    {tr(
+                        'Importante: marcar lesion en un partido suelto no te deja lesionado toda la temporada.',
+                        'Garrantzitsua: partida bakarreko lesioa markatzeak ez zaitu denboraldi osorako lesionatuta uzten.',
                     )}
                 </p>
                 <div>

@@ -170,9 +170,18 @@ export default function MatchHistory() {
     // Filtered and paginated matches
     const filteredMatches = useMemo(() => {
         return matches.filter((match) => {
-            // Exclude scheduled matches without results (unless admin viewing all)
-            if (!isAdmin && (match.gamesP1 === null || match.gamesP2 === null)) {
-                return false;
+            // Non-admins: show only closed matches (PLAYED with result, INJURY, CANCELLED)
+            if (!isAdmin) {
+                const isPlayedWithResult =
+                    match.matchStatus === 'PLAYED' &&
+                    match.gamesP1 !== null &&
+                    match.gamesP2 !== null;
+                const isClosedNonPlayed =
+                    match.matchStatus === 'INJURY' ||
+                    match.matchStatus === 'CANCELLED';
+                if (!isPlayedWithResult && !isClosedNonPlayed) {
+                    return false;
+                }
             }
 
             const currentPlayerId = user?.player?.id;
@@ -230,6 +239,21 @@ export default function MatchHistory() {
             return true;
         });
     }, [matches, effectiveOnlyMyMatches, searchTerm, playerName1, playerName2, dateFrom, dateTo, selectedSeason, selectedGroup, user?.player?.id, isAdmin]);
+
+    const legacyInjuryExposureByGroup = useMemo(() => {
+        const byGroup = new Map<string, Map<string, number>>();
+
+        matches.forEach((match) => {
+            if (match.matchStatus !== 'INJURY' || match.winnerId) return;
+
+            const groupMap = byGroup.get(match.groupId) ?? new Map<string, number>();
+            groupMap.set(match.player1Id, (groupMap.get(match.player1Id) ?? 0) + 1);
+            groupMap.set(match.player2Id, (groupMap.get(match.player2Id) ?? 0) + 1);
+            byGroup.set(match.groupId, groupMap);
+        });
+
+        return byGroup;
+    }, [matches]);
 
     const totalPages = Math.ceil(filteredMatches.length / itemsPerPage);
     const paginatedMatches = useMemo(() => {
@@ -536,6 +560,22 @@ export default function MatchHistory() {
                                 const isCurrentSeasonMatch = match.group?.season?.isActive === true;
                                 const canEdit = isAdmin || (isCurrentPlayerInMatch && isCurrentSeasonMatch);
                                 const canDelete = isAdmin;
+                                const iAmInjuredInThisMatch =
+                                    match.matchStatus === 'INJURY' &&
+                                    (match.winnerId
+                                        ? match.winnerId !== user?.player?.id
+                                        : (() => {
+                                            const groupMap = legacyInjuryExposureByGroup.get(match.groupId);
+                                            const p1Count = groupMap?.get(match.player1Id) ?? 0;
+                                            const p2Count = groupMap?.get(match.player2Id) ?? 0;
+                                            const inferredInjuredPlayerId =
+                                                p1Count === p2Count
+                                                    ? match.player1Id
+                                                    : p1Count > p2Count
+                                                        ? match.player1Id
+                                                        : match.player2Id;
+                                            return inferredInjuredPlayerId === user?.player?.id;
+                                        })());
 
                                 return (
                                     <div key={match.id} className="p-3 md:p-6 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors group">
@@ -583,7 +623,11 @@ export default function MatchHistory() {
                                                     )}
                                                     {match.matchStatus !== 'PLAYED' && (
                                                         <p className="text-sm text-orange-600 dark:text-orange-400 mt-1 uppercase font-medium">
-                                                            {match.matchStatus === 'INJURY' ? tr('LESION', 'LESIOA') : tr('CANCELADO', 'EZEZTATUA')}
+                                                            {match.matchStatus === 'INJURY'
+                                                                ? (isCurrentPlayerInMatch
+                                                                    ? (iAmInjuredInThisMatch ? tr('LESION', 'LESIOA') : tr('RIVAL LESIONADO', 'AURKARIA LESIONATUTA'))
+                                                                    : tr('LESION', 'LESIOA'))
+                                                                : tr('CANCELADO', 'EZEZTATUA')}
                                                         </p>
                                                     )}
                                                 </div>
