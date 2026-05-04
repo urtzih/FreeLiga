@@ -280,7 +280,8 @@ export default function ManageSeasons() {
  {isLoading ? (
  <div className="p-12 text-center"><Loader /></div>
  ) : (
- <table className="w-full">
+ <div className="overflow-x-auto">
+ <table className="w-full min-w-[72rem]">
  <thead className="bg-slate-50 dark:bg-slate-900">
  <tr>
  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Nombre</th>
@@ -288,7 +289,7 @@ export default function ManageSeasons() {
  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Inicio</th>
  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Fin</th>
  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Grupos</th>
- <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Acciones</th>
+ <th className="min-w-[28rem] px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Acciones</th>
  </tr>
  </thead>
  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -334,7 +335,8 @@ export default function ManageSeasons() {
  {new Date(season.endDate).toLocaleDateString('es-ES')}
  </td>
  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{season.groups?.length || 0}</td>
- <td className="px-6 py-4 flex gap-2 flex-wrap">
+ <td className="min-w-[28rem] px-6 py-4">
+ <div className="flex flex-wrap gap-2 lg:flex-nowrap">
  {!season.isActive && (
  <button
  onClick={() => handleSetActive(season.id, season.name)}
@@ -378,11 +380,13 @@ export default function ManageSeasons() {
  className="text-xs px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50"
  title="Eliminar temporada"
  >{deleteMutation.isPending ? 'Eliminando...' : 'Eliminar'}</button>
+ </div>
  </td>
  </tr>
  ))}
  </tbody>
  </table>
+ </div>
  )}
  </div>
  {editSeason && (

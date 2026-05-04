@@ -19,13 +19,14 @@ export default function ManagePlayers() {
  {isLoading ? (
  <div className="p-12 text-center"><Loader /></div>
  ) : (
- <table className="w-full">
+ <div className="overflow-x-auto">
+ <table className="w-full min-w-[52rem] table-fixed">
  <thead className="bg-slate-50 dark:bg-slate-900">
  <tr>
- <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Nombre</th>
- <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Email</th>
- <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Teléfono</th>
- <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Grupo Actual</th>
+ <th className="w-56 px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Nombre</th>
+ <th className="w-80 px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Email</th>
+ <th className="w-44 px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Teléfono</th>
+ <th className="w-44 px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Grupo Actual</th>
  </tr>
  </thead>
  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -39,7 +40,7 @@ export default function ManagePlayers() {
  )}
  </div>
  </td>
- <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{player.user?.email || '-'}</td>
+ <td className="px-6 py-4 text-slate-600 dark:text-slate-400 break-all" title={player.user?.email || '-'}>{player.user?.email || '-'}</td>
  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">{player.phone || '-'}</td>
  <td className="px-6 py-4 text-slate-600 dark:text-slate-400">
  {player.currentGroup?.name || 'Sin grupo'}
@@ -48,6 +49,7 @@ export default function ManagePlayers() {
  ))}
  </tbody>
  </table>
+ </div>
  )}
  </div>
  </div>

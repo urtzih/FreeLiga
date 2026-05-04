@@ -704,31 +704,31 @@ export default function ManageUsers() {
  </h2>
  </div>
  <div className="overflow-x-auto">
- <table className="w-full">
+ <table className="w-full min-w-[96rem] table-fixed">
  <thead className="bg-slate-50 dark:bg-slate-900">
  <tr>
- <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+ <th className="w-20 px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
  <div className="flex items-center gap-1">ID</div>
  </th>
- <th onClick={() => handleSort('email')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+ <th onClick={() => handleSort('email')} className="w-[24rem] px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
  <div className="flex items-center gap-1">Email {sortField === 'email' && <span>{sortDirection === 'asc' ? '▲' : '▼'}</span>}</div>
  </th>
- <th onClick={() => handleSort('name')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+ <th onClick={() => handleSort('name')} className="w-44 px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
  <div className="flex items-center gap-1">Jugador {sortField === 'name' && <span>{sortDirection === 'asc' ? '▲' : '▼'}</span>}</div>
  </th>
- <th onClick={() => handleSort('phone')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+ <th onClick={() => handleSort('phone')} className="w-36 px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
  <div className="flex items-center gap-1">Teléfono {sortField === 'phone' && <span>{sortDirection === 'asc' ? '▲' : '▼'}</span>}</div>
  </th>
- <th onClick={() => handleSort('group')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+ <th onClick={() => handleSort('group')} className="w-36 px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
  <div className="flex items-center gap-1">Grupo {sortField === 'group' && <span>{sortDirection === 'asc' ? '▲' : '▼'}</span>}</div>
  </th>
- <th onClick={() => handleSort('createdAt')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+ <th onClick={() => handleSort('createdAt')} className="w-40 px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
  <div className="flex items-center gap-1">Fecha Registro {sortField === 'createdAt' && <span>{sortDirection === 'asc' ? '▲' : '▼'}</span>}</div>
  </th>
- <th onClick={() => handleSort('lastConnection')} className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+ <th onClick={() => handleSort('lastConnection')} className="w-44 px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
  <div className="flex items-center gap-1"> Conexión {sortField === 'lastConnection' && <span>{sortDirection === 'asc' ? '▲' : '▼'}</span>}</div>
  </th>
- <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Acciones</th>
+ <th className="sticky right-0 z-20 min-w-[30rem] px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider bg-slate-50 dark:bg-slate-900">Acciones</th>
  </tr>
  </thead>
  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -751,9 +751,9 @@ export default function ManageUsers() {
  </button>
  </div>
  </td>
- <td className="px-6 py-4 whitespace-nowrap">
+ <td className="px-6 py-4">
  <div className="flex items-center gap-2">
- <span className="text-sm font-medium text-slate-900 dark:text-white">{user.email}</span>
+ <span className="block max-w-full break-all text-sm font-medium text-slate-900 dark:text-white" title={user.email}>{user.email}</span>
  {user.role === 'ADMIN' && (
  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300">
  ⭐ Admin
@@ -785,8 +785,8 @@ export default function ManageUsers() {
  )}
  </div>
  </td>
- <td className="px-6 py-4 whitespace-nowrap">
- <div className="flex flex-wrap gap-2">
+ <td className={`sticky right-0 z-10 min-w-[30rem] px-6 py-4 whitespace-nowrap ${user.role === 'ADMIN' ? 'bg-amber-50 dark:bg-amber-950/20' : 'bg-white dark:bg-slate-800'}`}>
+ <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
  <button
  onClick={() => toggleActivationMutation.mutate({ userId: user.id, isActive: !user.isActive })}
  className={`text-sm px-3 py-1 rounded-lg font-medium transition-colors ${user.isActive
