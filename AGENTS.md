@@ -28,6 +28,20 @@ FreeLiga es una aplicacion full-stack para gestionar una liga de squash con grup
 - Si aparece `P3009`/`P3018`, resolver estado con `prisma migrate resolve --rolled-back <migration>` y volver a desplegar con SQL compatible con la version real de MySQL.
 - Para invalidar cache publico tras deploy: usar `POST /api/public/cache/invalidate` con header `x-cache-token`; definir `CACHE_INVALIDATE_TOKEN` en Railway (evitar fallback `dev-token` en produccion).
 
+## Variables de entorno de produccion (Railway API)
+
+- Minimo esperado en `@freesquash/api`:
+  - `NODE_ENV=production`
+  - `HOST=0.0.0.0`
+  - `PORT` (Railway puede inyectarlo; no hardcodear si no hace falta)
+  - `DATABASE_URL` (MySQL de Railway)
+  - `JWT_SECRET`
+  - `ALLOWED_ORIGINS` y `FRONTEND_URL` apuntando a Vercel (`https://free-liga-web.vercel.app`)
+  - `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`
+  - `CACHE_INVALIDATE_TOKEN` (obligatorio en prod para invalidador de cache)
+- Evitar variables de frontend (`VITE_*`) en el servicio API de Railway salvo necesidad operativa concreta.
+- No copiar secretos reales en docs, issues o commits; usar placeholders y gestionar valores reales solo en Railway.
+
 ## Estructura de carpetas
 
 - `apps/api`: API Fastify, rutas y servicios.
