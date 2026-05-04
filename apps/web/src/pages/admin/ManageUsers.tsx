@@ -41,13 +41,11 @@ export default function ManageUsers() {
  const [activeTab, setActiveTab] = useState<'users' | 'history'>('users');
  const [page, setPage] = useState(1);
  const [selectedUser, setSelectedUser] = useState<User | null>(null);
- const [showResetPassword, setShowResetPassword] = useState(false);
  const [showEditModal, setShowEditModal] = useState(false);
  const [showCreateModal, setShowCreateModal] = useState(false);
  const [showFeesModal, setShowFeesModal] = useState(false);
  const [showInjuryModal, setShowInjuryModal] = useState(false);
  const [injuryTarget, setInjuryTarget] = useState<User | null>(null);
- const [newPassword, setNewPassword] = useState('');
  const [searchTerm, setSearchTerm] = useState('');
  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
  const [filterGroup, setFilterGroup] = useState('');
@@ -75,7 +73,8 @@ export default function ManageUsers() {
  nickname: '',
  phone: '',
  role: 'PLAYER' as 'PLAYER' | 'ADMIN',
- groupId: ''
+ groupId: '',
+ newPassword: ''
  });
  const [createForm, setCreateForm] = useState({
  email: '',
@@ -260,22 +259,9 @@ export default function ManageUsers() {
  }
  });
 
- const resetPasswordMutation = useMutation({
- mutationFn: async ({ userId, newPassword }: { userId: string; newPassword: string }) => {
- const { data } = await api.post(`/users/${userId}/reset-password`, { newPassword });
- return data;
- },
- onSuccess: () => {
- setShowResetPassword(false);
- setNewPassword('');
- setSelectedUser(null);
- alert('Contraseña restablecida correctamente');
- }
- });
-
  const updateUserMutation = useMutation({
  mutationFn: async ({ userId, userData, playerId, previousGroupId }: { userId: string; userData: any; playerId?: string; previousGroupId?: string }) => {
- const { groupId, ...userBody } = userData;
+ const { groupId, newPassword, ...userBody } = userData;
  const { data: updated } = await api.put(`/users/${userId}`, userBody);
  if (playerId) {
  const newGroupId = groupId;
@@ -287,6 +273,10 @@ export default function ManageUsers() {
  } else if (!newGroupId && previousGroupId) {
  await api.delete(`/groups/${previousGroupId}/players/${playerId}`);
  }
+ }
+ const trimmedPassword = typeof newPassword === 'string' ? newPassword.trim() : '';
+ if (trimmedPassword) {
+ await api.post(`/users/${userId}/reset-password`, { newPassword: trimmedPassword });
  }
  return updated;
  },
@@ -374,7 +364,8 @@ export default function ManageUsers() {
  nickname: user.player?.nickname || '',
  phone: user.player?.phone || '',
  role: user.role,
- groupId: user.player?.currentGroup?.id || ''
+ groupId: user.player?.currentGroup?.id || '',
+ newPassword: ''
  });
  setShowEditModal(true);
  };
@@ -398,6 +389,11 @@ export default function ManageUsers() {
  alert('Por favor, corrige los errores en el formulario');
  return;
  }
+
+ if (editForm.newPassword && editForm.newPassword.trim().length < 6) {
+ alert('La nueva contraseña debe tener al menos 6 caracteres');
+ return;
+ }
  
  updateUserMutation.mutate({
  userId: selectedUser.id,
@@ -405,15 +401,6 @@ export default function ManageUsers() {
  playerId: selectedUser.player?.id,
  previousGroupId: selectedUser.player?.currentGroup?.id
  });
- };
-
- const handleResetPassword = () => {
- if (!selectedUser || !newPassword) return;
- if (newPassword.length < 6) {
- alert('La contraseña debe tener al menos 6 caracteres');
- return;
- }
- resetPasswordMutation.mutate({ userId: selectedUser.id, newPassword });
  };
 
  const handleOpenFeesModal = (user: User) => {
@@ -710,7 +697,7 @@ export default function ManageUsers() {
  <th className="w-20 px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
  <div className="flex items-center gap-1">ID</div>
  </th>
- <th onClick={() => handleSort('email')} className="w-[24rem] px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
+ <th onClick={() => handleSort('email')} className="w-64 px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
  <div className="flex items-center gap-1">Email {sortField === 'email' && <span>{sortDirection === 'asc' ? '▲' : '▼'}</span>}</div>
  </th>
  <th onClick={() => handleSort('name')} className="w-44 px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 select-none">
@@ -752,8 +739,8 @@ export default function ManageUsers() {
  </div>
  </td>
  <td className="px-6 py-4">
- <div className="flex items-center gap-2">
- <span className="block max-w-full break-all text-sm font-medium text-slate-900 dark:text-white" title={user.email}>{user.email}</span>
+ <div className="flex min-w-0 items-center gap-2">
+ <span className="block max-w-[14rem] min-w-0 truncate text-sm font-medium text-slate-900 dark:text-white" title={user.email}>{user.email}</span>
  {user.role === 'ADMIN' && (
  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300">
  ⭐ Admin
@@ -817,7 +804,6 @@ export default function ManageUsers() {
  Lesionar
  </button>
  )}
- <button onClick={() => { setSelectedUser(user); setShowResetPassword(true); }} className="text-sm px-3 py-1 club-btn-yellow">Cambiar contraseña</button>
  </div>
  </td>
  </tr>
@@ -1091,6 +1077,18 @@ export default function ManageUsers() {
  <p className="mt-1 text-xs text-amber-600 dark:text-amber-400"> Los administradores no pueden estar en grupos</p>
  )}
  </div>
+ <div>
+ <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nueva contraseña (opcional)</label>
+ <input
+ type="password"
+ value={editForm.newPassword}
+ onChange={e => setEditForm({ ...editForm, newPassword: e.target.value })}
+ className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+ placeholder="Déjalo vacío para mantener la actual"
+ minLength={6}
+ />
+ <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Si la rellenas, la contraseña se actualizará al guardar.</p>
+ </div>
  <div className="flex space-x-3 mt-6">
  <button onClick={handleUpdateUser} disabled={updateUserMutation.isPending} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50">
  {updateUserMutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
@@ -1099,28 +1097,6 @@ export default function ManageUsers() {
  Cancelar
  </button>
  </div>
- </div>
- </div>
- </div>
- )}
-
- {/* Reset Password Modal */}
- {showResetPassword && selectedUser && (
- <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
- <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl">
- <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Cambiar contraseña</h3>
- <p className="text-slate-600 dark:text-slate-400 mb-4">Usuario: <strong>{selectedUser.email}</strong></p>
- <div className="mb-4">
- <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nueva Contraseña</label>
- <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mínimo 6 caracteres" className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-white" />
- </div>
- <div className="flex space-x-3">
- <button onClick={handleResetPassword} disabled={resetPasswordMutation.isPending} className="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50">
- {resetPasswordMutation.isPending ? 'Cambiando contraseña...' : 'Cambiar contraseña'}
- </button>
- <button onClick={() => { setShowResetPassword(false); setNewPassword(''); setSelectedUser(null); }} className="flex-1 px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600">
- Cancelar
- </button>
  </div>
  </div>
  </div>

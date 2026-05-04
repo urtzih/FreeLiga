@@ -238,8 +238,8 @@ export default function GroupsSummary() {
                                                     <th className="px-2 py-2">{tr('Jugador', 'Jokalaria')}</th>
                                                     <th className="px-2 py-2 text-center">G</th>
                                                     <th className="px-2 py-2 text-center">P</th>
-                                                    <th className="">AVG</th>
-                                                    <th className="px-2 py-2 text-cpx-2 py-2 text-centerenter">R</th>
+                                                    <th className="px-2 py-2 text-center">AVG</th>
+                                                    <th className="px-2 py-2 text-center">R</th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -250,7 +250,7 @@ export default function GroupsSummary() {
                                                         progressByPlayer.set(playerRow.playerId, progress);
                                                     });
 
-                                                    return classification.slice(0, 8).map((row, idx) => {
+                                                    return classification.map((row, idx) => {
                                                         const setsDiff = row.setsWon - row.setsLost;
                                                         const progress = progressByPlayer.get(row.playerId) ?? getPlayerProgress(row.playerId);
                                                         const remainingMatches = progress.remainingMatches;
@@ -315,11 +315,13 @@ export default function GroupsSummary() {
                                     </div>
                                 )}
 
-                                <div className="flex justify-between items-center text-sm text-slate-600 dark:text-slate-300 pt-1">
-                                    <Link to={`/groups/${group.id}`} className="text-amber-600 dark:text-amber-400 font-medium hover:underline">
+                                <div className="pt-1">
+                                    <Link
+                                        to={`/groups/${group.id}`}
+                                        className="inline-flex items-center justify-center rounded-lg border border-amber-300/80 dark:border-amber-500/60 bg-amber-50 dark:bg-amber-900/25 px-3 py-1.5 text-sm font-semibold text-amber-700 dark:text-amber-300 transition-colors hover:bg-amber-100 dark:hover:bg-amber-900/35"
+                                    >
                                         {tr('Ver grupo', 'Taldea ikusi')}
                                     </Link>
-                                    <span className="text-[12px] text-slate-500">{tr('Se actualiza con los datos del grupo', 'Taldeko datuekin eguneratzen da')}</span>
                                 </div>
                             </div>
                         </div>

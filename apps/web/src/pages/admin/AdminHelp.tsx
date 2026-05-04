@@ -31,7 +31,7 @@
  El sistema protege automáticamente toda la información histórica de la liga. Esto significa que:
  </p>
  <ul className="list-disc list-inside ml-4 mt-2 text-sm space-y-1">
- <li>No puedes eliminar temporadas que tienen grupos, partidos o cierres guardados</li>
+<li>No puedes eliminar temporadas con partidos o cierres guardados</li>
  <li>No puedes eliminar usuarios (solo desactivarlos)</li>
  <li>Los cierres de temporada son permanentes una vez aprobados</li>
  </ul>
@@ -136,7 +136,7 @@
  </div>
  <div>
  <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Eliminar Temporada</h3>
- <p>Solo se pueden eliminar temporadas completamente vacías (sin grupos, sin partidos, sin cierres). Esto protege el historial.</p>
+<p>Se pueden eliminar temporadas sin partidos ni cierre guardado. Si tiene grupos o inscripciones sin partidos, se eliminarán junto con la temporada.</p>
  </div>
  </div>
  </section>
@@ -518,7 +518,7 @@
  <div className="space-y-4 text-slate-600 dark:text-slate-400">
  <div>
  <h3 className="font-semibold text-slate-900 dark:text-white mb-2">"No puedo eliminar una temporada"</h3>
- <p>Esto es normal y es por diseño. Solo puedes eliminar temporadas que estén completamente vacías (sin grupos, sin partidos, sin cierres). Si intentas eliminar una temporada con datos, el sistema te mostrará un mensaje detallado de qué contiene. Esto protege el historial de la liga.</p>
+<p>Esto es normal y es por diseño. Solo puedes eliminar temporadas que no tengan partidos ni cierre histórico. Si tiene grupos o inscripciones pero ningún partido, el sistema la puede eliminar. Si intentas eliminar una temporada con historial, verás un mensaje detallado con el motivo.</p>
  <p className="mt-2"><strong>Solución:</strong> Si quieres "ocultar" una temporada antigua, simplemente desactívala (quítale el estado de "activa"). Seguirá en el sistema pero no se mostrará como la temporada en curso.</p>
  </div>
  <div>
@@ -637,7 +637,7 @@
  <div className="space-y-4 text-slate-600 dark:text-slate-400">
  <p>El sistema protege automáticamente el historial de la liga:</p>
  <ul className="list-disc list-inside space-y-2 ml-4">
- <li>No se pueden eliminar temporadas con grupos, partidos o cierres</li>
+<li>No se pueden eliminar temporadas con partidos o cierres</li>
  <li>No se pueden eliminar usuarios (solo desactivar)</li>
  <li>Los cierres aprobados quedan permanentes en el historial</li>
  <li>Los ascensos y descensos quedan registrados para siempre</li>

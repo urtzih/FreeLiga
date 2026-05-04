@@ -555,6 +555,7 @@ export default function MatchHistory() {
                                 const opponent = isPlayer1 ? match.player2 : match.player1;
                                 const myGames = isPlayer1 ? match.gamesP1 : match.gamesP2;
                                 const opponentGames = isPlayer1 ? match.gamesP2 : match.gamesP1;
+                                const hasRecordedScore = match.gamesP1 !== null && match.gamesP2 !== null;
                                 const won = match.winnerId === user?.player?.id;
                                 const showPersonalView = !isAdmin && isCurrentPlayerInMatch;
                                 const isCurrentSeasonMatch = match.group?.season?.isActive === true;
@@ -643,7 +644,7 @@ export default function MatchHistory() {
                                                         </div>
                                                     </div>
                                                 )}
-                                                {match.matchStatus === 'PLAYED' && (
+                                                {match.matchStatus === 'PLAYED' && hasRecordedScore && (
                                                     <div className="text-right">
                                                         <div className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white leading-none">
                                                             {showPersonalView ? `${myGames} - ${opponentGames}` : `${match.gamesP1} - ${match.gamesP2}`}
