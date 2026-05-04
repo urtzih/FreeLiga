@@ -57,19 +57,6 @@ enum NotificationTargetType {
   USER
 }
 
-enum NotificationTemplateKey {
-  NEW_TOURNAMENT
-  NEW_FEATURE
-  MAINTENANCE
-  INCIDENT_RESOLVED
-  URGENT_ANNOUNCEMENT
-  SEASON_START
-  SEASON_END_REMINDER
-  WEEKLY_PENDING_MATCH_REMINDER
-  TOURNAMENT_REGISTRATION_DEADLINE_REMINDER
-  SEASON_END_SUMMARY
-}
-
 model User {
   id                        String   @id @default(cuid())
   email                     String   @unique
@@ -412,7 +399,7 @@ model PwaInstallation {
 model NotificationCampaign {
   id            String                      @id @default(cuid())
   type          NotificationCampaignType
-  templateKey   NotificationTemplateKey
+  templateKey   String                      @db.VarChar(120)
   title         String                      @db.VarChar(160)
   body          String                      @db.Text
   url           String?                     @db.VarChar(500)

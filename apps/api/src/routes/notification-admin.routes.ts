@@ -1,7 +1,6 @@
 import {
     NotificationCampaignStatus,
     NotificationTargetType,
-    NotificationTemplateKey,
     Role,
     prisma,
 } from '@freesquash/database';
@@ -10,6 +9,8 @@ import { z } from 'zod';
 import {
     createScheduledCampaign,
     deleteScheduledCampaign,
+    getNotificationTemplateKeys,
+    isNotificationTemplateKey,
     listNotificationCampaigns,
     listNotificationTemplates,
     sendNowCampaign,
@@ -23,7 +24,12 @@ declare module 'fastify' {
 }
 
 const targetTypeSchema = z.nativeEnum(NotificationTargetType);
-const templateKeySchema = z.nativeEnum(NotificationTemplateKey);
+const templateKeySchema = z
+    .string()
+    .min(1)
+    .refine((value) => isNotificationTemplateKey(value), {
+        message: `Invalid templateKey. Allowed values: ${getNotificationTemplateKeys().join(', ')}`,
+    });
 
 const sendNowSchema = z.object({
     templateKey: templateKeySchema,

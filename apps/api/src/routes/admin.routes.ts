@@ -45,7 +45,13 @@ export async function adminRoutes(fastify: FastifyInstance) {
                                 _count: {
                                     select: {
                                         groupPlayers: true,
-                                        matches: true,
+                                        matches: {
+                                            where: {
+                                                matchStatus: 'PLAYED',
+                                                gamesP1: { not: null },
+                                                gamesP2: { not: null },
+                                            },
+                                        },
                                     },
                                 },
                             },

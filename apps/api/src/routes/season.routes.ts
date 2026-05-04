@@ -509,38 +509,81 @@ export async function seasonRoutes(fastify: FastifyInstance) {
                 return reply.status(404).send({ error: 'Temporada no encontrada' });
             }
 
-            // Check if season has groups
-            if (season.groups && season.groups.length > 0) {
-                const totalPlayers = season.groups.reduce((sum, g) => sum + g._count.groupPlayers, 0);
-                const totalMatches = season.groups.reduce((sum, g) => sum + g._count.matches, 0);
-                
-                return reply.status(400).send({ 
-                    error: `No se puede eliminar esta temporada porque contiene:\n\n` +
-                           `• ${season.groups.length} grupo(s)\n` +
-                           `• ${totalPlayers} inscripción(es) de jugadores\n` +
-                           `• ${totalMatches} partido(s) jugado(s)\n\n` +
-                           `Para proteger el historial de la liga, no se pueden eliminar temporadas con datos. ` +
-                           `Si deseas ocultar esta temporada, márcala como inactiva en lugar de eliminarla.`
+            const totalPlayers = season.groups.reduce((sum, group) => sum + group._count.groupPlayers, 0);
+            const totalMatches = season.groups.reduce((sum, group) => sum + group._count.matches, 0);
+
+            // Protect season history when it already has match data
+            if (totalMatches > 0) {
+                return reply.status(400).send({
+                    error: 'No se puede eliminar esta temporada porque contiene:\n\n' +
+                           '• ' + season.groups.length + ' grupo(s)\n' +
+                           '• ' + totalPlayers + ' inscripción(es) de jugadores\n' +
+                           '• ' + totalMatches + ' partido(s)\n\n' +
+                           'Para proteger el historial de la liga, no se pueden eliminar temporadas con partidos registrados. ' +
+                           'Si deseas ocultar esta temporada, márcala como inactiva en lugar de eliminarla.'
                 });
             }
 
             // Check if season has closure (historical data)
             if (season.closure) {
-                return reply.status(400).send({ 
-                    error: `No se puede eliminar esta temporada porque tiene un cierre de temporada guardado con datos históricos de ascensos/descensos.\n\n` +
-                           `Para proteger el historial de la liga, no se pueden eliminar temporadas cerradas.`
+                return reply.status(400).send({
+                    error: 'No se puede eliminar esta temporada porque tiene un cierre de temporada guardado con datos históricos de ascensos/descensos.\n\n' +
+                           'Para proteger el historial de la liga, no se pueden eliminar temporadas cerradas.'
                 });
             }
 
-            await prisma.season.delete({ where: { id } });
-            return { success: true };
+            const groupIds = season.groups.map(group => group.id);
+            const [historyEntriesCount, promotionRecordsCount] = await Promise.all([
+                prisma.playerGroupHistory.count({ where: { seasonId: id } }),
+                groupIds.length > 0
+                    ? prisma.promotionRecord.count({
+                        where: {
+                            OR: [
+                                { fromGroupId: { in: groupIds } },
+                                { toGroupId: { in: groupIds } },
+                            ],
+                        },
+                    })
+                    : Promise.resolve(0),
+            ]);
+
+            if (historyEntriesCount > 0 || promotionRecordsCount > 0) {
+                return reply.status(400).send({
+                    error: 'No se puede eliminar esta temporada porque tiene datos históricos asociados.\n\n' +
+                           '• Historial de jugadores: ' + historyEntriesCount + '\n' +
+                           '• Registros de ascenso/descenso: ' + promotionRecordsCount + '\n\n' +
+                           'Para proteger el historial de la liga, no se pueden eliminar temporadas con historial.'
+                });
+            }
+
+            await prisma.$transaction(async (tx) => {
+                // Avoid FK conflict in season rollover chain
+                await tx.season.updateMany({
+                    where: { previousSeasonId: id },
+                    data: { previousSeasonId: null },
+                });
+
+                await tx.season.delete({ where: { id } });
+            });
+
+            cacheService.invalidatePattern('public:');
+            cacheService.invalidatePattern('private:');
+
+            return {
+                success: true,
+                deleted: {
+                    groups: season.groups.length,
+                    groupPlayers: totalPlayers,
+                    matches: totalMatches,
+                }
+            };
         } catch (error: any) {
             fastify.log.error(error);
             
             // Handle foreign key constraint errors
             if (error.code === 'P2003') {
-                return reply.status(400).send({ 
-                    error: 'No se puede eliminar esta temporada porque tiene datos relacionados (grupos, partidos, etc.)' 
+                return reply.status(400).send({
+                    error: 'No se puede eliminar esta temporada porque tiene datos históricos relacionados (partidos, cierres o referencias cruzadas).'
                 });
             }
             

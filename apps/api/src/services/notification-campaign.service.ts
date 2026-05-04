@@ -2,7 +2,6 @@ import {
     NotificationCampaignStatus,
     NotificationCampaignType,
     NotificationTargetType,
-    NotificationTemplateKey,
     prisma,
 } from '@freesquash/database';
 import { logBusinessEvent, logger } from '../utils/logger';
@@ -12,9 +11,10 @@ const DEFAULT_TIMEZONE = 'Europe/Madrid';
 const STALE_LOCK_MS = 10 * 60 * 1000;
 
 type TemplateCategory = 'ON_DEMAND' | 'SCHEDULED';
+export type NotificationTemplateKey = string;
 
 interface TemplateDefinition {
-    key: NotificationTemplateKey;
+    key: string;
     category: TemplateCategory;
     label: string;
     description: string;
@@ -24,7 +24,7 @@ interface TemplateDefinition {
 }
 
 interface SendNowInput {
-    templateKey: NotificationTemplateKey;
+    templateKey: string;
     title?: string;
     body?: string;
     url?: string;
@@ -34,7 +34,7 @@ interface SendNowInput {
 }
 
 interface CreateScheduledInput {
-    templateKey: NotificationTemplateKey;
+    templateKey: string;
     title?: string;
     body?: string;
     url?: string;
@@ -46,7 +46,7 @@ interface CreateScheduledInput {
 }
 
 interface UpdateScheduledInput {
-    templateKey?: NotificationTemplateKey;
+    templateKey?: string;
     title?: string;
     body?: string;
     url?: string | null;
@@ -57,9 +57,9 @@ interface UpdateScheduledInput {
     nextRunAt?: Date | null;
 }
 
-const TEMPLATE_DEFINITIONS: Record<NotificationTemplateKey, TemplateDefinition> = {
+const TEMPLATE_DEFINITIONS: Record<string, TemplateDefinition> = {
     NEW_TOURNAMENT: {
-        key: NotificationTemplateKey.NEW_TOURNAMENT,
+        key: 'NEW_TOURNAMENT',
         category: 'ON_DEMAND',
         label: 'Nuevo torneo',
         description: 'Anuncio inmediato de apertura de torneo',
@@ -68,7 +68,7 @@ const TEMPLATE_DEFINITIONS: Record<NotificationTemplateKey, TemplateDefinition> 
         defaultUrl: '/dashboard',
     },
     NEW_FEATURE: {
-        key: NotificationTemplateKey.NEW_FEATURE,
+        key: 'NEW_FEATURE',
         category: 'ON_DEMAND',
         label: 'Nueva funcionalidad',
         description: 'Comunicación de nuevas funcionalidades publicadas',
@@ -77,7 +77,7 @@ const TEMPLATE_DEFINITIONS: Record<NotificationTemplateKey, TemplateDefinition> 
         defaultUrl: '/dashboard',
     },
     MAINTENANCE: {
-        key: NotificationTemplateKey.MAINTENANCE,
+        key: 'MAINTENANCE',
         category: 'ON_DEMAND',
         label: 'Mantenimiento programado',
         description: 'Aviso de ventana de mantenimiento',
@@ -86,7 +86,7 @@ const TEMPLATE_DEFINITIONS: Record<NotificationTemplateKey, TemplateDefinition> 
         defaultUrl: '/dashboard',
     },
     INCIDENT_RESOLVED: {
-        key: NotificationTemplateKey.INCIDENT_RESOLVED,
+        key: 'INCIDENT_RESOLVED',
         category: 'ON_DEMAND',
         label: 'Incidencia resuelta',
         description: 'Confirmación de recuperación de servicio',
@@ -95,7 +95,7 @@ const TEMPLATE_DEFINITIONS: Record<NotificationTemplateKey, TemplateDefinition> 
         defaultUrl: '/dashboard',
     },
     URGENT_ANNOUNCEMENT: {
-        key: NotificationTemplateKey.URGENT_ANNOUNCEMENT,
+        key: 'URGENT_ANNOUNCEMENT',
         category: 'ON_DEMAND',
         label: 'Comunicado urgente',
         description: 'Aviso urgente enviado al momento',
@@ -103,8 +103,17 @@ const TEMPLATE_DEFINITIONS: Record<NotificationTemplateKey, TemplateDefinition> 
         defaultBody: 'Tenemos una actualización urgente para todos los jugadores.',
         defaultUrl: '/dashboard',
     },
+    SEASON_ROLLOVER_ANNOUNCEMENT: {
+        key: 'SEASON_ROLLOVER_ANNOUNCEMENT',
+        category: 'ON_DEMAND',
+        label: 'Ascensos/descensos y nueva temporada',
+        description: 'Comunicado de cierre y apertura de temporada',
+        defaultTitle: 'Ascensos/descensos aplicados y nueva temporada disponible',
+        defaultBody: 'Ya se han aplicado los ascensos y descensos. La nueva temporada ya esta disponible para empezar a jugar.',
+        defaultUrl: '/dashboard',
+    },
     SEASON_START: {
-        key: NotificationTemplateKey.SEASON_START,
+        key: 'SEASON_START',
         category: 'SCHEDULED',
         label: 'Inicio nueva temporada',
         description: 'Día de inicio de temporada a las 09:00',
@@ -113,7 +122,7 @@ const TEMPLATE_DEFINITIONS: Record<NotificationTemplateKey, TemplateDefinition> 
         defaultUrl: '/dashboard',
     },
     SEASON_END_REMINDER: {
-        key: NotificationTemplateKey.SEASON_END_REMINDER,
+        key: 'SEASON_END_REMINDER',
         category: 'SCHEDULED',
         label: 'Fin de temporada (T-14/T-7/T-2)',
         description: 'Recordatorios automáticos antes del cierre de temporada',
@@ -122,7 +131,7 @@ const TEMPLATE_DEFINITIONS: Record<NotificationTemplateKey, TemplateDefinition> 
         defaultUrl: '/matches/history',
     },
     WEEKLY_PENDING_MATCH_REMINDER: {
-        key: NotificationTemplateKey.WEEKLY_PENDING_MATCH_REMINDER,
+        key: 'WEEKLY_PENDING_MATCH_REMINDER',
         category: 'SCHEDULED',
         label: 'Recordatorio semanal',
         description: 'Cada lunes a las 19:00',
@@ -131,7 +140,7 @@ const TEMPLATE_DEFINITIONS: Record<NotificationTemplateKey, TemplateDefinition> 
         defaultUrl: '/matches/history',
     },
     TOURNAMENT_REGISTRATION_DEADLINE_REMINDER: {
-        key: NotificationTemplateKey.TOURNAMENT_REGISTRATION_DEADLINE_REMINDER,
+        key: 'TOURNAMENT_REGISTRATION_DEADLINE_REMINDER',
         category: 'SCHEDULED',
         label: 'Cierre inscripción torneo',
         description: 'Recordatorio a T-3 del próximo inicio de temporada',
@@ -140,7 +149,7 @@ const TEMPLATE_DEFINITIONS: Record<NotificationTemplateKey, TemplateDefinition> 
         defaultUrl: '/dashboard',
     },
     SEASON_END_SUMMARY: {
-        key: NotificationTemplateKey.SEASON_END_SUMMARY,
+        key: 'SEASON_END_SUMMARY',
         category: 'SCHEDULED',
         label: 'Resumen fin de temporada',
         description: 'Día de cierre a las 21:00',
@@ -150,8 +159,27 @@ const TEMPLATE_DEFINITIONS: Record<NotificationTemplateKey, TemplateDefinition> 
     },
 };
 
+const TEMPLATE_KEYS = Object.keys(TEMPLATE_DEFINITIONS);
+const TEMPLATE_KEY_SET = new Set(TEMPLATE_KEYS);
+
 export function listNotificationTemplates() {
     return Object.values(TEMPLATE_DEFINITIONS);
+}
+
+export function getNotificationTemplateKeys() {
+    return [...TEMPLATE_KEYS];
+}
+
+export function isNotificationTemplateKey(value: string): value is NotificationTemplateKey {
+    return TEMPLATE_KEY_SET.has(value);
+}
+
+function getTemplateDefinition(templateKey: string): TemplateDefinition {
+    const template = TEMPLATE_DEFINITIONS[templateKey];
+    if (!template) {
+        throw new Error(`Unknown templateKey: ${templateKey}`);
+    }
+    return template;
 }
 
 function requireTargetValue(targetType: NotificationTargetType, targetValue?: string | null) {
@@ -178,7 +206,7 @@ function resolveNotificationPayload(params: {
     url?: string | null;
     runAt?: Date;
 }): PushNotificationInput {
-    const template = TEMPLATE_DEFINITIONS[params.templateKey];
+    const template = getTemplateDefinition(params.templateKey);
     const title = params.title?.trim() || template.defaultTitle;
     const body = params.body?.trim() || template.defaultBody;
     const url = params.url?.trim() || template.defaultUrl;
@@ -276,7 +304,7 @@ export async function sendNowCampaign(input: SendNowInput) {
 }
 
 export async function createScheduledCampaign(input: CreateScheduledInput) {
-    const template = TEMPLATE_DEFINITIONS[input.templateKey];
+    const template = getTemplateDefinition(input.templateKey);
     if (template.category !== 'SCHEDULED') {
         throw new Error('Selected template is not schedulable');
     }
@@ -397,7 +425,7 @@ export async function updateScheduledCampaign(campaignId: string, updates: Updat
     }
 
     const templateKey = updates.templateKey || existing.templateKey;
-    const template = TEMPLATE_DEFINITIONS[templateKey];
+    const template = getTemplateDefinition(templateKey);
     if (template.category !== 'SCHEDULED') {
         throw new Error('Selected template is not schedulable');
     }
@@ -642,15 +670,15 @@ async function calculateNextRunAt(
     timezone: string
 ): Promise<Date | null> {
     switch (templateKey) {
-        case NotificationTemplateKey.SEASON_START:
+        case 'SEASON_START':
             return calculateSeasonStartRun(fromDate, timezone);
-        case NotificationTemplateKey.SEASON_END_REMINDER:
+        case 'SEASON_END_REMINDER':
             return calculateSeasonEndReminderRun(fromDate, timezone);
-        case NotificationTemplateKey.WEEKLY_PENDING_MATCH_REMINDER:
+        case 'WEEKLY_PENDING_MATCH_REMINDER':
             return calculateNextWeeklyMondayRun(fromDate, timezone, 19, 0);
-        case NotificationTemplateKey.TOURNAMENT_REGISTRATION_DEADLINE_REMINDER:
+        case 'TOURNAMENT_REGISTRATION_DEADLINE_REMINDER':
             return calculateTournamentReminderRun(fromDate, timezone);
-        case NotificationTemplateKey.SEASON_END_SUMMARY:
+        case 'SEASON_END_SUMMARY':
             return calculateSeasonEndSummaryRun(fromDate, timezone);
         default:
             return null;

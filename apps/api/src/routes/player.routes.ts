@@ -61,6 +61,59 @@ export async function playerRoutes(fastify: FastifyInstance) {
         return match.player1Id === playerId;
     };
 
+    const movementPriority = (movement?: string | null) => {
+        if (movement === 'PROMOTION') return 3;
+        if (movement === 'RELEGATION') return 2;
+        return 1;
+    };
+
+    const normalizedRankValue = (finalRank: number | null | undefined) => {
+        if (typeof finalRank !== 'number' || finalRank <= 0) return Number.MAX_SAFE_INTEGER;
+        return finalRank;
+    };
+
+    const selectCanonicalHistoryRows = <T extends {
+        seasonId: string;
+        finalRank: number | null;
+        movementType: string | null;
+        createdAt: Date;
+    }>(rows: T[]) => {
+        const bySeason = new Map<string, T>();
+
+        for (const row of rows) {
+            const current = bySeason.get(row.seasonId);
+            if (!current) {
+                bySeason.set(row.seasonId, row);
+                continue;
+            }
+
+            const currentMovement = movementPriority(current.movementType);
+            const nextMovement = movementPriority(row.movementType);
+            const currentRank = normalizedRankValue(current.finalRank);
+            const nextRank = normalizedRankValue(row.finalRank);
+
+            const shouldReplace =
+                nextMovement > currentMovement ||
+                (nextMovement === currentMovement && nextRank < currentRank) ||
+                (nextMovement === currentMovement && nextRank === currentRank && row.createdAt > current.createdAt);
+
+            if (shouldReplace) {
+                bySeason.set(row.seasonId, row);
+            }
+        }
+
+        return Array.from(bySeason.values());
+    };
+
+    const selectCanonicalRowsBySeason = <T extends {
+        seasonId: string;
+        finalRank: number | null;
+        movementType: string | null;
+        createdAt: Date;
+    }>(rows: T[]) => {
+        return selectCanonicalHistoryRows(rows);
+    };
+
     // Get all players
     fastify.get('/', {
         onRequest: [fastify.authenticate],
@@ -550,11 +603,12 @@ export async function playerRoutes(fastify: FastifyInstance) {
             if (cached) {
                 return cached;
             }
-            const history = await prisma.playerGroupHistory.findMany({
+            const rawHistory = await prisma.playerGroupHistory.findMany({
                 where: { playerId: id },
                 include: { season: true, group: true },
                 orderBy: { season: { startDate: 'asc' } }
             });
+            const history = selectCanonicalHistoryRows(rawHistory);
 
             const historyBySeason = new Map(history.map(h => [h.seasonId, h]));
 
@@ -625,13 +679,58 @@ export async function playerRoutes(fastify: FastifyInstance) {
         try {
             const { id } = request.params as { id: string };
 
-            const history = await prisma.playerGroupHistory.findMany({
+            const rawHistory = await prisma.playerGroupHistory.findMany({
                 where: { playerId: id },
                 include: { season: true, group: true },
                 orderBy: { season: { startDate: 'asc' } }
             });
+            const history = selectCanonicalHistoryRows(rawHistory);
 
             const historyBySeason = new Map(history.map(h => [h.seasonId, h]));
+
+            const closureRowsRaw = await prisma.seasonClosureEntry.findMany({
+                where: {
+                    playerId: id,
+                    closure: { status: 'APPROVED' },
+                },
+                include: {
+                    closure: { include: { season: true } },
+                    fromGroup: true,
+                },
+                orderBy: {
+                    closure: { season: { startDate: 'asc' } },
+                },
+            });
+
+            const closureRows = selectCanonicalRowsBySeason(
+                closureRowsRaw.map((entry) => ({
+                    seasonId: entry.closure.seasonId,
+                    finalRank: entry.finalRank ?? null,
+                    movementType: entry.movementType,
+                    createdAt: entry.createdAt,
+                    season: entry.closure.season,
+                    fromGroupId: entry.fromGroupId ?? null,
+                    fromGroupName: entry.fromGroup?.name || null,
+                }))
+            );
+
+            const closureBySeason = new Map(
+                closureRows.map((row) => [
+                    row.seasonId,
+                    {
+                        seasonId: row.seasonId,
+                        seasonName: row.season.name,
+                        seasonStartDate: row.season.startDate,
+                        seasonEndDate: row.season.endDate,
+                        groupId: row.fromGroupId,
+                        groupName: row.fromGroupName || 'Sin grupo',
+                        finalRank: row.finalRank,
+                        movement: row.movementType || 'STAY',
+                        isFallback: false,
+                        createdAt: row.createdAt,
+                    },
+                ])
+            );
 
             const groupMemberships = await prisma.groupPlayer.findMany({
                 where: { playerId: id },
@@ -643,6 +742,7 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 seasonName: string;
                 seasonStartDate: Date;
                 seasonEndDate: Date;
+                groupId: string | null;
                 groupName: string;
                 finalRank: number | null;
                 movement: string;
@@ -650,12 +750,18 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 createdAt: Date;
             }>();
 
+            for (const row of closureBySeason.values()) {
+                seasonById.set(row.seasonId, row);
+            }
+
             for (const h of history) {
+                if (closureBySeason.has(h.seasonId)) continue;
                 seasonById.set(h.seasonId, {
                     seasonId: h.seasonId,
                     seasonName: h.season.name,
                     seasonStartDate: h.season.startDate,
                     seasonEndDate: h.season.endDate,
+                    groupId: h.groupId ?? null,
                     groupName: h.group?.name || 'Sin grupo',
                     finalRank: h.finalRank ?? null,
                     movement: h.movementType || 'STAY',
@@ -667,6 +773,7 @@ export async function playerRoutes(fastify: FastifyInstance) {
             for (const gp of groupMemberships) {
                 if (!gp.group?.season) continue;
                 const seasonId = gp.group.season.id;
+                if (closureBySeason.has(seasonId)) continue;
                 if (historyBySeason.has(seasonId)) continue;
                 const existing = seasonById.get(seasonId);
                 if (existing && existing.createdAt >= gp.createdAt) continue;
@@ -675,6 +782,7 @@ export async function playerRoutes(fastify: FastifyInstance) {
                     seasonName: gp.group.season.name,
                     seasonStartDate: gp.group.season.startDate,
                     seasonEndDate: gp.group.season.endDate,
+                    groupId: gp.groupId,
                     groupName: gp.group?.name || 'Sin grupo',
                     finalRank: null,
                     movement: 'STAY',
@@ -703,11 +811,39 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 statsBySeason.set(seasonId, entry);
             }
 
+            const seasonIds = Array.from(seasonById.keys());
+            const seasonGroupHistory = seasonIds.length > 0
+                ? await prisma.playerGroupHistory.findMany({
+                    where: {
+                        seasonId: { in: seasonIds },
+                        groupId: { not: null },
+                    },
+                    select: {
+                        seasonId: true,
+                        groupId: true,
+                    },
+                })
+                : [];
+
+            const groupSizeBySeasonAndGroup = new Map<string, number>();
+            for (const row of seasonGroupHistory) {
+                if (!row.groupId) continue;
+                const key = `${row.seasonId}:${row.groupId}`;
+                groupSizeBySeasonAndGroup.set(key, (groupSizeBySeasonAndGroup.get(key) ?? 0) + 1);
+            }
+
+            const now = new Date();
+
             const combined = Array.from(seasonById.values())
                 .sort((a, b) => a.seasonStartDate.getTime() - b.seasonStartDate.getTime())
-                .map(({ createdAt: _createdAt, ...rest }) => {
+                .filter((row) => row.seasonEndDate < now)
+                .map(({ createdAt: _createdAt, groupId, ...rest }) => {
                     const stats = statsBySeason.get(rest.seasonId) || { wins: 0, losses: 0 };
-                    return { ...rest, wins: stats.wins, losses: stats.losses };
+                    const maxRank = groupId ? groupSizeBySeasonAndGroup.get(`${rest.seasonId}:${groupId}`) : undefined;
+                    const normalizedFinalRank = (rest.finalRank !== null && maxRank && rest.finalRank > maxRank)
+                        ? null
+                        : rest.finalRank;
+                    return { ...rest, groupId, finalRank: normalizedFinalRank, wins: stats.wins, losses: stats.losses };
                 });
 
             return combined;
