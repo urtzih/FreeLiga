@@ -320,15 +320,43 @@ export async function matchRoutes(fastify: FastifyInstance) {
 
             // If there is a pending/injury match, update it instead of creating a new one.
             const isUpdatingInjuryToPlayed = isRecordingResult && updatableMatch?.matchStatus === 'INJURY';
+            let normalizedGamesP1: number | null = null;
+            let normalizedGamesP2: number | null = null;
+            let normalizedWinnerId: string | null = winnerId;
+
+            if (isRecordingResult && updatableMatch) {
+                const bodyGamesP1 = body.gamesP1 as number;
+                const bodyGamesP2 = body.gamesP2 as number;
+                const isSamePlayerOrder =
+                    updatableMatch.player1Id === body.player1Id &&
+                    updatableMatch.player2Id === body.player2Id;
+
+                if (isSamePlayerOrder) {
+                    normalizedGamesP1 = bodyGamesP1;
+                    normalizedGamesP2 = bodyGamesP2;
+                } else {
+                    normalizedGamesP1 = bodyGamesP2;
+                    normalizedGamesP2 = bodyGamesP1;
+                }
+
+                if (normalizedGamesP1 > normalizedGamesP2) {
+                    normalizedWinnerId = updatableMatch.player1Id;
+                } else if (normalizedGamesP2 > normalizedGamesP1) {
+                    normalizedWinnerId = updatableMatch.player2Id;
+                } else {
+                    normalizedWinnerId = null;
+                }
+            }
+
             const match = updatableMatch && (isRecordingResult || isMarkingInjury)
                 ? await prisma.match.update({
                     where: { id: updatableMatch.id },
                     data: {
                         player1Id: (isMarkingInjury || isUpdatingInjuryToPlayed) ? body.player1Id : updatableMatch.player1Id,
                         player2Id: (isMarkingInjury || isUpdatingInjuryToPlayed) ? body.player2Id : updatableMatch.player2Id,
-                        gamesP1: isRecordingResult ? body.gamesP1 : null,
-                        gamesP2: isRecordingResult ? body.gamesP2 : null,
-                        winnerId: isRecordingResult ? winnerId : isMarkingInjury ? body.player2Id : null,
+                        gamesP1: isRecordingResult ? normalizedGamesP1 : null,
+                        gamesP2: isRecordingResult ? normalizedGamesP2 : null,
+                        winnerId: isRecordingResult ? normalizedWinnerId : isMarkingInjury ? body.player2Id : null,
                         matchStatus: body.matchStatus,
                         date: body.date ? new Date(body.date) : updatableMatch.date,
                         isScheduled: false,

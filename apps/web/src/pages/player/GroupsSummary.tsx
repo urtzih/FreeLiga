@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import Loader from '../../components/Loader';
@@ -40,25 +40,47 @@ interface ClassificationRow {
 
 export default function GroupsSummary() {
     const { user } = useAuth();
-    const { language } = useLanguage();
+    const { language, t } = useLanguage();
     const tr = (es: string, eu: string) => (language === 'eu' ? eu : es);
+    const [selectedSeasonId, setSelectedSeasonId] = useState('');
 
     const { data: seasons, isLoading: loadingSeasons } = useQuery({
         queryKey: ['seasons'],
         queryFn: async () => {
             const { data } = await api.get('/seasons');
-            return data as Array<{ id: string; name: string; isActive: boolean }>;
+            return data as Array<{ id: string; name: string; isActive: boolean; startDate?: string; endDate?: string }>;
         },
         staleTime: 1000 * 60 * 2,
     });
 
-    const activeSeason = useMemo(() => seasons?.find((s) => s.isActive), [seasons]);
+    const selectedSeason = useMemo(
+        () => seasons?.find((season) => season.id === selectedSeasonId) ?? null,
+        [seasons, selectedSeasonId],
+    );
+
+    useEffect(() => {
+        if (!seasons || seasons.length === 0 || selectedSeasonId) return;
+
+        const activeSeason = seasons.find((season) => season.isActive);
+        if (activeSeason) {
+            setSelectedSeasonId(activeSeason.id);
+            return;
+        }
+
+        const sortedByMostRecent = [...seasons].sort((a, b) => {
+            const dateA = new Date(a.endDate ?? a.startDate ?? 0).getTime();
+            const dateB = new Date(b.endDate ?? b.startDate ?? 0).getTime();
+            return dateB - dateA;
+        });
+
+        setSelectedSeasonId(sortedByMostRecent[0]?.id ?? '');
+    }, [seasons, selectedSeasonId]);
 
     const { data: groups, isLoading: loadingGroups } = useQuery({
-        queryKey: ['season-groups', activeSeason?.id],
-        enabled: Boolean(activeSeason?.id),
+        queryKey: ['season-groups', selectedSeasonId],
+        enabled: Boolean(selectedSeasonId),
         queryFn: async () => {
-            const { data } = await api.get(`/groups?seasonId=${activeSeason?.id}`);
+            const { data } = await api.get(`/groups?seasonId=${selectedSeasonId}`);
             return data as Group[];
         },
     });
@@ -96,17 +118,52 @@ export default function GroupsSummary() {
     if (isLoading) {
         return (
             <div className="py-12">
-                <Loader label={tr('Cargando resumen de grupos...', 'Taldeen laburpena kargatzen...')} />
+                <Loader label={t('groupsSummary.loading')} />
             </div>
         );
     }
 
-    if (!activeSeason) {
-        return <div className="py-12 text-center text-slate-600">{tr('No hay una temporada activa.', 'Ez dago denboraldi aktiborik.')}</div>;
+    if (!seasons || seasons.length === 0) {
+        return <div className="py-12 text-center text-slate-600">{t('groupsSummary.noSeasons')}</div>;
     }
 
     if (!groups || groups.length === 0) {
-        return <div className="py-12 text-center text-slate-600">{tr('Sin grupos para la temporada activa.', 'Ez dago talderik denboraldi aktiborako.')}</div>;
+        return (
+            <div className="space-y-6">
+                <header className="club-page-hero p-4 md:p-8">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                        <div>
+                            <p className="text-xs md:text-sm uppercase tracking-wide text-amber-200/90">{t('groupsSummary.selectedSeason')}</p>
+                            <h1 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">{selectedSeason?.name ?? '-'}</h1>
+                            <p className="text-sm md:text-base club-page-hero-subtitle">{t('groupsSummary.subtitle')}</p>
+                        </div>
+                    </div>
+                </header>
+
+                <div className="py-8 text-center text-slate-600">{t('groupsSummary.noGroupsForSeason')}</div>
+
+                {seasons.length > 1 && (
+                    <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm p-4 md:p-5">
+                        <div className="max-w-sm">
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                {t('groupsSummary.chooseAnotherSeason')}
+                            </label>
+                            <select
+                                value={selectedSeasonId}
+                                onChange={(e) => setSelectedSeasonId(e.target.value)}
+                                className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                            >
+                                {seasons.map((season) => (
+                                    <option key={season.id} value={season.id}>
+                                        {season.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
     }
 
     return (
@@ -114,10 +171,10 @@ export default function GroupsSummary() {
             <header className="club-page-hero p-4 md:p-8">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <p className="text-xs md:text-sm uppercase tracking-wide text-amber-200/90">{tr('Temporada activa', 'Denboraldi aktiboa')}</p>
-                        <h1 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">{activeSeason.name}</h1>
+                        <p className="text-xs md:text-sm uppercase tracking-wide text-amber-200/90">{t('groupsSummary.selectedSeason')}</p>
+                        <h1 className="text-2xl md:text-3xl font-bold mb-1 md:mb-2">{selectedSeason?.name ?? '-'}</h1>
                         <p className="text-sm md:text-base club-page-hero-subtitle">
-                            {tr('Resumen y progreso actual de todos los grupos', 'Talde guztien laburpena eta uneko aurrerapena')}
+                            {t('groupsSummary.subtitle')}
                         </p>
                     </div>
                     <div className="flex gap-2 text-sm">
@@ -328,6 +385,27 @@ export default function GroupsSummary() {
                     );
                 })}
             </div>
+
+            {seasons.length > 1 && (
+                <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm p-4 md:p-5">
+                    <div className="max-w-sm">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            {t('groupsSummary.chooseAnotherSeason')}
+                        </label>
+                        <select
+                            value={selectedSeasonId}
+                            onChange={(e) => setSelectedSeasonId(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                        >
+                            {seasons.map((season) => (
+                                <option key={season.id} value={season.id}>
+                                    {season.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
