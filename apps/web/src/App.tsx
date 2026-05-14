@@ -8,6 +8,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 import ToastContainer from './components/ToastContainer';
 import InstallAppBanner from './components/InstallAppBanner';
 import { useLanguage } from './contexts/LanguageContext';
+import SeoManager from './components/SeoManager';
 const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/auth/Login'));
 const Dashboard = lazy(() => import('./pages/player/Dashboard'));
@@ -91,6 +92,7 @@ function App() {
     return (
         <ErrorBoundary>
             <BrowserRouter>
+                <SeoManager />
                 <SpeedInsights />
                 <Analytics />
                 <ToastContainer />
