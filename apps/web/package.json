@@ -9,7 +9,7 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "tsc && vite build",
+        "build": "tsc && vite build && node scripts/generate-seo-static.cjs",
         "preview": "vite preview"
     },
     "dependencies": {
