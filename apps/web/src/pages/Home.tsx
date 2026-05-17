@@ -43,6 +43,15 @@ export default function Home() {
                                 {t('home.hero.cta')}
                             </Link>
                         </div>
+
+                        <div className="mt-6 sm:mt-8 max-w-3xl mx-auto club-surface border border-amber-200/70 p-3 sm:p-4">
+                            <h2 className="text-sm sm:text-base font-bold text-club-black-900 mb-1 sm:mb-2">
+                                {t('home.seoCluster.title')}
+                            </h2>
+                            <p className="text-xs sm:text-sm text-club-black-700">
+                                {t('home.seoCluster.description')}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>

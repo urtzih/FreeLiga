@@ -15,30 +15,30 @@ const baseHtml = fs.readFileSync(baseFile, 'utf8');
 const routes = [
   {
     route: '/',
-    title: 'FreeSquash Liga | Liga de squash en Vitoria-Gasteiz',
+    title: 'FreeSquash Liga | Liga squash Vitoria-Gasteiz',
     description:
-      'FreeSquash Liga, liga de squash en Vitoria-Gasteiz. Partidos, clasificacion, ranking y estadisticas en tiempo real.',
+      'FreeSquash Liga (Free Liga Vitoria-Gasteiz), liga squash Vitoria-Gasteiz. Partidos, clasificacion, ranking y estadisticas en tiempo real.',
     robots: 'index,follow',
   },
   {
     route: '/inicio',
-    title: 'FreeSquash Liga | Liga de squash en Vitoria-Gasteiz',
+    title: 'FreeSquash Liga | Liga squash Vitoria-Gasteiz',
     description:
-      'FreeSquash Liga, liga de squash en Vitoria-Gasteiz. Partidos, clasificacion, ranking y estadisticas en tiempo real.',
+      'FreeSquash Liga (Free Liga Vitoria-Gasteiz), liga squash Vitoria-Gasteiz. Partidos, clasificacion, ranking y estadisticas en tiempo real.',
     robots: 'index,follow',
   },
   {
     route: '/public/groups',
     title: 'Grupos y clasificacion | FreeSquash Liga',
     description:
-      'Consulta la clasificacion por grupos de la temporada en FreeSquash Liga, la liga de squash de Vitoria-Gasteiz.',
+      'Consulta la clasificacion por grupos en FreeSquash Liga (Free Liga Vitoria-Gasteiz), la liga squash de Vitoria-Gasteiz.',
     robots: 'index,follow',
   },
   {
     route: '/public/matches',
     title: 'Ultimos partidos | FreeSquash Liga',
     description:
-      'Mira los resultados de los ultimos partidos de squash en FreeSquash Liga, en Vitoria-Gasteiz.',
+      'Mira los resultados de los ultimos partidos de squash en FreeSquash Liga, la liga squash de Vitoria-Gasteiz.',
     robots: 'index,follow',
   },
   {

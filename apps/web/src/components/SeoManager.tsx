@@ -64,8 +64,8 @@ function getSeoConfig(pathname: string, isBasque: boolean): SeoConfig {
         ? 'FreeSquash Liga | Vitoria-Gasteizko squash liga'
         : 'FreeSquash Liga | Liga de squash en Vitoria-Gasteiz';
     const homeDescription = isBasque
-        ? 'FreeSquash Liga: Vitoria-Gasteizko squash liga. Partidak, sailkapena, rankinga eta estatistikak denbora errealean.'
-        : 'FreeSquash Liga, liga de squash en Vitoria-Gasteiz. Partidos, clasificacion, ranking y estadisticas en tiempo real.';
+        ? 'FreeSquash Liga (Free Liga Vitoria-Gasteiz): Vitoria-Gasteizko squash liga. Partidak, sailkapena, rankinga eta estatistikak denbora errealean.'
+        : 'FreeSquash Liga (Free Liga Vitoria-Gasteiz), liga squash Vitoria-Gasteiz. Partidos, clasificacion, ranking y estadisticas en tiempo real.';
 
     if (pathname === '/' || pathname === '/inicio') {
         return {
@@ -162,6 +162,7 @@ export default function SeoManager() {
         document.title = seo.title;
         upsertMetaByName('description', seo.description);
         upsertMetaByName('robots', seo.robots);
+        upsertMetaByName('keywords', 'free squash liga, free liga vitoria-gasteiz, liga squash vitoria-gasteiz, squash vitoria-gasteiz');
 
         upsertCanonical(canonicalUrl);
 
@@ -183,18 +184,19 @@ export default function SeoManager() {
                 '@context': 'https://schema.org',
                 '@type': 'SportsOrganization',
                 name: 'FreeSquash Liga',
-                alternateName: 'FreeLiga',
+                alternateName: ['FreeLiga', 'Free Liga Vitoria-Gasteiz'],
                 url: BASE_URL,
                 logo: `${BASE_URL}/logo.jpg`,
                 sport: 'Squash',
                 areaServed: 'Vitoria-Gasteiz',
+                sameAs: ['https://www.instagram.com/freesquashgasteiz/'],
             });
 
             upsertJsonLd('schema-website', {
                 '@context': 'https://schema.org',
                 '@type': 'WebSite',
                 name: 'FreeSquash Liga',
-                alternateName: 'FreeLiga',
+                alternateName: ['FreeLiga', 'Free Liga Vitoria-Gasteiz'],
                 url: BASE_URL,
                 inLanguage: isBasque ? ['eu', 'es'] : ['es', 'eu'],
             });
