@@ -4,6 +4,7 @@
  * @author Urtzi Diaz Arberas
  * @copyright © 2024-2026 Urtzi Diaz Arberas. All rights reserved.
  * @license Proprietary - All intellectual property rights belong to Urtzi Diaz Arberas
+ * @note Non-functional touch to trigger Railway auto-deploy watch pattern.
  */
 
 /// <reference types="node" />
