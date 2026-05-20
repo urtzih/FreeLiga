@@ -31,6 +31,7 @@ class SmtpEmailSender implements EmailSender {
       host: input.host,
       port: input.port,
       secure: input.port === 465,
+      family: 4,
       connectionTimeout: 7000,
       greetingTimeout: 7000,
       socketTimeout: 10000,
