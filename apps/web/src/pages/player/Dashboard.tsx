@@ -77,6 +77,68 @@ export default function Dashboard() {
     });
 
     const currentGroup = currentGroupLive ?? currentGroupFromAuth;
+    const myRemainingMatches = (() => {
+        if (!currentGroup?.groupPlayers || !user?.player?.id) return 0;
+        const myPlayerId = String(user.player.id);
+        const totalOpponents = Math.max(0, currentGroup.groupPlayers.length - 1);
+        const completedOpponents = new Set<string>();
+
+        (currentGroup.matches ?? []).forEach((match: any) => {
+            const isPlayer1 = String(match.player1Id) === myPlayerId;
+            const isPlayer2 = String(match.player2Id) === myPlayerId;
+            if (!isPlayer1 && !isPlayer2) return;
+
+            const isClosed =
+                (match.matchStatus === 'PLAYED' && match.gamesP1 !== null && match.gamesP2 !== null) ||
+                match.matchStatus === 'INJURY';
+            if (!isClosed) return;
+
+            const opponentId = String(isPlayer1 ? match.player2Id : match.player1Id);
+            completedOpponents.add(opponentId);
+        });
+
+        return Math.max(0, totalOpponents - completedOpponents.size);
+    })();
+    const recentGroupMatchesExcludingMe = currentGroup?.matches
+        ? [...currentGroup.matches]
+            .filter((match: any) => {
+                const myPlayerId = String(user?.player?.id ?? '');
+                const isMyMatch = String(match.player1Id) === myPlayerId || String(match.player2Id) === myPlayerId;
+                if (isMyMatch) return false;
+
+                return (
+                    (match.matchStatus === 'PLAYED' && match.gamesP1 !== null && match.gamesP2 !== null) ||
+                    match.matchStatus === 'INJURY' ||
+                    match.matchStatus === 'CANCELLED'
+                );
+            })
+            .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .slice(0, 4)
+        : [];
+    const getGroupMatchOutcome = (match: any) => {
+        if (match.matchStatus === 'CANCELLED') {
+            return { winnerId: null as string | null, loserId: null as string | null };
+        }
+
+        if (match.winnerId) {
+            const winnerId = String(match.winnerId);
+            const p1 = String(match.player1Id);
+            const p2 = String(match.player2Id);
+            const loserId = winnerId === p1 ? p2 : winnerId === p2 ? p1 : null;
+            return { winnerId, loserId };
+        }
+
+        if (typeof match.gamesP1 === 'number' && typeof match.gamesP2 === 'number') {
+            if (match.gamesP1 > match.gamesP2) {
+                return { winnerId: String(match.player1Id), loserId: String(match.player2Id) };
+            }
+            if (match.gamesP2 > match.gamesP1) {
+                return { winnerId: String(match.player2Id), loserId: String(match.player1Id) };
+            }
+        }
+
+        return { winnerId: null as string | null, loserId: null as string | null };
+    };
 
     const myRanking = currentGroup?.groupPlayers?.find(
         (gp: any) => gp.playerId === user?.player?.id
@@ -87,6 +149,9 @@ export default function Dashboard() {
     const rankingPosition = classificationPosition !== undefined && classificationPosition >= 0
         ? classificationPosition + 1
         : myRanking?.rankingPosition;
+    const groupPositionByPlayerId = new Map<string, number>(
+        (currentClassification ?? []).map((row, index) => [String(row.playerId), index + 1]),
+    );
     const rankingHighlightClasses = rankingPosition && rankingPosition <= 2
         ? {
             number: 'text-green-600 dark:text-green-400',
@@ -161,7 +226,7 @@ export default function Dashboard() {
                 <h2 className="text-base md:text-lg font-bold text-slate-900 dark:text-white">
                     {t('dashboard.currentSeasonStats')}
                 </h2>
-                <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
+                <div className="grid grid-cols-4 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
                     <StatCard
                         title={t('dashboard.statWins')}
                         value={playerStats?.wins || 0}
@@ -193,22 +258,19 @@ export default function Dashboard() {
                 </div>
             </div>
 
-            <div className="md:hidden">
-                <Link
-                    to="/matches/record"
-                    className="flex items-center justify-center w-full px-4 py-3 club-btn-primary"
-                >
-                    {t('dashboard.recordMatch')}
-                </Link>
-            </div>
-
             {currentGroup && (
                 <div className="bg-white dark:bg-slate-800 rounded-xl md:rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-                    <div className="px-3 md:px-6 py-3 md:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                    <div className="px-3 md:px-6 py-3 md:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between gap-3">
                         <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white">{t('dashboard.currentGroup')}</h2>
+                        <Link
+                            to={`/groups/${currentGroup.id}`}
+                            className="inline-flex items-center px-3 md:px-4 py-2 text-sm md:text-base club-btn-yellow whitespace-nowrap"
+                        >
+                            {t('dashboard.viewDetails')} →
+                        </Link>
                     </div>
-                    <div className="p-3 md:p-6 flex justify-between items-center gap-3 md:gap-6 min-h-[140px] md:min-h-auto">
-                        <div className="flex-1 flex flex-col justify-center">
+                    <div className="p-3 md:p-6 min-h-[140px] md:min-h-auto">
+                        <div className="flex flex-col justify-center">
                             <div className="flex flex-wrap items-baseline gap-x-2 md:gap-x-4 mb-3 md:mb-4">
                                 <h3 className="text-lg md:text-2xl font-bold text-slate-900 dark:text-white">{currentGroup.name}</h3>
                                 {currentGroup.season && (() => {
@@ -225,26 +287,97 @@ export default function Dashboard() {
                                     );
                                 })()}
                             </div>
-                            <Link
-                                to={`/groups/${currentGroup.id}`}
-                                className="inline-flex items-center px-3 md:px-4 py-2 text-sm md:text-base club-btn-yellow"
-                            >
-                                {t('dashboard.viewDetails')} →
-                            </Link>
-                        </div>
-                        <div className="shrink-0">
-                            <div className={`text-left rounded-xl md:rounded-2xl border px-3 md:px-5 py-2 md:py-3 shadow-sm ${rankingHighlightClasses.box}`}>
-                                <div className={`text-3xl md:text-5xl font-extrabold leading-none ${rankingHighlightClasses.number}`}>
-                                    #{rankingPosition || '-'}
+                            <div className="mb-3 md:mb-4">
+                                <div className={`w-full text-left rounded-xl md:rounded-2xl border px-3 md:px-5 py-2 md:py-3 shadow-sm ${rankingHighlightClasses.box}`}>
+                                    <div className="flex items-end justify-between gap-2">
+                                        <div className={`text-3xl md:text-5xl font-extrabold leading-none ${rankingHighlightClasses.number}`}>
+                                            #{rankingPosition || '-'}
+                                        </div>
+                                        <p className={`text-xs md:text-sm font-semibold leading-none ${rankingHighlightClasses.label}`}>
+                                            {rankingPosition && rankingPosition <= 2
+                                                ? `⬆️ ${t('dashboard.promotion')}`
+                                                : rankingPosition && rankingPosition > 6
+                                                    ? `⚠️ ${t('dashboard.relegation')}`
+                                                    : t('dashboard.position')
+                                            }
+                                        </p>
+                                    </div>
+                                    <p className="text-xs md:text-sm mt-1 text-slate-600 dark:text-slate-300">
+                                        {t('dashboard.statWins')}: {playerStats?.wins || 0} · {t('dashboard.statLosses')}: {playerStats?.losses || 0} · {t('dashboard.remainingMatchesLabel')}: {myRemainingMatches}
+                                    </p>
                                 </div>
-                                <p className={`text-xs md:text-sm font-semibold mt-1 ${rankingHighlightClasses.label}`}>
-                                    {rankingPosition && rankingPosition <= 2
-                                        ? `⬆️ ${t('dashboard.promotion')}`
-                                        : rankingPosition && rankingPosition > 6
-                                            ? `⚠️ ${t('dashboard.relegation')}`
-                                            : t('dashboard.position')
-                                    }
-                                </p>
+                            </div>
+                            <div className="mt-3 md:mt-4">
+                                <h4 className="text-xs md:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                                    {t('dashboard.currentGroupRecentOthers')}
+                                </h4>
+                                {recentGroupMatchesExcludingMe.length > 0 ? (
+                                    <div className="space-y-1.5">
+                                        {recentGroupMatchesExcludingMe.map((match: any) => (
+                                            <article
+                                                key={match.id}
+                                                className="text-xs md:text-sm rounded-xl border border-slate-200 dark:border-slate-700 px-2.5 md:px-3 py-2 bg-slate-50 dark:bg-slate-900/60"
+                                            >
+                                                {(() => {
+                                                    const p1Id = String(match.player1Id);
+                                                    const p2Id = String(match.player2Id);
+                                                    const { winnerId, loserId } = getGroupMatchOutcome(match);
+                                                    const p1Position = groupPositionByPlayerId.get(p1Id);
+                                                    const p2Position = groupPositionByPlayerId.get(p2Id);
+                                                    const p1Class = winnerId === p1Id
+                                                        ? 'text-green-700 dark:text-green-400 font-semibold'
+                                                        : loserId === p1Id
+                                                            ? 'text-red-700 dark:text-red-400'
+                                                            : 'text-slate-700 dark:text-slate-300';
+                                                    const p2Class = winnerId === p2Id
+                                                        ? 'text-green-700 dark:text-green-400 font-semibold'
+                                                        : loserId === p2Id
+                                                            ? 'text-red-700 dark:text-red-400'
+                                                            : 'text-slate-700 dark:text-slate-300';
+
+                                                    return (
+                                                        <>
+                                                            <div className="flex items-center justify-between gap-2">
+                                                                <p className={`truncate ${p1Class}`}>
+                                                                    <span className="text-[11px] md:text-xs text-slate-500 dark:text-slate-400 mr-1">
+                                                                        {p1Position ? `#${p1Position}` : '#-'}
+                                                                    </span>
+                                                                    {match.player1?.name}
+                                                                    {match.matchStatus !== 'CANCELLED' && (
+                                                                        <span className="ml-2 text-sm md:text-base font-bold text-slate-700 dark:text-slate-200">
+                                                                            {match.gamesP1 ?? '-'}
+                                                                        </span>
+                                                                    )}
+                                                                </p>
+                                                                <span className="text-slate-400">vs</span>
+                                                                <p className={`truncate text-right ${p2Class}`}>
+                                                                    <span className="text-[11px] md:text-xs text-slate-500 dark:text-slate-400 mr-1">
+                                                                        {p2Position ? `#${p2Position}` : '#-'}
+                                                                    </span>
+                                                                    {match.player2?.name}
+                                                                    {match.matchStatus !== 'CANCELLED' && (
+                                                                        <span className="ml-2 text-sm md:text-base font-bold text-slate-700 dark:text-slate-200">
+                                                                            {match.gamesP2 ?? '-'}
+                                                                        </span>
+                                                                    )}
+                                                                </p>
+                                                            </div>
+                                                            <div className="mt-1">
+                                                                <p className="text-slate-500 dark:text-slate-400">
+                                                                    {formatDate(match.date)}
+                                                                </p>
+                                                            </div>
+                                                        </>
+                                                    );
+                                                })()}
+                                            </article>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">
+                                        {t('dashboard.currentGroupRecentOthersEmpty')}
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -403,12 +536,16 @@ function StatCard({
     loading?: boolean;
 }) {
     return (
-        <div className="bg-white dark:bg-slate-800 rounded-lg md:rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div className="min-w-0 bg-white dark:bg-slate-800 rounded-lg md:rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
             <div className={`h-1 md:h-2 bg-gradient-to-r ${color}`}></div>
-            <div className="p-3 md:p-6">
-                <div className="flex items-center justify-between mb-1 md:mb-2">
-                    <p className="text-xs md:text-sm font-medium text-slate-600 dark:text-slate-400">{title}</p>
-                    <span className="text-lg md:text-2xl">{icon}</span>
+            <div className="relative p-3 md:p-6">
+                <span className="absolute top-2.5 right-2.5 md:top-5 md:right-5 text-base md:text-2xl leading-none">
+                    {icon}
+                </span>
+                <div className="mb-1 md:mb-2 pr-5 md:pr-8">
+                    <p className="text-xs md:text-sm font-medium text-slate-600 dark:text-slate-400 leading-tight whitespace-nowrap overflow-hidden text-ellipsis">
+                        {title}
+                    </p>
                 </div>
                 {loading ? (
                     <div className="h-6 md:h-8 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
@@ -498,16 +635,16 @@ function GlobalStatsVisual({
     return (
         <div className="relative overflow-hidden rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg">
             <div className="absolute inset-0 opacity-40 pointer-events-none bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.16),transparent_40%),radial-gradient(circle_at_80%_20%,rgba(245,158,11,0.18),transparent_35%),radial-gradient(circle_at_50%_100%,rgba(59,130,246,0.12),transparent_40%)]" />
+            <div className="relative px-3 md:px-6 py-3 md:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between gap-3">
+                <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white">{globalTitle}</h2>
+                <Link
+                    to="/matches/history"
+                    className="inline-flex items-center px-3 md:px-4 py-2 text-sm md:text-base club-btn-yellow whitespace-nowrap"
+                >
+                    {historyLabel} →
+                </Link>
+            </div>
             <div className="relative p-4 md:p-6 grid md:grid-cols-2 gap-4 md:gap-6 items-stretch">
-                <div className="md:col-span-2 flex items-center justify-between gap-2 md:gap-3 overflow-x-auto">
-                    <h2 className="text-sm md:text-lg font-bold text-slate-900 dark:text-white whitespace-nowrap shrink-0">{globalTitle}</h2>
-                    <Link
-                        to="/matches/history"
-                        className="inline-flex items-center px-3 md:px-4 py-2 text-xs md:text-base club-btn-yellow hover:!translate-y-0 hover:!shadow-lg whitespace-nowrap shrink-0"
-                    >
-                        {historyLabel} →
-                    </Link>
-                </div>
                 <div className="h-full flex flex-col items-center justify-center gap-2 py-2 md:py-3">
                     <div className="relative w-full max-w-[180px] md:max-w-[260px] aspect-square rounded-full p-2 md:p-3 shadow-inner ring-1 ring-slate-300 dark:ring-slate-600" style={ringStyle}>
                         <div className="h-full w-full rounded-full bg-white dark:bg-slate-900 flex flex-col items-center justify-center text-center">

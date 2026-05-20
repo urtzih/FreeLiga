@@ -484,19 +484,18 @@ export default function PlayerProgress() {
 
       <div className="relative overflow-hidden rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg">
         <div className="absolute inset-0 opacity-40 pointer-events-none bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.16),transparent_40%),radial-gradient(circle_at_80%_20%,rgba(245,158,11,0.18),transparent_35%),radial-gradient(circle_at_50%_100%,rgba(59,130,246,0.12),transparent_40%)]" />
+        <div className="relative px-3 md:px-6 py-3 md:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/60 flex items-center justify-between gap-3 overflow-x-auto">
+          <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white whitespace-nowrap shrink-0">
+            {tr('Estadisticas globales', 'Estatistika globalak')}
+          </h2>
+          <Link
+            to="/matches/history"
+            className="inline-flex items-center px-3 md:px-4 py-2 text-sm md:text-base club-btn-yellow hover:!translate-y-0 hover:!shadow-lg whitespace-nowrap shrink-0"
+          >
+            {tr('Ver historico de partidos', 'Partiden historikoa ikusi')} →
+          </Link>
+        </div>
         <div className="relative p-4 md:p-6 grid md:grid-cols-2 gap-4 md:gap-6 items-stretch">
-          <div className="md:col-span-2 flex items-center justify-between gap-2 md:gap-3 overflow-x-auto">
-            <h2 className="text-sm md:text-lg font-bold text-slate-900 dark:text-white whitespace-nowrap shrink-0">
-              {tr('Estadisticas globales', 'Estatistika globalak')}
-            </h2>
-            <Link
-              to="/matches/history"
-              className="inline-flex items-center px-3 md:px-4 py-2 text-xs md:text-base club-btn-yellow hover:!translate-y-0 hover:!shadow-lg whitespace-nowrap shrink-0"
-            >
-              {tr('Ver historico de partidos', 'Partiden historikoa ikusi')} →
-            </Link>
-          </div>
-
           <div className="h-full flex flex-col items-center justify-center gap-2 py-2 md:py-3">
             <div
               className="relative w-full max-w-[180px] md:max-w-[260px] aspect-square rounded-full p-2 md:p-3 shadow-inner ring-1 ring-slate-300 dark:ring-slate-600"

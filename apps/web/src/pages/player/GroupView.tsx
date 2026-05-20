@@ -108,6 +108,8 @@ export default function GroupView() {
     );
 
     const totalPlayers = group.groupPlayers.length;
+    const relegationStartPosition = 7;
+    const relegationStartIndex = relegationStartPosition - 1;
     const completedMatches = group.matches.filter((m: any) =>
         (m.matchStatus === 'PLAYED' && m.gamesP1 !== null && m.gamesP2 !== null) || m.matchStatus === 'INJURY'
     );
@@ -336,7 +338,7 @@ export default function GroupView() {
             const displayPosition = index + 1;
             const movement = displayPosition <= 2
                 ? tr('ASCENSO', 'IGOERA')
-                : displayPosition > totalPlayers - 2
+                : displayPosition >= relegationStartPosition
                     ? tr('DESCENSO', 'JAITSIERA')
                     : tr('MANTIENE', 'MANTENTZEN DA');
             const wins = group.matches.filter((m: any) => m.matchStatus === 'PLAYED' && m.winnerId === gp.playerId).length || 0;
@@ -470,7 +472,7 @@ export default function GroupView() {
                                             
                                             // Determinar ascenso/descenso
                                             const isPromotion = idx < 2; // Top 2: ascenso
-                                            const isRelegation = idx >= totalPlayers - 2; // altimos 2: descenso
+                                            const isRelegation = idx >= relegationStartIndex; // Posicion 7 en adelante: descenso
                                             
                                             const baseRowClass = isPromotion
                                                 ? "bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
@@ -538,7 +540,7 @@ export default function GroupView() {
                                             
                                             // Determinar ascenso/descenso
                                             const isPromotion = idx < 2; // Top 2: ascenso
-                                            const isRelegation = idx >= totalPlayers - 2; // altimos 2: descenso
+                                            const isRelegation = idx >= relegationStartIndex; // Posicion 7 en adelante: descenso
                                             
                                             const baseRowClass = isPromotion
                                                 ? "bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
@@ -622,7 +624,7 @@ export default function GroupView() {
                                                             {String.fromCodePoint(0x1F3C6)} TOP
                                                         </span>
                                                     )}
-                                                    {index >= totalPlayers - 2 && (
+                                                    {index >= relegationStartIndex && (
                                                         <span className="text-xs font-semibold text-red-700 dark:text-red-300">
                                                             {String.fromCodePoint(0x2B07)} OUT
                                                         </span>
@@ -685,12 +687,12 @@ export default function GroupView() {
                                                         {String.fromCodePoint(0x1F3C6)} TOP
                                                     </span>
                                                 )}
-                                                {index >= totalPlayers - 2 && (
+                                                {index >= relegationStartIndex && (
                                                     <span className="text-xs font-semibold text-red-700 dark:text-red-300">
                                                         {String.fromCodePoint(0x2B07)} OUT
                                                     </span>
                                                 )}
-                                                {index >= 2 && index < totalPlayers - 2 && <span className="text-sm font-bold text-slate-500">#{displayPosition}</span>}
+                                                {index >= 2 && index < relegationStartIndex && <span className="text-sm font-bold text-slate-500">#{displayPosition}</span>}
                                             </div>
                                             <div className="flex-1">
                                                 <div className="flex items-start justify-between gap-2">

@@ -121,14 +121,6 @@ export default function ProtectedLayout() {
                                     >
                                         {groupLabel}
                                     </Link>
-                                    {calendarEnabled && (
-                                        <Link
-                                            to="/calendar"
-                                            className="px-3 py-2 rounded-md text-sm font-medium text-amber-100 hover:bg-zinc-800 hover:text-amber-200 transition-colors"
-                                        >
-                                            {translate('nav.player.calendar')}
-                                        </Link>
-                                    )}
                                     <Link
                                         to="/matches/record"
                                         className="px-3 py-2 rounded-md text-sm font-medium text-amber-100 hover:bg-zinc-800 hover:text-amber-200 transition-colors"
@@ -149,6 +141,9 @@ export default function ProtectedLayout() {
                                             <Link to="/progress" className="block px-4 py-2 text-sm text-amber-100 hover:bg-zinc-800 hover:text-amber-200">{translate('nav.player.progress')}</Link>
                                             <Link to="/groups/summary" className="block px-4 py-2 text-sm text-amber-100 hover:bg-zinc-800 hover:text-amber-200">{translate('nav.player.groupsSummary')}</Link>
                                             <Link to="/matches/history" className="block px-4 py-2 text-sm text-amber-100 hover:bg-zinc-800 hover:text-amber-200">{translate('nav.player.matchHistory')}</Link>
+                                            {calendarEnabled && (
+                                                <Link to="/calendar" className="block px-4 py-2 text-sm text-amber-100 hover:bg-zinc-800 hover:text-amber-200">{translate('nav.player.calendar')}</Link>
+                                            )}
                                             <Link to="/historia" className="block px-4 py-2 text-sm text-amber-100 hover:bg-zinc-800 hover:text-amber-200">{translate('nav.player.general')}</Link>
                                             <Link to="/blacklist" className="block px-4 py-2 text-sm text-amber-100 hover:bg-zinc-800 hover:text-amber-200">{translate('nav.player.blacklist')}</Link>
                                             <Link to="/help" className="block px-4 py-2 text-sm text-amber-100 hover:bg-zinc-800 hover:text-amber-200">{translate('nav.player.help')}</Link>
@@ -192,6 +187,24 @@ export default function ProtectedLayout() {
                             </button>
                         </div>
                     </div>
+                    {!isAdmin && (
+                        <div className="md:hidden pb-2">
+                            <div className="grid grid-cols-2 rounded-xl border border-amber-500/30 bg-zinc-900/70 overflow-hidden">
+                                <Link
+                                    to={user?.player?.currentGroup ? `/groups/${user.player.currentGroup.id}` : '/dashboard'}
+                                    className="px-2 py-2.5 text-center text-sm font-semibold text-amber-100 hover:bg-zinc-800 hover:text-amber-200 transition-colors border-r border-amber-500/25 truncate"
+                                >
+                                    {translate('nav.player.viewGroup', { group: groupLabel })}
+                                </Link>
+                                <Link
+                                    to="/matches/record"
+                                    className="px-2 py-2.5 text-center text-sm font-semibold text-amber-100 hover:bg-zinc-800 hover:text-amber-200 transition-colors truncate"
+                                >
+                                    {translate('nav.player.recordMatch')}
+                                </Link>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {mobileMenuOpen && (
@@ -229,57 +242,37 @@ export default function ProtectedLayout() {
                                 </>
                             ) : (
                                 <>
-                                    <div className="rounded-xl border border-amber-500/20 bg-zinc-950/80 divide-y divide-amber-500/15">
-                                        <Link to="/dashboard" onClick={closeMobileMenu} className="block px-4 py-3 text-base font-semibold text-amber-100 hover:bg-zinc-900 hover:text-amber-200 transition-colors">
-                                            {translate('nav.player.home')}
-                                        </Link>
-                                        <Link to={user?.player?.currentGroup ? `/groups/${user.player.currentGroup.id}` : '/dashboard'} onClick={closeMobileMenu} className="block px-4 py-3 text-base font-semibold text-amber-100 hover:bg-zinc-900 hover:text-amber-200 transition-colors">
-                                            {groupLabel}
-                                        </Link>
-                                        <Link to="/matches/record" onClick={closeMobileMenu} className="block px-4 py-3 text-base font-semibold text-amber-100 hover:bg-zinc-900 hover:text-amber-200 transition-colors">
-                                            {translate('nav.player.recordMatch')}
-                                        </Link>
-                                        {calendarEnabled && (
-                                            <Link to="/calendar" onClick={closeMobileMenu} className="block px-4 py-3 text-base font-semibold text-amber-100 hover:bg-zinc-900 hover:text-amber-200 transition-colors">
-                                                {translate('nav.player.calendar')}
-                                            </Link>
-                                        )}
-                                        <details className="group border-t border-amber-500/15">
-                                            <summary className="list-none cursor-pointer px-4 py-3 text-base font-semibold text-amber-100 hover:bg-zinc-900 hover:text-amber-200 transition-colors flex items-center justify-between">
-                                                <span>{translate('nav.more')}</span>
-                                                <svg className="h-4 w-4 text-amber-300/80 transition-transform duration-200 group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                </svg>
-                                            </summary>
-                                            <div className="border-t border-amber-500/10 divide-y divide-amber-500/10">
-                                                <Link to="/progress" onClick={closeMobileMenu} className="block px-4 py-3 text-base font-semibold text-amber-100 hover:bg-zinc-900 hover:text-amber-200 transition-colors">{translate('nav.player.progress')}</Link>
-                                                <Link to="/groups/summary" onClick={closeMobileMenu} className="block px-4 py-3 text-base font-semibold text-amber-100 hover:bg-zinc-900 hover:text-amber-200 transition-colors">{translate('nav.player.groupsSummary')}</Link>
-                                                <Link to="/matches/history" onClick={closeMobileMenu} className="block px-4 py-3 text-base font-semibold text-amber-100 hover:bg-zinc-900 hover:text-amber-200 transition-colors">{translate('nav.player.matchHistory')}</Link>
-                                                <Link to="/historia" onClick={closeMobileMenu} className="block px-4 py-3 text-base font-semibold text-amber-100 hover:bg-zinc-900 hover:text-amber-200 transition-colors">{translate('nav.player.general')}</Link>
-                                                <Link to="/blacklist" onClick={closeMobileMenu} className="block px-4 py-3 text-base font-semibold text-amber-100 hover:bg-zinc-900 hover:text-amber-200 transition-colors">{translate('nav.player.blacklist')}</Link>
-                                                <Link to="/help" onClick={closeMobileMenu} className="block px-4 py-3 text-base font-semibold text-amber-100 hover:bg-zinc-900 hover:text-amber-200 transition-colors">{translate('nav.player.help')}</Link>
-                                            </div>
-                                        </details>
+                                    <div className="rounded-xl border border-amber-500/20 bg-zinc-950/80">
+                                        <div className="border-t border-amber-500/10 divide-y divide-amber-500/10">
+                                            <Link to="/progress" onClick={closeMobileMenu} className="block px-4 py-3 text-base font-semibold text-amber-100 hover:bg-zinc-900 hover:text-amber-200 transition-colors">{translate('nav.player.progress')}</Link>
+                                            <Link to="/groups/summary" onClick={closeMobileMenu} className="block px-4 py-3 text-base font-semibold text-amber-100 hover:bg-zinc-900 hover:text-amber-200 transition-colors">{translate('nav.player.groupsSummary')}</Link>
+                                            <Link to="/matches/history" onClick={closeMobileMenu} className="block px-4 py-3 text-base font-semibold text-amber-100 hover:bg-zinc-900 hover:text-amber-200 transition-colors">{translate('nav.player.matchHistory')}</Link>
+                                            <Link to="/historia" onClick={closeMobileMenu} className="block px-4 py-3 text-base font-semibold text-amber-100 hover:bg-zinc-900 hover:text-amber-200 transition-colors">{translate('nav.player.general')}</Link>
+                                            <Link to="/blacklist" onClick={closeMobileMenu} className="block px-4 py-3 text-base font-semibold text-amber-100 hover:bg-zinc-900 hover:text-amber-200 transition-colors">{translate('nav.player.blacklist')}</Link>
+                                            <Link to="/help" onClick={closeMobileMenu} className="block px-4 py-3 text-base font-semibold text-amber-100 hover:bg-zinc-900 hover:text-amber-200 transition-colors">{translate('nav.player.help')}</Link>
+                                        </div>
                                     </div>
                                 </>
                             )}
 
-                            <div className="pt-4 mt-4">
-                                <Link to="/profile" onClick={closeMobileMenu} className="block px-3 py-2 hover:bg-zinc-900 rounded-md transition-colors">
-                                    <div className="text-sm font-medium text-amber-100">
-                                        {user?.player?.name || user?.email}
-                                    </div>
-                                    <div className="text-xs text-amber-200/70 mt-1">
-                                        {translate('nav.viewProfileShort')}
-                                    </div>
-                                </Link>
-                                <button
-                                    onClick={handleLogout}
-                                    className="mt-2 w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-300 hover:bg-red-900/25 transition-colors"
-                                >
-                                    {translate('nav.logout')}
-                                </button>
-                            </div>
+                            {isAdmin && (
+                                <div className="pt-4 mt-4">
+                                    <Link to="/profile" onClick={closeMobileMenu} className="block px-3 py-2 hover:bg-zinc-900 rounded-md transition-colors">
+                                        <div className="text-sm font-medium text-amber-100">
+                                            {user?.player?.name || user?.email}
+                                        </div>
+                                        <div className="text-xs text-amber-200/70 mt-1">
+                                            {translate('nav.viewProfileShort')}
+                                        </div>
+                                    </Link>
+                                    <button
+                                        onClick={handleLogout}
+                                        className="mt-2 w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-300 hover:bg-red-900/25 transition-colors"
+                                    >
+                                        {translate('nav.logout')}
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
