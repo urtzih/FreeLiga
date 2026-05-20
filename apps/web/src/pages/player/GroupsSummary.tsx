@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import Loader from '../../components/Loader';
@@ -285,7 +285,7 @@ export default function GroupsSummary() {
 
                             <div className="p-5 flex-1 flex flex-col gap-4">
                                 {classification.length === 0 ? (
-                                    <p className="text-sm text-slate-600 dark:text-slate-400">{tr('Aun no hay partidos en este grupo.', 'Oraindik ez dago partidarik talde honetan.')}</p>
+                                    <p className="text-sm text-slate-600 dark:text-slate-400">{tr('Aún no hay partidos en este grupo.', 'Oraindik ez dago partidarik talde honetan.')}</p>
                                 ) : (
                                     <div className="overflow-x-auto -mx-2">
                                         <table className="min-w-full text-sm">
@@ -409,3 +409,4 @@ export default function GroupsSummary() {
         </div>
     );
 }
+

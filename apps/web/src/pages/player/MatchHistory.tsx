@@ -162,7 +162,7 @@ export default function MatchHistory() {
     });
 
     const handleDelete = async (matchId: string) => {
-        if (window.confirm(tr('Estas seguro de que quieres eliminar este partido?', 'Ziur zaude partida hau ezabatu nahi duzula?'))) {
+        if (window.confirm(tr('¿Estás seguro de que quieres eliminar este partido?', 'Ziur zaude partida hau ezabatu nahi duzula?'))) {
             await deleteMutation.mutateAsync(matchId);
         }
     };
@@ -353,7 +353,7 @@ export default function MatchHistory() {
             (createPendingForm.gamesP2 === 3 && createPendingForm.gamesP1 >= 0 && createPendingForm.gamesP1 <= 2);
 
         if (!validScore) {
-            setCreatePendingError(tr('Resultado invalido: formato permitido 3-0, 3-1, 3-2 (o inverso).', 'Emaitza baliogabea: onartutako formatua 3-0, 3-1, 3-2 (edo alderantziz).'));
+            setCreatePendingError(tr('Resultado inválido: formato permitido 3-0, 3-1, 3-2 (o inverso).', 'Emaitza baliogabea: onartutako formatua 3-0, 3-1, 3-2 (edo alderantziz).'));
 
             return;
         }
@@ -626,8 +626,8 @@ export default function MatchHistory() {
                                                         <p className="text-sm text-orange-600 dark:text-orange-400 mt-1 uppercase font-medium">
                                                             {match.matchStatus === 'INJURY'
                                                                 ? (isCurrentPlayerInMatch
-                                                                    ? (iAmInjuredInThisMatch ? tr('LESION', 'LESIOA') : tr('RIVAL LESIONADO', 'AURKARIA LESIONATUTA'))
-                                                                    : tr('LESION', 'LESIOA'))
+                                                                    ? (iAmInjuredInThisMatch ? tr('LESIÓN', 'LESIOA') : tr('RIVAL LESIÓNADO', 'AURKARIA LESIÓNATUTA'))
+                                                                    : tr('LESIÓN', 'LESIOA'))
                                                                 : tr('CANCELADO', 'EZEZTATUA')}
                                                         </p>
                                                     )}
@@ -707,7 +707,7 @@ export default function MatchHistory() {
                             })}
                         </div>
 
-                        {/* Pagination */}
+                        {/* Págination */}
                         {totalPages > 1 && (
                             <div className="p-3 md:p-6 border-t border-slate-200 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-3">
                                 <div className="text-xs md:text-sm text-slate-600 dark:text-slate-400 text-center md:text-left">
@@ -722,7 +722,7 @@ export default function MatchHistory() {
                                         {tr('Anterior', 'Aurrekoa')}
                                     </button>
                                     <span className="text-xs md:text-sm text-slate-600 dark:text-slate-400">
-                                        {tr('Pagina', 'Orria')} {currentPage} {tr('de', '/')} {totalPages}
+                                        {tr('Página', 'Orria')} {currentPage} {tr('de', '/')} {totalPages}
                                     </span>
                                     <button
                                         onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
@@ -921,3 +921,7 @@ export default function MatchHistory() {
         </div>
     );
 }
+
+
+
+

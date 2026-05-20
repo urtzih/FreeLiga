@@ -426,39 +426,37 @@ export default function PlayerProgress() {
               {seasonSummary.length === 0 ? (
                 <p className="text-slate-500 dark:text-slate-400 text-sm">{tr('No hay datos por temporada', 'Ez dago daturik denboraldika')}</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead>
-                      <tr className="text-left text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
-                        <th className="py-2 pr-4">{tr('Temporada', 'Denboraldia')}</th>
-                        <th className="py-2 pr-4">{tr('Clasificación', 'Sailkapena')}</th>
-                        <th className="py-2 pr-4">{tr('Ganados', 'Irabaziak')}</th>
-                        <th className="py-2 pr-4">{tr('Perdidos', 'Galduak')}</th>
-                        <th className="py-2 pr-4">{tr('Variación', 'Aldaketa')}</th>
-                        <th className="py-2 pr-4">{tr('Grupo', 'Taldea')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {seasonSummary.map((row) => {
-                        let movementLabel = tr('→ Se mantiene', '→ Mantendu');
-                        let movementClass = 'text-slate-600 dark:text-slate-300';
+                <div className="space-y-3 md:space-y-0">
+                  <div className="grid grid-cols-1 gap-3 md:hidden">
+                    {seasonSummary.map((row) => {
+                      let movementLabel = tr('→ Se mantiene', '→ Mantendu');
+                      let movementClass = 'text-slate-600 dark:text-slate-300';
 
-                        if (row.movement === 'PROMOTION') {
-                          movementLabel = tr('↑ Ascenso', '↑ Igoera');
-                          movementClass = 'text-green-600 dark:text-green-400';
-                        } else if (row.movement === 'RELEGATION') {
-                          movementLabel = tr('↓ Descenso', '↓ Jaitsiera');
-                          movementClass = 'text-red-600 dark:text-red-400';
-                        }
+                      if (row.movement === 'PROMOTION') {
+                        movementLabel = tr('↑ Ascenso', '↑ Igoera');
+                        movementClass = 'text-green-600 dark:text-green-400';
+                      } else if (row.movement === 'RELEGATION') {
+                        movementLabel = tr('↓ Descenso', '↓ Jaitsiera');
+                        movementClass = 'text-red-600 dark:text-red-400';
+                      }
 
-                        return (
-                          <tr key={row.seasonId} className="border-b border-slate-100 dark:border-slate-800">
-                            <td className="py-2 pr-4 text-slate-900 dark:text-white">{row.seasonName}</td>
-                            <td className="py-2 pr-4 text-slate-700 dark:text-slate-300">{row.finalRank ?? '—'}</td>
-                            <td className="py-2 pr-4 text-slate-700 dark:text-slate-300">{row.wins}</td>
-                            <td className="py-2 pr-4 text-slate-700 dark:text-slate-300">{row.losses}</td>
-                            <td className={`py-2 pr-4 ${movementClass}`}>{movementLabel}</td>
-                            <td className="py-2 pr-4 text-slate-700 dark:text-slate-300">
+                      return (
+                        <div
+                          key={row.seasonId}
+                          className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3"
+                        >
+                          <p className="text-sm font-semibold text-slate-900 dark:text-white">{row.seasonName}</p>
+                          <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
+                            <p className="text-slate-500 dark:text-slate-400">{tr('Clasificación', 'Sailkapena')}</p>
+                            <p className="text-right text-slate-700 dark:text-slate-300">{row.finalRank ?? '—'}</p>
+                            <p className="text-slate-500 dark:text-slate-400">{tr('Ganados', 'Irabaziak')}</p>
+                            <p className="text-right text-slate-700 dark:text-slate-300">{row.wins}</p>
+                            <p className="text-slate-500 dark:text-slate-400">{tr('Perdidos', 'Galduak')}</p>
+                            <p className="text-right text-slate-700 dark:text-slate-300">{row.losses}</p>
+                            <p className="text-slate-500 dark:text-slate-400">{tr('Variación', 'Aldaketa')}</p>
+                            <p className={`text-right ${movementClass}`}>{movementLabel}</p>
+                            <p className="text-slate-500 dark:text-slate-400">{tr('Grupo', 'Taldea')}</p>
+                            <p className="text-right text-slate-700 dark:text-slate-300">
                               {row.groupId ? (
                                 <Link
                                   to={`/groups/${row.groupId}`}
@@ -469,12 +467,63 @@ export default function PlayerProgress() {
                               ) : (
                                 '—'
                               )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="hidden md:block">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-slate-600 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+                          <th className="py-2 pr-4">{tr('Temporada', 'Denboraldia')}</th>
+                          <th className="py-2 pr-4">{tr('Clasificación', 'Sailkapena')}</th>
+                          <th className="py-2 pr-4">{tr('Ganados', 'Irabaziak')}</th>
+                          <th className="py-2 pr-4">{tr('Perdidos', 'Galduak')}</th>
+                          <th className="py-2 pr-4">{tr('Variación', 'Aldaketa')}</th>
+                          <th className="py-2 pr-4">{tr('Grupo', 'Taldea')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {seasonSummary.map((row) => {
+                          let movementLabel = tr('→ Se mantiene', '→ Mantendu');
+                          let movementClass = 'text-slate-600 dark:text-slate-300';
+
+                          if (row.movement === 'PROMOTION') {
+                            movementLabel = tr('↑ Ascenso', '↑ Igoera');
+                            movementClass = 'text-green-600 dark:text-green-400';
+                          } else if (row.movement === 'RELEGATION') {
+                            movementLabel = tr('↓ Descenso', '↓ Jaitsiera');
+                            movementClass = 'text-red-600 dark:text-red-400';
+                          }
+
+                          return (
+                            <tr key={row.seasonId} className="border-b border-slate-100 dark:border-slate-800">
+                              <td className="py-2 pr-4 text-slate-900 dark:text-white">{row.seasonName}</td>
+                              <td className="py-2 pr-4 text-slate-700 dark:text-slate-300">{row.finalRank ?? '—'}</td>
+                              <td className="py-2 pr-4 text-slate-700 dark:text-slate-300">{row.wins}</td>
+                              <td className="py-2 pr-4 text-slate-700 dark:text-slate-300">{row.losses}</td>
+                              <td className={`py-2 pr-4 ${movementClass}`}>{movementLabel}</td>
+                              <td className="py-2 pr-4 text-slate-700 dark:text-slate-300">
+                                {row.groupId ? (
+                                  <Link
+                                    to={`/groups/${row.groupId}`}
+                                    className="text-amber-700 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200 underline underline-offset-2"
+                                  >
+                                    {row.groupName}
+                                  </Link>
+                                ) : (
+                                  '—'
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>
@@ -484,15 +533,15 @@ export default function PlayerProgress() {
 
       <div className="relative overflow-hidden rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg">
         <div className="absolute inset-0 opacity-40 pointer-events-none bg-[radial-gradient(circle_at_20%_20%,rgba(16,185,129,0.16),transparent_40%),radial-gradient(circle_at_80%_20%,rgba(245,158,11,0.18),transparent_35%),radial-gradient(circle_at_50%_100%,rgba(59,130,246,0.12),transparent_40%)]" />
-        <div className="relative px-3 md:px-6 py-3 md:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/60 flex items-center justify-between gap-3 overflow-x-auto">
+        <div className="relative px-3 md:px-6 py-3 md:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/60 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white whitespace-nowrap shrink-0">
-            {tr('Estadisticas globales', 'Estatistika globalak')}
+            {tr('Estadísticas', 'Estatistikak')}
           </h2>
           <Link
             to="/matches/history"
             className="inline-flex items-center px-3 md:px-4 py-2 text-sm md:text-base club-btn-yellow hover:!translate-y-0 hover:!shadow-lg whitespace-nowrap shrink-0"
           >
-            {tr('Ver historico de partidos', 'Partiden historikoa ikusi')} →
+            {tr('Ver histórico de partidos', 'Partiden historikoa ikusi')} →
           </Link>
         </div>
         <div className="relative p-4 md:p-6 grid md:grid-cols-2 gap-4 md:gap-6 items-stretch">
@@ -587,6 +636,8 @@ function MetricBar({
     </div>
   );
 }
+
+
 
 
 

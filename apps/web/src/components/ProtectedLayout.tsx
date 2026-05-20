@@ -255,24 +255,22 @@ export default function ProtectedLayout() {
                                 </>
                             )}
 
-                            {isAdmin && (
-                                <div className="pt-4 mt-4">
-                                    <Link to="/profile" onClick={closeMobileMenu} className="block px-3 py-2 hover:bg-zinc-900 rounded-md transition-colors">
-                                        <div className="text-sm font-medium text-amber-100">
-                                            {user?.player?.name || user?.email}
-                                        </div>
-                                        <div className="text-xs text-amber-200/70 mt-1">
-                                            {translate('nav.viewProfileShort')}
-                                        </div>
-                                    </Link>
-                                    <button
-                                        onClick={handleLogout}
-                                        className="mt-2 w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-300 hover:bg-red-900/25 transition-colors"
-                                    >
-                                        {translate('nav.logout')}
-                                    </button>
-                                </div>
-                            )}
+                            <div className="pt-4 mt-4">
+                                <Link to="/profile" onClick={closeMobileMenu} className="block px-3 py-2 hover:bg-zinc-900 rounded-md transition-colors">
+                                    <div className="text-sm font-medium text-amber-100">
+                                        {user?.player?.name || user?.email}
+                                    </div>
+                                    <div className="text-xs text-amber-200/70 mt-1">
+                                        {translate('nav.viewProfileShort')}
+                                    </div>
+                                </Link>
+                                <button
+                                    onClick={handleLogout}
+                                    className="mt-2 w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-300 hover:bg-red-900/25 transition-colors"
+                                >
+                                    {translate('nav.logout')}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}

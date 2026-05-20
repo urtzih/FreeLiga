@@ -195,7 +195,7 @@ export default function SendPushNotifications() {
  })
  ).data,
  onSuccess: (data) => {
- showToast(`Notificacion enviada: ${data.result.sent} ok / ${data.result.failed} fallidas`, 'success');
+ showToast(`Notificación enviada: ${data.result.sent} ok / ${data.result.failed} fallidas`, 'success');
  queryClient.invalidateQueries({ queryKey: ['admin-notification-campaigns'] });
  },
  onError: (error: any) => showToast(error?.response?.data?.error || 'No se pudo enviar', 'error'),
@@ -263,7 +263,7 @@ export default function SendPushNotifications() {
  </p>
  </div>
  <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
- <p className="text-xs uppercase tracking-wide text-slate-500">Instalaciones 7 dias</p>
+ <p className="text-xs uppercase tracking-wide text-slate-500">Instalaciones 7 días</p>
  <p className="text-2xl font-bold text-slate-900 dark:text-white">
  {adoptionMetricsQuery.data?.pwa.installsLast7Days ?? '-'}
  </p>
@@ -307,7 +307,7 @@ export default function SendPushNotifications() {
  <input value={sendForm.title} onChange={(e) => setSendForm((prev) => ({ ...prev, title: e.target.value }))} placeholder="Titulo" className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-900 dark:border-slate-700" />
  <textarea value={sendForm.body} onChange={(e) => setSendForm((prev) => ({ ...prev, body: e.target.value }))} rows={4} placeholder="Mensaje" className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-900 dark:border-slate-700" />
  <input value={sendForm.url} onChange={(e) => setSendForm((prev) => ({ ...prev, url: e.target.value }))} placeholder="URL" className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:bg-slate-900 dark:border-slate-700" />
- <button onClick={() => sendNowMutation.mutate()} disabled={sendNowMutation.isPending || !sendForm.templateKey || (sendForm.targetType !== 'ALL' && !sendForm.targetValue)} className="w-full rounded-lg bg-amber-600 py-2 text-white disabled:bg-amber-300">{sendNowMutation.isPending ? 'Enviando...' : 'Enviar notificacion'}</button>
+ <button onClick={() => sendNowMutation.mutate()} disabled={sendNowMutation.isPending || !sendForm.templateKey || (sendForm.targetType !== 'ALL' && !sendForm.targetValue)} className="w-full rounded-lg bg-amber-600 py-2 text-white disabled:bg-amber-300">{sendNowMutation.isPending ? 'Enviando...' : 'Enviar notificación'}</button>
  </div>
  )}
 
@@ -375,6 +375,9 @@ export default function SendPushNotifications() {
  </div>
  );
 }
+
+
+
 
 
 

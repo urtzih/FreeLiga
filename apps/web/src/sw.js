@@ -20,7 +20,7 @@ const DEFAULT_NOTIFICATION_BADGE = '/icon-maskable-192.png';
 self.addEventListener('push', (event) => {
     let notificationData = {
         title: 'FreeLiga',
-        body: 'Tienes una nueva notificacion',
+        body: 'Tienes una nueva notificación',
     };
 
     if (event.data) {
@@ -29,14 +29,14 @@ self.addEventListener('push', (event) => {
         } catch {
             notificationData = {
                 title: 'FreeLiga',
-                body: event.data.text() || 'Tienes una nueva notificacion',
+                body: event.data.text() || 'Tienes una nueva notificación',
             };
         }
     }
 
     const {
         title = 'FreeLiga',
-        body = 'Nueva notificacion',
+        body = 'Nueva notificación',
         icon = DEFAULT_NOTIFICATION_ICON,
         badge = DEFAULT_NOTIFICATION_BADGE,
         tag = 'default',

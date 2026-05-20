@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 function Section({
@@ -66,38 +66,38 @@ export default function Help() {
             <Section title={tr('Como se resuelven los empates', 'Berdinketak nola ebazten diren')} tone="info">
                 <p>
                     {tr(
-                        'Cuando dos o mas jugadores terminan igual, se desempata siempre con estas reglas, en este orden.',
+                        'Cuando dos o más jugadores terminan igual, se desempata siempre con estas reglas, en este orden.',
                         'Bi jokalari edo gehiago berdin amaitzen dutenean, berdinketa beti arau hauekin hausten da, orden honetan.',
                     )}
                 </p>
                 <ol className="list-decimal list-inside space-y-2">
                     <li>
                         {tr(
-                            'Primero: quien tenga mas victorias.',
+                            'Primero: quien tenga más victorias.',
                             'Lehenik: garaipen gehiago duenak.',
                         )}
                     </li>
                     <li>
                         {tr(
-                            'Si los empatados ya no tienen partidos por jugar, se aplica una regla de lesion: queda por delante quien tuvo menos partidos perdidos por su parte (derrotas + lesiones propias).',
+                            'Si los empatados ya no tienen partidos por jugar, se aplica una regla de lesión: queda por delante quien tuvo menos partidos perdidos por su parte (derrotas + lesiones propias).',
                             'Berdinduek jokatzeko partidarik ez badute, lesio-arau bat aplikatzen da: aurretik geratzen da bere aldetik galdutako partida gutxien izan duena (porrotak + lesio propioak).',
                         )}
                     </li>
                     <li>
                         {tr(
-                            'Si aun siguen empatados:',
+                            'Si aún siguen empatados:',
                             'Oraindik berdinduta jarraitzen badute:',
                         )}
                         <ul className="list-disc list-inside mt-2 space-y-1">
                             <li>
                                 {tr(
-                                    'Empate de 2 jugadores: primero el resultado entre ellos; si aun empatan, se mira el average de ese duelo.',
+                                    'Empate de 2 jugadores: primero el resultado entre ellos; si aún empatan, se mira el average de ese duelo.',
                                     '2 jokalariren berdinketa: lehenik bien arteko emaitza; berdin jarraituz gero, duelo horretako average-a.',
                                 )}
                             </li>
                             <li>
                                 {tr(
-                                    'Empate de 3 o mas: se mira el average solo entre esos jugadores empatados.',
+                                    'Empate de 3 o más: se mira el average solo entre esos jugadores empatados.',
                                     '3 jokalari edo gehiagoren berdinketa: berdinduta dauden jokalarien arteko average-a bakarrik begiratzen da.',
                                 )}
                             </li>
@@ -118,13 +118,13 @@ export default function Help() {
                 </ol>
                 <p>
                     {tr(
-                        'Importante: si un partido no se jugo porque se lesiono tu rival, eso no te perjudica en este desempate. Si no se jugo porque te lesionaste tu, entonces si cuenta en tu parte.',
+                        'Importante: si un partido no se jugo porque se lesionó tu rival, eso no te perjudica en este desempate. Si no se jugo porque te lesionaste tú, entonces si cuenta en tu parte.',
                         'Garrantzitsua: partida bat ez bada jokatu aurkaria lesionatu delako, horrek ez dizu kalterik egiten berdinketa honetan. Zuk lesionatuta ez bada jokatu, orduan bai kontatzen da zure aldean.',
                     )}
                 </p>
                 <p>
                     {tr(
-                        'Ejemplo rapido: si tu y otro jugador teneis las mismas victorias, y tu no pudiste jugar un cruce porque el otro se lesiono, no se te penaliza por ese caso.',
+                        'Ejemplo rápido: si tu y otro jugador tenéis las mismas victorias, y tu no pudiste jugar un cruce porque el otro se lesionó, no se te penaliza por ese caso.',
                         'Adibide azkarra: zuk eta beste jokalari batek garaipen berdinak badituzue, eta gurutzaketa bat ez bada jokatu bestea lesionatu delako, kasu horrek ez zaitu zigortzen.',
                     )}
                 </p>
@@ -146,20 +146,20 @@ export default function Help() {
                 <ul className="list-disc list-inside space-y-1">
                     <li>
                         {tr(
-                            'Lesion de este partido: cierra solo ese cruce concreto (puedes marcar si te lesionaste tu o si se lesiono tu rival).',
+                            'Lesión de este partido: cierra solo ese cruce concreto (puedes marcar si te lesionaste tú o si se lesionó tu rival).',
                             'Partida honetako lesioa: gurutzaketa zehatz hori bakarrik ixten du (zuk lesionatu zaren ala aurkaria lesionatu den markatu dezakezu).',
                         )}
                     </li>
                     <li>
                         {tr(
-                            'Lesion para el resto de la temporada: cierra tus cruces pendientes de la temporada activa.',
+                            'Lesión para el resto de la temporada: cierra tus cruces pendientes de la temporada activa.',
                             'Denboraldi osorako lesioa: denboraldi aktiboko zure gurutzaketa pendienteak ixten ditu.',
                         )}
                     </li>
                 </ul>
                 <p>
                     {tr(
-                        'Importante: marcar lesion en un partido suelto no te deja lesionado toda la temporada.',
+                        'Importante: marcar lesión en un partido suelto no te deja lesionado toda la temporada.',
                         'Garrantzitsua: partida bakarreko lesioa markatzeak ez zaitu denboraldi osorako lesionatuta uzten.',
                     )}
                 </p>
@@ -258,4 +258,17 @@ export default function Help() {
         </div>
     );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 

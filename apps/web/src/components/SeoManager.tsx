@@ -65,7 +65,7 @@ function getSeoConfig(pathname: string, isBasque: boolean): SeoConfig {
         : 'FreeSquash Liga | Liga de squash en Vitoria-Gasteiz';
     const homeDescription = isBasque
         ? 'FreeSquash Liga (Free Liga Vitoria-Gasteiz): Vitoria-Gasteizko squash liga. Partidak, sailkapena, rankinga eta estatistikak denbora errealean.'
-        : 'FreeSquash Liga (Free Liga Vitoria-Gasteiz), liga squash Vitoria-Gasteiz. Partidos, clasificacion, ranking y estadisticas en tiempo real.';
+        : 'FreeSquash Liga (Free Liga Vitoria-Gasteiz), liga squash Vitoria-Gasteiz. Partidos, clasificación, ranking y estadísticas en tiempo real.';
 
     if (pathname === '/' || pathname === '/inicio') {
         return {
@@ -80,10 +80,10 @@ function getSeoConfig(pathname: string, isBasque: boolean): SeoConfig {
         return {
             title: isBasque
                 ? 'Taldeak eta sailkapena | FreeSquash Liga'
-                : 'Grupos y clasificacion | FreeSquash Liga',
+                : 'Grupos y clasificación | FreeSquash Liga',
             description: isBasque
                 ? 'Ikusi denboraldiko taldeen sailkapena FreeSquash Liga-n, Vitoria-Gasteizko squash ligan.'
-                : 'Consulta la clasificacion por grupos de la temporada en FreeSquash Liga, la liga de squash de Vitoria-Gasteiz.',
+                : 'Consulta la clasificación por grupos de la temporada en FreeSquash Liga, la liga de squash de Vitoria-Gasteiz.',
             canonicalPath: pathname,
             robots: 'index,follow',
         };
@@ -93,10 +93,10 @@ function getSeoConfig(pathname: string, isBasque: boolean): SeoConfig {
         return {
             title: isBasque
                 ? 'Azken partidak | FreeSquash Liga'
-                : 'Ultimos partidos | FreeSquash Liga',
+                : 'Últimos partidos | FreeSquash Liga',
             description: isBasque
                 ? 'Azken squash partidetako emaitzak ikusi FreeSquash Liga-n, Vitoria-Gasteizko ligan.'
-                : 'Mira los resultados de los ultimos partidos de squash en FreeSquash Liga, en Vitoria-Gasteiz.',
+                : 'Mira los resultados de los últimos partidos de squash en FreeSquash Liga, en Vitoria-Gasteiz.',
             canonicalPath: pathname,
             robots: 'index,follow',
         };
@@ -106,10 +106,10 @@ function getSeoConfig(pathname: string, isBasque: boolean): SeoConfig {
         return {
             title: isBasque
                 ? 'Taldearen sailkapen osoa | FreeSquash Liga'
-                : 'Clasificacion completa del grupo | FreeSquash Liga',
+                : 'Clasificación completa del grupo | FreeSquash Liga',
             description: isBasque
                 ? 'Taldeko sailkapen zehatza, partidak eta estatistikak FreeSquash Liga-n.'
-                : 'Consulta la clasificacion completa del grupo, sus partidos y estadisticas en FreeSquash Liga.',
+                : 'Consulta la clasificación completa del grupo, sus partidos y estadísticas en FreeSquash Liga.',
             canonicalPath: pathname,
             robots: 'index,follow',
         };
@@ -117,10 +117,10 @@ function getSeoConfig(pathname: string, isBasque: boolean): SeoConfig {
 
     if (pathname === '/privacy' || pathname === '/terms' || pathname === '/legal') {
         return {
-            title: isBasque ? 'Legezko informazioa | FreeSquash Liga' : 'Informacion legal | FreeSquash Liga',
+            title: isBasque ? 'Legezko informazioa | FreeSquash Liga' : 'Información legal | FreeSquash Liga',
             description: isBasque
                 ? 'FreeSquash Liga-ren pribatutasun, zerbitzu eta lege baldintzak.'
-                : 'Consulta las politicas de privacidad, terminos y aviso legal de FreeSquash Liga.',
+                : 'Consulta las políticas de privacidad, términos y aviso legal de FreeSquash Liga.',
             canonicalPath: pathname,
             robots: 'index,follow',
         };

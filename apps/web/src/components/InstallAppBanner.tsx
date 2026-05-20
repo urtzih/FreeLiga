@@ -81,7 +81,7 @@ export default function InstallAppBanner() {
         let installOutcome: 'accepted' | 'dismissed' | 'unavailable' = 'unavailable';
         try {
             if (!canUseWebPushSecureContext()) {
-                showToast('Para notificaciones en movil necesitas HTTPS (o localhost). Con IP local por http no funciona.', 'warning');
+                showToast('Para notificaciones en móvil necesitas HTTPS (o localhost). Con IP local por http no funciona.', 'warning');
                 return;
             }
 
@@ -100,7 +100,7 @@ export default function InstallAppBanner() {
                 if (isIOS) {
                     showToast('Notificaciones bloqueadas. En iPhone: Ajustes > Safari > Notificaciones y permite FreeLiga.', 'warning');
                 } else {
-                    showToast('Notificaciones bloqueadas en el navegador. Habilitalas en ajustes del sitio.', 'warning');
+                    showToast('Notificaciones bloqueadas en el navegador. Habilítalas en ajustes del sitio.', 'warning');
                 }
                 return;
             }
@@ -159,8 +159,8 @@ export default function InstallAppBanner() {
                                     {!notificationsGranted && supportsNotifications
                                         ? 'Activa notificaciones para recibir avisos de torneos, partidos y recordatorios.'
                                         : isMobile && canInstall
-                                          ? 'Instala FreeLiga en tu movil para acceder rapido y recibir avisos.'
-                                          : 'En iPhone: pulsa Compartir y luego Anadir a pantalla de inicio.'}
+                                          ? 'Instala FreeLiga en tu móvil para acceder rápido y recibir avisos.'
+                                          : 'En iPhone: pulsa Compartir y luego Añadir a pantalla de inicio.'}
                                 </p>
                             </div>
                         </div>

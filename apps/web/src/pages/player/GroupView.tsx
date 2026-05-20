@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+﻿import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../../lib/api';
@@ -73,7 +73,7 @@ export default function GroupView() {
                 <ul className="text-left max-w-md mx-auto text-slate-600 dark:text-slate-400 space-y-2">
                     <li>- {tr('El grupo no exista o haya sido eliminado', 'Taldea ez egotea edo ezabatuta egotea')}</li>
                     <li>- {tr('No tengas permiso para ver este grupo', 'Talde hau ikusteko baimenik ez izatea')}</li>
-                    <li>- {tr('Tu sesion haya expirado', 'Zure saioa iraungi izana')}</li>
+                    <li>- {tr('Tu sesión haya expirado', 'Zure saioa iraungi izana')}</li>
                 </ul>
                 <a href="/dashboard" className="text-amber-600 dark:text-amber-400 hover:underline mt-6 inline-block">{tr('Volver al inicio', 'Hasierara itzuli')}</a>
             </div>
@@ -90,7 +90,7 @@ export default function GroupView() {
     }
 
     if (classificationError) {
-        return <div className="text-center py-12 text-red-600">{tr('Error cargando clasificacion', 'Errorea sailkapena kargatzean')}</div>;
+        return <div className="text-center py-12 text-red-600">{tr('Error cargando clasificación', 'Errorea sailkapena kargatzean')}</div>;
     }
 
     const classificationRows = classification ?? [];
@@ -237,11 +237,11 @@ export default function GroupView() {
         if (directMatch.matchStatus === 'INJURY') {
             const iAmInjured = isPlayerInjuredInMatch(directMatch, String(myPlayerId));
             return {
-                resultText: iAmInjured ? tr('Lesion', 'Lesioa') : tr('Rival lesionado', 'Aurkaria lesionatuta'),
+                resultText: iAmInjured ? tr('Lesión', 'Lesioa') : tr('Rival lesionado', 'Aurkaria lesionatuta'),
                 resultColor: iAmInjured
                     ? 'text-orange-600 dark:text-orange-400 font-semibold'
                     : 'text-slate-600 dark:text-slate-300 font-semibold',
-                resultStatusText: iAmInjured ? tr('Lesion', 'Lesioa') : tr('Rival lesionado', 'Aurkaria lesionatuta'),
+                resultStatusText: iAmInjured ? tr('Lesión', 'Lesioa') : tr('Rival lesionado', 'Aurkaria lesionatuta'),
                 resultStatusTone: iAmInjured
                     ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
                     : 'bg-slate-100 text-slate-700 dark:bg-slate-700/50 dark:text-slate-300',
@@ -318,7 +318,7 @@ export default function GroupView() {
         }
     }
 
-    // Calcular dias restantes
+    // Calcular días restantes
     const endDate = new Date(group.season.endDate);
     const today = new Date();
     const daysRemaining = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
@@ -329,7 +329,7 @@ export default function GroupView() {
 
         const rows: string[] = [];
         rows.push(tr(
-            'Posicion,Jugador,Partidos Ganados,Partidos Perdidos,Sets Ganados,Sets Perdidos,Movimiento',
+            'Posición,Jugador,Partidos Ganados,Partidos Perdidos,Sets Ganados,Sets Perdidos,Movimiento',
             'Postua,Jokalaria,Irabazitako Partidak,Galdutako Partidak,Irabazitako Setak,Galdutako Setak,Mugimendua',
         ));
 
@@ -365,7 +365,7 @@ export default function GroupView() {
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
         link.setAttribute('href', url);
-        link.setAttribute('download', `${tr('clasificacion', 'sailkapena')}_${group.name.replace(/\s+/g, '_')}.csv`);
+        link.setAttribute('download', `${tr('clasificación', 'sailkapena')}_${group.name.replace(/\s+/g, '_')}.csv`);
         link.click();
     };
 
@@ -382,7 +382,7 @@ export default function GroupView() {
                         <button
                             onClick={handleExportGroupCSV}
                             className="px-4 py-2 club-btn-dark font-medium flex items-center gap-2 shadow-sm"
-                            title={tr('Descargar clasificacion como CSV', 'Sailkapena CSV gisa deskargatu')}
+                            title={tr('Descargar clasificación como CSV', 'Sailkapena CSV gisa deskargatu')}
                         >
                             {String.fromCodePoint(0x1F4C4)} CSV
                         </button>
@@ -428,10 +428,10 @@ export default function GroupView() {
                 </div>
             </div>
 
-            {/* Estadisticas del Grupo */}
+            {/* Estadísticas del Grupo */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">{tr('Estadisticas del Grupo', 'Taldearen Estatistikak')}</h2>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">{tr('Estadísticas del Grupo', 'Taldearen Estatistikak')}</h2>
                     {classificationRows.length > 0 && (
                         <span className="text-xs text-slate-500 dark:text-slate-400">
                             {classificationRows.length} {tr('jugadores', 'jokalari')}
@@ -454,7 +454,7 @@ export default function GroupView() {
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">{tr('Victorias', 'Garaipenak')}</th>
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">{tr('Derrotas', 'Porrotak')}</th>
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">{tr('Restantes', 'Geratzen direnak')}</th>
-                                            <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">{tr('Lesion', 'Lesioa')}</th>
+                                            <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">{tr('Lesión', 'Lesioa')}</th>
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">AVG</th>
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Sets +</th>
                                             <th className="px-3 py-2 text-center font-medium text-slate-600 dark:text-slate-400">Sets -</th>
@@ -494,7 +494,7 @@ export default function GroupView() {
                                                             )}
                                                             {isInjuredPlayer && (
                                                                 <span className="text-[11px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
-                                                                    {String.fromCodePoint(0x1F915)} {tr('Lesionado', 'Lesionatua')}
+                                                                    {String.fromCodePoint(0x1F915)} {tr('Lesiónado', 'Lesiónatua')}
                                                                 </span>
                                                             )}
                                                         </span>
@@ -515,7 +515,7 @@ export default function GroupView() {
                                 </table>
                             </div>
 
-                            {/* Tabla para movil - version compacta */}
+                            {/* Tabla para móvil - versión compacta */}
                             <div className="md:hidden overflow-x-auto -mx-2">
                                 <table className="min-w-full text-sm">
                                     <thead>
@@ -584,7 +584,7 @@ export default function GroupView() {
                 </div>
             </div>
 
-            {/* Clasificacion Actual (Ranking interno) */}
+            {/* Clasificación Actual (Ranking interno) */}
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white">{tr('Contrincantes', 'Aurkariak')}</h2>
@@ -665,7 +665,7 @@ export default function GroupView() {
                     </table>
                 </div>
 
-            {/* Vista movil - Cards */}
+            {/* Vista móvil - Cards */}
                 <div className="md:hidden space-y-2 p-3">
                     {orderedGroupPlayers
                         .filter((gp: any) => gp.player.user?.role !== 'ADMIN')
@@ -791,7 +791,7 @@ export default function GroupView() {
                                         )}
                                         {match.matchStatus !== 'PLAYED' && (
                                             <p className="text-xs text-orange-600 dark:text-orange-400 uppercase">
-                                                {match.matchStatus === 'INJURY' ? tr('LESION', 'LESIOA') : tr('CANCELADO', 'EZEZTATUA')}
+                                                {match.matchStatus === 'INJURY' ? tr('LESIÓN', 'LESIOA') : tr('CANCELADO', 'EZEZTATUA')}
                                             </p>
                                         )}
                                     </div>
@@ -805,7 +805,7 @@ export default function GroupView() {
                                 onClick={() => setVisibleRecentMatches((prev) => Math.min(prev + 10, filteredRecentMatches.length))}
                                 className="px-4 py-2 club-btn-tertiary"
                             >
-                                {filteredRecentMatches.length - visibleRecentMatches <= 10 ? tr('Ver todos', 'Guztiak ikusi') : tr('Ver mas', 'Gehiago ikusi')}
+                                {filteredRecentMatches.length - visibleRecentMatches <= 10 ? tr('Ver todos', 'Guztiak ikusi') : tr('Ver más', 'Gehiago ikusi')}
                             </button>
                         </div>
                     )}
@@ -844,7 +844,7 @@ export default function GroupView() {
                                 onClick={() => setVisibleRemainingMatches((prev) => prev + 6)}
                                 className="px-4 py-2 club-btn-tertiary"
                             >
-                                {tr('Ver mas', 'Gehiago ikusi')}
+                                {tr('Ver más', 'Gehiago ikusi')}
                             </button>
                         </div>
                     )}
@@ -908,7 +908,7 @@ export default function GroupView() {
                                                 {played ? (
                                                     match.matchStatus === 'INJURY' ? (
                                                         <p className={`text-sm font-bold uppercase ${iAmInjuredInThisMatch ? 'text-orange-600 dark:text-orange-400' : 'text-slate-600 dark:text-slate-300'}`}>
-                                                            {iAmInjuredInThisMatch ? tr('LESION', 'LESIOA') : tr('RIVAL LESIONADO', 'AURKARIA LESIONATUTA')}
+                                                            {iAmInjuredInThisMatch ? tr('LESIÓN', 'LESIOA') : tr('RIVAL LESIÓNADO', 'AURKARIA LESIÓNATUTA')}
                                                         </p>
                                                     ) : (
                                                         <p className={`text-2xl font-bold ${won ? 'text-green-700 dark:text-green-300' : 'text-red-600 dark:text-red-400'}`}>
@@ -937,7 +937,7 @@ function ContactButtons({ phone, email, language }: { phone?: string; email?: st
     const hasValidEmail = email && !email.endsWith('@ejemplo.com');
     
     if (!phone && !hasValidEmail) {
-        return <span className="text-sm text-slate-400">{tr('Sin informacion de contacto', 'Kontaktu informaziorik gabe')}</span>;
+        return <span className="text-sm text-slate-400">{tr('Sin información de contacto', 'Kontaktu informaziorik gabe')}</span>;
     }
 
     return (
@@ -980,3 +980,16 @@ function ContactButtons({ phone, email, language }: { phone?: string; email?: st
         </div>
     );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+

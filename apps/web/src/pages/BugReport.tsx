@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import api from '../lib/api';
 import { useToast } from '../contexts/ToastContext';
@@ -109,7 +109,7 @@ export default function BugReport() {
               className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-2 focus:ring-red-500"
               required
             />
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{tr('Minimo 5 caracteres.', 'Gutxienez 5 karaktere.')}</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{tr('Mínimo 5 caracteres.', 'Gutxienez 5 karaktere.')}</p>
           </div>
 
           <div>
@@ -138,7 +138,7 @@ export default function BugReport() {
                   <div key={i} className="flex items-center gap-2 text-xs bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
                     <span className="truncate max-w-[150px]">{file.name}</span>
                     <button type="button" onClick={() => setFiles(files.filter((_, idx) => idx !== i))} className="text-red-600 hover:text-red-800">
-                      �
+                      ×
                     </button>
                   </div>
                 ))}
@@ -170,4 +170,5 @@ export default function BugReport() {
     </div>
   );
 }
+
 

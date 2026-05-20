@@ -17,54 +17,54 @@ const routes = [
     route: '/',
     title: 'FreeSquash Liga | Liga squash Vitoria-Gasteiz',
     description:
-      'FreeSquash Liga (Free Liga Vitoria-Gasteiz), liga squash Vitoria-Gasteiz. Partidos, clasificacion, ranking y estadisticas en tiempo real.',
+      'FreeSquash Liga (Free Liga Vitoria-Gasteiz), liga squash Vitoria-Gasteiz. Partidos, clasificación, ranking y estadísticas en tiempo real.',
     robots: 'index,follow',
   },
   {
     route: '/inicio',
     title: 'FreeSquash Liga | Liga squash Vitoria-Gasteiz',
     description:
-      'FreeSquash Liga (Free Liga Vitoria-Gasteiz), liga squash Vitoria-Gasteiz. Partidos, clasificacion, ranking y estadisticas en tiempo real.',
+      'FreeSquash Liga (Free Liga Vitoria-Gasteiz), liga squash Vitoria-Gasteiz. Partidos, clasificación, ranking y estadísticas en tiempo real.',
     robots: 'index,follow',
   },
   {
     route: '/public/groups',
-    title: 'Grupos y clasificacion | FreeSquash Liga',
+    title: 'Grupos y clasificación | FreeSquash Liga',
     description:
-      'Consulta la clasificacion por grupos en FreeSquash Liga (Free Liga Vitoria-Gasteiz), la liga squash de Vitoria-Gasteiz.',
+      'Consulta la clasificación por grupos en FreeSquash Liga (Free Liga Vitoria-Gasteiz), la liga squash de Vitoria-Gasteiz.',
     robots: 'index,follow',
   },
   {
     route: '/public/matches',
-    title: 'Ultimos partidos | FreeSquash Liga',
+    title: 'Últimos partidos | FreeSquash Liga',
     description:
-      'Mira los resultados de los ultimos partidos de squash en FreeSquash Liga, la liga squash de Vitoria-Gasteiz.',
+      'Mira los resultados de los últimos partidos de squash en FreeSquash Liga, la liga squash de Vitoria-Gasteiz.',
     robots: 'index,follow',
   },
   {
     route: '/legal',
-    title: 'Informacion legal | FreeSquash Liga',
+    title: 'Información legal | FreeSquash Liga',
     description:
-      'Consulta las politicas de privacidad, terminos y aviso legal de FreeSquash Liga.',
+      'Consulta las políticas de privacidad, términos y aviso legal de FreeSquash Liga.',
     robots: 'index,follow',
   },
   {
     route: '/privacy',
-    title: 'Politica de privacidad | FreeSquash Liga',
+    title: 'Política de privacidad | FreeSquash Liga',
     description:
-      'Consulta la politica de privacidad de FreeSquash Liga.',
+      'Consulta la política de privacidad de FreeSquash Liga.',
     robots: 'index,follow',
   },
   {
     route: '/terms',
-    title: 'Terminos de servicio | FreeSquash Liga',
+    title: 'Términos de servicio | FreeSquash Liga',
     description:
-      'Consulta los terminos de servicio de FreeSquash Liga.',
+      'Consulta los términos de servicio de FreeSquash Liga.',
     robots: 'index,follow',
   },
   {
     route: '/login',
-    title: 'Iniciar sesion | FreeSquash Liga',
+    title: 'Iniciar sesión | FreeSquash Liga',
     description: 'Acceso para jugadores y administradores de FreeSquash Liga.',
     robots: 'noindex,nofollow',
   },

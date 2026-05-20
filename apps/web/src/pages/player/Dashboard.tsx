@@ -261,7 +261,7 @@ export default function Dashboard() {
             {currentGroup && (
                 <div className="bg-white dark:bg-slate-800 rounded-xl md:rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                     <div className="px-3 md:px-6 py-3 md:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between gap-3">
-                        <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white">{t('dashboard.currentGroup')}</h2>
+                        <h3 className="text-lg md:text-2xl font-bold text-slate-900 dark:text-white">Grupo 3</h3>
                         <Link
                             to={`/groups/${currentGroup.id}`}
                             className="inline-flex items-center px-3 md:px-4 py-2 text-sm md:text-base club-btn-yellow whitespace-nowrap"
@@ -272,7 +272,6 @@ export default function Dashboard() {
                     <div className="p-3 md:p-6 min-h-[140px] md:min-h-auto">
                         <div className="flex flex-col justify-center">
                             <div className="flex flex-wrap items-baseline gap-x-2 md:gap-x-4 mb-3 md:mb-4">
-                                <h3 className="text-lg md:text-2xl font-bold text-slate-900 dark:text-white">{currentGroup.name}</h3>
                                 {currentGroup.season && (() => {
                                     const start = new Date(currentGroup.season.startDate);
                                     const end = new Date(currentGroup.season.endDate);
@@ -354,12 +353,12 @@ export default function Dashboard() {
                                                                     <span className="text-[11px] md:text-xs text-slate-500 dark:text-slate-400 mr-1">
                                                                         {p2Position ? `#${p2Position}` : '#-'}
                                                                     </span>
-                                                                    {match.player2?.name}
                                                                     {match.matchStatus !== 'CANCELLED' && (
-                                                                        <span className="ml-2 text-sm md:text-base font-bold text-slate-700 dark:text-slate-200">
+                                                                        <span className="mr-2 text-sm md:text-base font-bold text-slate-700 dark:text-slate-200">
                                                                             {match.gamesP2 ?? '-'}
                                                                         </span>
                                                                     )}
+                                                                    {match.player2?.name}
                                                                 </p>
                                                             </div>
                                                             <div className="mt-1">
