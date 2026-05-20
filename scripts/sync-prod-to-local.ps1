@@ -59,6 +59,72 @@ function Compress-GzipFile {
     }
 }
 
+function Try-RailwaySshDump {
+    param(
+        [string]$OutputFile
+    )
+
+    try {
+        $railwayCmd = Get-Command railway -ErrorAction SilentlyContinue
+        if (-not $railwayCmd) {
+            Write-Output "   Railway CLI no encontrada en PATH."
+            return $false
+        }
+
+        Write-Output "   Ejecutando mysqldump via railway ssh (servicio MySQL)..."
+        railway ssh --service MySQL 'mysqldump --default-character-set=utf8mb4 -u root -p$MYSQL_ROOT_PASSWORD --single-transaction --routines --triggers --events $MYSQLDATABASE' | Set-Content -Path $OutputFile -Encoding utf8
+
+        if (-not (Test-Path $OutputFile)) {
+            Write-Output "   No se genero archivo de dump."
+            return $false
+        }
+
+        $fileSize = (Get-Item $OutputFile).Length
+        if ($fileSize -le 5000) {
+            Write-Output "   Dump pequeno (${fileSize} bytes)."
+            return $false
+        }
+
+        # El warning inicial de mysqldump rompe la restauracion SQL; lo removemos.
+        $lines = Get-Content -Path $OutputFile
+        if ($lines.Count -gt 1 -and $lines[0] -like "mysqldump:*") {
+            $lines[1..($lines.Count - 1)] | Set-Content -Path $OutputFile -Encoding utf8
+            $fileSize = (Get-Item $OutputFile).Length
+        }
+
+        Write-Output "   OK - $('{0:N0}' -f $fileSize) bytes"
+        return $true
+    }
+    catch {
+        Write-Output "   Error en railway ssh: $($_.Exception.Message)"
+        return $false
+    }
+}
+
+function Test-TcpPort {
+    param(
+        [string]$HostName,
+        [int]$Port,
+        [int]$TimeoutMs = 5000
+    )
+
+    try {
+        $client = New-Object System.Net.Sockets.TcpClient
+        $async = $client.BeginConnect($HostName, $Port, $null, $null)
+        $wait = $async.AsyncWaitHandle.WaitOne($TimeoutMs, $false)
+        if (-not $wait) {
+            $client.Close()
+            return $false
+        }
+        $client.EndConnect($async) | Out-Null
+        $client.Close()
+        return $true
+    }
+    catch {
+        return $false
+    }
+}
+
 Write-Output ""
 Write-ColorOutput Green "SINCRONIZAR PRODUCCION A LOCAL"
 Write-Output ""
@@ -132,6 +198,16 @@ Write-Output "Host: $($prodInfo.Host):$($prodInfo.Port)"
 Write-Output "Database: $($prodInfo.Database)"
 Write-Output ""
 
+Write-Output "Verificando conectividad TCP con Railway..."
+$tcpOk = Test-TcpPort -HostName $prodInfo.Host -Port ([int]$prodInfo.Port) -TimeoutMs 6000
+if (-not $tcpOk) {
+    Write-Output "Sin conectividad TCP publica. Se intentara Railway SSH como fallback..."
+}
+else {
+    Write-Output "Conectividad TCP OK"
+}
+Write-Output ""
+
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $backupFile = "$BackupDir\prod_sync_$timestamp.sql.gz"
 $tempUncompressed = "$env:TEMP\prod_raw_$timestamp.sql"
@@ -171,9 +247,22 @@ if (-not $dockerSuccess) {
     Write-Output "2. Intentando: MySQL CLI local..."
     
     $mysqlCheck = cmd /c "where mysql" 2>&1
+    $mysqldumpPath = $null
+
     if ($LASTEXITCODE -eq 0) {
+        $mysqldumpCheck = cmd /c "where mysqldump" 2>&1
+        if ($LASTEXITCODE -eq 0) {
+            $mysqldumpPath = "mysqldump"
+        }
+    }
+
+    if (-not $mysqldumpPath -and (Test-Path "C:\xampp\mysql\bin\mysqldump.exe")) {
+        $mysqldumpPath = "C:\xampp\mysql\bin\mysqldump.exe"
+    }
+
+    if ($mysqldumpPath) {
         try {
-            mysqldump `
+            & $mysqldumpPath `
                 -h $($prodInfo.Host) `
                 -P $($prodInfo.Port) `
                 -u $($prodInfo.User) `
@@ -190,16 +279,32 @@ if (-not $dockerSuccess) {
                 $dockerSuccess = $true
                 Write-Output "   OK - $('{0:N0}' -f $fileSize) bytes"
             }
+            else {
+                Write-Output "   Dump pequeno ($fileSize bytes) - intentando alternativa..."
+            }
         }
         catch {
             Write-Output "   Fallo - intentando alternativa..."
         }
     }
+    else {
+        Write-Output "   mysqldump no disponible en PATH ni en C:\\xampp\\mysql\\bin\\mysqldump.exe"
+    }
 }
 
-# Opcion 3: Mostrar alternativas manuales
+# Opcion 3: Railway SSH
 if (-not $dockerSuccess) {
-    Write-Output "3. Métodos alternativos disponibles:"
+    Write-Output "3. Intentando: Railway SSH..."
+    $railwayOk = Try-RailwaySshDump -OutputFile $tempUncompressed
+    if ($railwayOk) {
+        $dockerSuccess = $true
+        $fileSize = (Get-Item $tempUncompressed).Length
+    }
+}
+
+# Opcion 4: Mostrar alternativas manuales
+if (-not $dockerSuccess) {
+    Write-Output "4. Metodos alternativos disponibles:"
     Write-Output ""
     Write-ColorOutput Yellow "ALTERNATIVA A: Descargar manualmente en Railway"
     Write-Output "  1. Abre: https://railway.app/"
@@ -208,11 +313,10 @@ if (-not $dockerSuccess) {
     Write-Output "  4. Guarda en carpeta: backups/"
     Write-Output "  5. Ejecuta: npm run restore"
     Write-Output ""
-    Write-ColorOutput Yellow "ALTERNATIVA B: Instalar MySQL CLI"
-    Write-Output "  1. chocolatey install mysql-connector-net"
-    Write-Output "  2. Luego intenta: npm run sync"
-    Write-Output ""
-    Write-Host "Ver: docs/DESCARGAR_BACKUP_RAILWAY.md para mas detalles"
+    Write-ColorOutput Yellow "ALTERNATIVA B: Revisar Railway CLI"
+    Write-Output "  1. railway status"
+    Write-Output "  2. railway service link MySQL"
+    Write-Output "  3. Luego intenta: npm run sync"
     exit 1
 }
 

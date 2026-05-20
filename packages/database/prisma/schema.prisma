@@ -80,8 +80,27 @@ model User {
   googleCalendarToken GoogleCalendarToken?
   pushSubscriptions PushSubscription[]
   notificationCampaignsCreated NotificationCampaign[] @relation("NotificationCampaignCreator")
+  passwordResetTokens PasswordResetToken[]
 
   @@map("users")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique @db.VarChar(64)
+  expiresAt DateTime
+  usedAt    DateTime?
+  requestIp String?   @db.VarChar(64)
+  userAgent String?   @db.Text
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([usedAt])
+  @@map("password_reset_tokens")
 }
 
 model Player {

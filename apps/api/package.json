@@ -33,6 +33,7 @@
     "dotenv": "^17.2.3",
     "fastify": "^5.2.0",
     "googleapis": "^118.0.0",
+    "nodemailer": "^8.0.7",
     "pino": "^10.1.0",
     "pino-abstract-transport": "^2.0.0",
     "pino-http": "^11.0.0",
@@ -43,6 +44,7 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "@types/nodemailer": "^8.0.0",
     "@types/node": "^20.10.6",
     "@types/web-push": "^3.6.4",
     "tsx": "^4.7.0",

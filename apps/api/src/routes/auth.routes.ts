@@ -4,8 +4,14 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { getPlayerCurrentGroup } from '../utils/playerHelpers';
 import { GoogleCalendarService } from '../services/googleCalendar.service';
-import { logger } from '../utils/logger';
+import { logger, logBusinessEvent } from '../utils/logger';
 import { logAuthentication } from '../utils/httpLogger';
+import { emailSender } from '../services/email.service';
+import {
+    createPasswordResetToken,
+    consumePasswordResetToken,
+    validatePasswordResetToken,
+} from '../services/password-reset.service';
 
 const registerSchema = z.object({
     email: z.string().email(),
@@ -20,7 +26,31 @@ const loginSchema = z.object({
     password: z.string(),
 });
 
+const forgotPasswordSchema = z.object({
+    email: z.string().email(),
+});
+
+const resetPasswordSchema = z.object({
+    token: z.string().min(40),
+    newPassword: z.string().min(8),
+});
+
+const genericResetMessage = 'If the email exists, a recovery link will be sent shortly';
+
 export async function authRoutes(fastify: FastifyInstance) {
+    const forgotPasswordConfig = {
+        rateLimit: {
+            max: 5,
+            timeWindow: '15 minutes',
+        },
+    };
+    const resetPasswordConfig = {
+        rateLimit: {
+            max: 10,
+            timeWindow: '15 minutes',
+        },
+    };
+
     // Register
     fastify.post('/register', async (request, reply) => {
         try {
@@ -177,6 +207,126 @@ export async function authRoutes(fastify: FastifyInstance) {
                 error: 'Internal server error',
                 requestId
             });
+        }
+    });
+
+    fastify.post('/forgot-password', {
+        config: forgotPasswordConfig,
+    }, async (request, reply) => {
+        const requestId = request.id;
+        const startedAt = Date.now();
+
+        try {
+            const body = forgotPasswordSchema.parse(request.body);
+            const email = body.email.trim().toLowerCase();
+
+            const user = await prisma.user.findUnique({
+                where: { email },
+                select: {
+                    id: true,
+                    email: true,
+                    isActive: true,
+                },
+            });
+
+            if (user?.isActive) {
+                const tokenData = await createPasswordResetToken({
+                    userId: user.id,
+                    requestIp: request.ip,
+                    userAgent: typeof request.headers['user-agent'] === 'string' ? request.headers['user-agent'] : undefined,
+                });
+
+                if (tokenData) {
+                    if (process.env.PASSWORD_RESET_DEBUG_LOG === 'true') {
+                        logger.info({ requestId, email, resetUrl: tokenData.resetUrl }, 'Password reset URL (dev)');
+                    }
+                    setImmediate(() => {
+                        void emailSender.sendPasswordResetEmail({
+                            to: user.email,
+                            resetUrl: tokenData.resetUrl,
+                        }).catch((error) => {
+                            logger.error({ error, requestId, email }, 'Failed to send password reset email');
+                        });
+                    });
+                }
+            }
+
+            logBusinessEvent('password_reset_requested', {
+                requestId,
+                email,
+                userExists: !!user,
+                ip: request.ip,
+            });
+
+            const elapsed = Date.now() - startedAt;
+            if (elapsed < 250) {
+                await new Promise((resolve) => setTimeout(resolve, 250 - elapsed));
+            }
+
+            return reply.send({ success: true, message: genericResetMessage });
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                return reply.status(400).send({ error: error.errors });
+            }
+
+            logger.error({ error, requestId }, 'Failed forgot password request');
+
+            return reply.send({ success: true, message: genericResetMessage });
+        }
+    });
+
+    fastify.get('/reset-password/validate', async (request, reply) => {
+        try {
+            const querySchema = z.object({ token: z.string().min(40) });
+            const query = querySchema.parse(request.query);
+            const tokenRow = await validatePasswordResetToken(query.token);
+
+            return {
+                valid: !!tokenRow,
+            };
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                return reply.status(400).send({ error: error.errors });
+            }
+            logger.error({ error }, 'Failed validating password reset token');
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    fastify.post('/reset-password', {
+        config: resetPasswordConfig,
+    }, async (request, reply) => {
+        const requestId = request.id;
+
+        try {
+            const body = resetPasswordSchema.parse(request.body);
+            const hashedPassword = await bcrypt.hash(body.newPassword, 10);
+
+            const consumed = await consumePasswordResetToken(body.token, hashedPassword);
+
+            if (!consumed.success) {
+                logBusinessEvent('password_reset_failed', {
+                    requestId,
+                    reason: 'invalid_or_expired_token',
+                    ip: request.ip,
+                });
+                return reply.status(400).send({ error: 'Invalid or expired reset token' });
+            }
+
+            logBusinessEvent('password_reset_succeeded', {
+                requestId,
+                userId: consumed.userId,
+                ip: request.ip,
+            });
+
+            return { success: true, message: 'Password updated successfully' };
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                return reply.status(400).send({ error: error.errors });
+            }
+
+            logger.error({ error, requestId }, 'Failed resetting password');
+            return reply.status(500).send({ error: 'Internal server error' });
         }
     });
 

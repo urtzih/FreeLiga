@@ -131,6 +131,11 @@ export default function Login() {
                                 className="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
                                 placeholder="••••••••"
                             />
+                            <div className="mt-2 text-right">
+                                <Link to="/forgot-password" className="text-sm font-medium text-amber-700 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-300">
+                                    {t('login.forgotPassword')}
+                                </Link>
+                            </div>
                         </div>
 
                         <button

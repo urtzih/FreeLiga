@@ -11,6 +11,8 @@ import { useLanguage } from './contexts/LanguageContext';
 import SeoManager from './components/SeoManager';
 const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/auth/Login'));
+const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/auth/ResetPassword'));
 const Dashboard = lazy(() => import('./pages/player/Dashboard'));
 const GroupView = lazy(() => import('./pages/player/GroupView'));
 // Eliminado: GlobalClassification fusionado en GroupView
@@ -103,6 +105,14 @@ function App() {
                             <Route
                                 path="/login"
                                 element={!isAuthenticated ? <Login /> : <Navigate to={defaultRoute} replace />}
+                            />
+                            <Route
+                                path="/forgot-password"
+                                element={!isAuthenticated ? <ForgotPassword /> : <Navigate to={defaultRoute} replace />}
+                            />
+                            <Route
+                                path="/reset-password"
+                                element={!isAuthenticated ? <ResetPassword /> : <Navigate to={defaultRoute} replace />}
                             />
 
                             {/* Public routes - With FooterOnlyLayout (footer with legal links, no nav) */}
