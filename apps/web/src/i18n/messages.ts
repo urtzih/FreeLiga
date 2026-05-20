@@ -39,7 +39,7 @@ const es = {
     'nav.player.record': 'Registrar partido',
     'nav.player.recordMatch': 'Registrar partido',
     'nav.player.viewGroup': 'Ver {group}',
-    'nav.player.progress': 'Mi progreso y stats',
+    'nav.player.progress': 'Mi progreso y estadisticas',
     'nav.player.groupsSummary': 'Todos los grupos',
     'nav.player.matchHistory': 'Historial de partidos',
     'nav.player.general': 'General',
