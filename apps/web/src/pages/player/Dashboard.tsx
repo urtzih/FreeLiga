@@ -350,15 +350,15 @@ export default function Dashboard() {
                                                                 </p>
                                                                 <span className="text-slate-400">vs</span>
                                                                 <p className={`truncate text-right ${p2Class}`}>
-                                                                    <span className="text-[11px] md:text-xs text-slate-500 dark:text-slate-400 mr-1">
-                                                                        {p2Position ? `#${p2Position}` : '#-'}
-                                                                    </span>
                                                                     {match.matchStatus !== 'CANCELLED' && (
                                                                         <span className="mr-2 text-sm md:text-base font-bold text-slate-700 dark:text-slate-200">
                                                                             {match.gamesP2 ?? '-'}
                                                                         </span>
                                                                     )}
                                                                     {match.player2?.name}
+                                                                    <span className="text-[11px] md:text-xs text-slate-500 dark:text-slate-400 ml-1">
+                                                                        {p2Position ? `#${p2Position}` : '#-'}
+                                                                    </span>
                                                                 </p>
                                                             </div>
                                                             <div className="mt-1">
