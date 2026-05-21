@@ -226,36 +226,39 @@ export default function Dashboard() {
                 <h2 className="text-base md:text-lg font-bold text-slate-900 dark:text-white">
                     {t('dashboard.currentSeasonStats')}
                 </h2>
-                <div className="grid grid-cols-4 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
-                    <StatCard
-                        title={t('dashboard.statWins')}
-                        value={playerStats?.wins || 0}
-                        icon="🏆"
-                        color="from-green-500 to-green-600"
-                        loading={statsLoading}
-                    />
-                    <StatCard
-                        title={t('dashboard.statLosses')}
-                        value={playerStats?.losses || 0}
-                        icon="📉"
-                        color="from-red-500 to-red-600"
-                        loading={statsLoading}
-                    />
-                    <StatCard
-                        title={t('dashboard.statWinRate')}
-                        value={`${playerStats?.winPercentage || 0}%`}
-                        icon="📊"
-                        color="from-amber-500 to-amber-600"
-                        loading={statsLoading}
-                    />
-                    <StatCard
-                        title={t('dashboard.statAverage')}
-                        value={playerStats?.average || 0}
-                        icon="⚖️"
-                        color="from-amber-500 to-amber-600"
-                        loading={statsLoading}
-                    />
-                </div>
+                <SeasonStatsStrip
+                    loading={statsLoading}
+                    items={[
+                        {
+                            title: t('dashboard.statWins'),
+                            value: playerStats?.wins || 0,
+                            icon: '🏆',
+                            accent: 'text-green-600 dark:text-green-400',
+                            surface: 'bg-green-50/80 dark:bg-green-900/20 border-green-100 dark:border-green-800/60',
+                        },
+                        {
+                            title: t('dashboard.statLosses'),
+                            value: playerStats?.losses || 0,
+                            icon: '📉',
+                            accent: 'text-red-600 dark:text-red-400',
+                            surface: 'bg-red-50/80 dark:bg-red-900/20 border-red-100 dark:border-red-800/60',
+                        },
+                        {
+                            title: t('dashboard.statWinRate'),
+                            value: `${playerStats?.winPercentage || 0}%`,
+                            icon: '📊',
+                            accent: 'text-amber-600 dark:text-amber-400',
+                            surface: 'bg-amber-50/80 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800/60',
+                        },
+                        {
+                            title: t('dashboard.statAverage'),
+                            value: playerStats?.average || 0,
+                            icon: '⚖️',
+                            accent: 'text-sky-600 dark:text-sky-400',
+                            surface: 'bg-sky-50/80 dark:bg-sky-900/20 border-sky-100 dark:border-sky-800/60',
+                        },
+                    ]}
+                />
             </div>
 
             {currentGroup && (
@@ -521,36 +524,42 @@ export default function Dashboard() {
     );
 }
 
-function StatCard({
-    title,
-    value,
-    icon,
-    color,
-    loading
+function SeasonStatsStrip({
+    loading,
+    items,
 }: {
-    title: string;
-    value: string | number;
-    icon: string;
-    color: string;
     loading?: boolean;
+    items: Array<{
+        title: string;
+        value: string | number;
+        icon: string;
+        accent: string;
+        surface: string;
+    }>;
 }) {
     return (
-        <div className="min-w-0 bg-white dark:bg-slate-800 rounded-lg md:rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
-            <div className={`h-1 md:h-2 bg-gradient-to-r ${color}`}></div>
-            <div className="relative p-3 md:p-6">
-                <span className="absolute top-2.5 right-2.5 md:top-5 md:right-5 text-base md:text-2xl leading-none">
-                    {icon}
-                </span>
-                <div className="mb-1 md:mb-2 pr-5 md:pr-8">
-                    <p className="text-xs md:text-sm font-medium text-slate-600 dark:text-slate-400 leading-tight whitespace-nowrap overflow-hidden text-ellipsis">
-                        {title}
-                    </p>
-                </div>
-                {loading ? (
-                    <div className="h-6 md:h-8 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
-                ) : (
-                    <p className="text-xl md:text-3xl font-bold text-slate-900 dark:text-white">{value}</p>
-                )}
+        <div className="relative overflow-hidden rounded-xl md:rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg">
+            <div className="pointer-events-none absolute inset-0 opacity-60 bg-[radial-gradient(circle_at_10%_0%,rgba(56,189,248,0.12),transparent_35%),radial-gradient(circle_at_90%_0%,rgba(34,197,94,0.10),transparent_35%)]" />
+            <div className="relative grid grid-cols-4 divide-x divide-slate-200 dark:divide-slate-700">
+                {items.map((item) => (
+                    <div key={item.title} className="p-1.5 md:p-2">
+                        <div className={`px-2 py-3 md:px-4 md:py-5 text-center rounded-lg md:rounded-xl border ${item.surface}`}>
+                        <div className="flex items-center justify-center gap-1.5 mb-1 md:mb-2">
+                            <span className="text-xs md:text-base leading-none">{item.icon}</span>
+                            <p className="text-[10px] md:text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 truncate">
+                                {item.title}
+                            </p>
+                        </div>
+                        {loading ? (
+                            <div className="mx-auto h-5 md:h-8 w-10 md:w-14 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+                        ) : (
+                            <p className={`text-lg md:text-3xl font-black leading-none tracking-tight ${item.accent}`}>
+                                {item.value}
+                            </p>
+                        )}
+                    </div>
+                    </div>
+                ))}
             </div>
         </div>
     );

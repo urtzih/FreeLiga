@@ -68,7 +68,7 @@ class GmailApiEmailSender implements EmailSender {
 }
 
 class SmtpEmailSender implements EmailSender {
-  private readonly transporter: nodemailer.Transporter;
+  private readonly transporter: nodemailer.Transporter<SMTPTransport.SentMessageInfo>;
   private readonly from: string;
 
   constructor(input: {
@@ -91,7 +91,7 @@ class SmtpEmailSender implements EmailSender {
       },
     };
 
-    this.transporter = nodemailer.createTransport(transportConfig);
+    this.transporter = nodemailer.createTransport<SMTPTransport.SentMessageInfo>(transportConfig);
     this.from = input.from;
   }
 
