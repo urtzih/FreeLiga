@@ -38,6 +38,28 @@ export default function Dashboard() {
         average: playerStats?.average ?? 0,
         totalMatches: playerStats?.totalMatches ?? 0,
     };
+    const lastPlayedMatch = playerStats?.recentMatches?.[0];
+    const daysSinceLastMatch = (() => {
+        if (!lastPlayedMatch?.date) return null;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const lastMatchDate = new Date(lastPlayedMatch.date);
+        lastMatchDate.setHours(0, 0, 0, 0);
+
+        return Math.max(
+            0,
+            Math.floor((today.getTime() - lastMatchDate.getTime()) / (1000 * 60 * 60 * 24)),
+        );
+    })();
+    const daysSinceLastMatchLabel = daysSinceLastMatch === null
+        ? t('dashboard.statNoMatchesYet')
+        : daysSinceLastMatch === 0
+            ? t('dashboard.statToday')
+            : daysSinceLastMatch === 1
+                ? t('dashboard.statDaysSinceLastMatchSingle', { count: daysSinceLastMatch })
+                : t('dashboard.statDaysSinceLastMatchPlural', { count: daysSinceLastMatch });
 
     const { data: upcomingMatches } = useQuery({
         queryKey: ['upcomingMatches', user?.player?.id],
@@ -244,18 +266,18 @@ export default function Dashboard() {
                             surface: 'bg-red-50/80 dark:bg-red-900/20 border-red-100 dark:border-red-800/60',
                         },
                         {
-                            title: t('dashboard.statWinRate'),
-                            value: `${playerStats?.winPercentage || 0}%`,
-                            icon: '📊',
-                            accent: 'text-amber-600 dark:text-amber-400',
-                            surface: 'bg-amber-50/80 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800/60',
-                        },
-                        {
                             title: t('dashboard.statAverage'),
                             value: playerStats?.average || 0,
                             icon: '⚖️',
                             accent: 'text-sky-600 dark:text-sky-400',
                             surface: 'bg-sky-50/80 dark:bg-sky-900/20 border-sky-100 dark:border-sky-800/60',
+                        },
+                        {
+                            title: t('dashboard.statDaysSinceLastMatch'),
+                            value: daysSinceLastMatchLabel,
+                            icon: '🗓️',
+                            accent: 'text-amber-600 dark:text-amber-400',
+                            surface: 'bg-amber-50/80 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800/60',
                         },
                     ]}
                 />

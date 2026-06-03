@@ -20,7 +20,9 @@ export default function ProtectedLayout() {
         return isAdmin ? formatMessage('es', key, params) : t(key, params);
     };
     const shouldPromptForRealEmail = user?.role === 'PLAYER' && hasGenericEmail(user.email);
+    const isCompletingProfile = location.pathname === '/profile' && location.search.includes('complete=profile');
     const profileMissingItems = [
+        shouldPromptForRealEmail ? translate('profileCompletion.missingEmail') : null,
         hasMissingPhone(user?.player?.phone) ? translate('profileCompletion.missingPhone') : null,
         hasMissingPhoto(user?.player?.photoDataUrl) ? translate('profileCompletion.missingPhoto') : null,
     ].filter(Boolean);
@@ -53,8 +55,8 @@ export default function ProtectedLayout() {
     }, [isAdmin, language, setLanguage]);
 
     useEffect(() => {
-        setShowProfileCompletionModal(!!shouldPromptForRealEmail);
-    }, [shouldPromptForRealEmail, location.pathname, location.search]);
+        setShowProfileCompletionModal(!!shouldPromptForRealEmail && !isCompletingProfile);
+    }, [shouldPromptForRealEmail, isCompletingProfile, location.pathname, location.search]);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-amber-50 via-slate-50 to-amber-100/70 dark:from-[#0f0f0f] dark:via-[#151515] dark:to-[#201908]">
@@ -354,8 +356,16 @@ export default function ProtectedLayout() {
                             {profileMissingItems.length > 0 && (
                                 <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-500/35 dark:bg-amber-500/10 dark:text-amber-100">
                                     <p className="font-semibold">{translate('profileCompletion.extraTitle')}</p>
-                                    <p className="mt-1">
-                                        {translate('profileCompletion.extraBody', { items: profileMissingItems.join(', ') })}
+                                    <ul className="mt-2 space-y-1">
+                                        {profileMissingItems.map((item) => (
+                                            <li key={item} className="flex gap-2">
+                                                <span aria-hidden="true">•</span>
+                                                <span>{item}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <p className="mt-2 text-amber-900/85 dark:text-amber-100/80">
+                                        {translate('profileCompletion.extraBody')}
                                     </p>
                                 </div>
                             )}
@@ -367,13 +377,6 @@ export default function ProtectedLayout() {
                                 className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 dark:border-zinc-700 dark:text-slate-200 dark:hover:bg-zinc-900"
                             >
                                 {translate('common.close')}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleLogout}
-                                className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-900/20"
-                            >
-                                {translate('nav.logout')}
                             </button>
                             <button
                                 type="button"

@@ -350,6 +350,16 @@ curl -X POST https://your-railway-backend-url.up.railway.app/api/auth/login \
 
 Visit frontend URL and verify login works end-to-end.
 
+## Git Releases & Versioning
+
+FreeLiga uses `semantic-release` to publish versions automatically from Conventional Commits on the `master` branch.
+
+- Use commit format: `<type>(<optional-scope>): <description>` (for example, `feat(web): add player profile modal`).
+- Release impact: `feat` creates a minor release, `fix` and `perf` create patch releases, and `!` or `BREAKING CHANGE:` creates a major release.
+- Supported commit types: `feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `build`, `ci`, `chore`, `revert`.
+- Do not create tags or GitHub Releases manually, except for the initial `v1.0.0` baseline tag.
+- On every release, GitHub Actions creates the `vX.Y.Z` tag, publishes release notes and commits the updated `CHANGELOG.md`.
+
 ## Documentation
 
 For more detailed information, see:

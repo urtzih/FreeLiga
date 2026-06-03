@@ -22,8 +22,25 @@ interface PlayerProfile {
 const MAX_PROFILE_PHOTO_SOURCE_BYTES = 5 * 1024 * 1024;
 const MAX_PROFILE_PHOTO_DATA_URL_LENGTH = 700_000;
 const PROFILE_PHOTO_SIZE = 320;
+const PROFILE_PHOTO_PREVIEW_SIZE = 288;
 
-async function resizeProfilePhoto(file: File): Promise<string> {
+interface PhotoCropState {
+  objectUrl: string;
+  image: HTMLImageElement;
+  zoom: number;
+  offsetX: number;
+  offsetY: number;
+}
+
+interface PhotoDragState {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  offsetX: number;
+  offsetY: number;
+}
+
+async function loadProfilePhoto(file: File): Promise<PhotoCropState> {
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
     throw new Error('invalidType');
   }
@@ -34,37 +51,84 @@ async function resizeProfilePhoto(file: File): Promise<string> {
 
   const objectUrl = URL.createObjectURL(file);
 
-  try {
-    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const element = new Image();
-      element.onload = () => resolve(element);
-      element.onerror = () => reject(new Error('loadFailed'));
-      element.src = objectUrl;
-    });
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const element = new Image();
+    element.onload = () => resolve(element);
+    element.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('loadFailed'));
+    };
+    element.src = objectUrl;
+  });
 
-    const scale = Math.min(PROFILE_PHOTO_SIZE / image.width, PROFILE_PHOTO_SIZE / image.height, 1);
-    const width = Math.max(1, Math.round(image.width * scale));
-    const height = Math.max(1, Math.round(image.height * scale));
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
+  return {
+    objectUrl,
+    image,
+    zoom: 1,
+    offsetX: 0,
+    offsetY: 0,
+  };
+}
 
-    const context = canvas.getContext('2d');
-    if (!context) {
-      throw new Error('loadFailed');
-    }
+function cropProfilePhoto(crop: PhotoCropState): string {
+  const canvas = document.createElement('canvas');
+  canvas.width = PROFILE_PHOTO_SIZE;
+  canvas.height = PROFILE_PHOTO_SIZE;
 
-    context.drawImage(image, 0, 0, width, height);
-    const dataUrl = canvas.toDataURL('image/webp', 0.82);
-
-    if (dataUrl.length > MAX_PROFILE_PHOTO_DATA_URL_LENGTH) {
-      throw new Error('optimizedTooLarge');
-    }
-
-    return dataUrl;
-  } finally {
-    URL.revokeObjectURL(objectUrl);
+  const context = canvas.getContext('2d');
+  if (!context) {
+    throw new Error('loadFailed');
   }
+
+  const baseScale = Math.max(
+    PROFILE_PHOTO_SIZE / crop.image.naturalWidth,
+    PROFILE_PHOTO_SIZE / crop.image.naturalHeight
+  );
+  const drawWidth = crop.image.naturalWidth * baseScale * crop.zoom;
+  const drawHeight = crop.image.naturalHeight * baseScale * crop.zoom;
+  const maxOffsetX = Math.max(0, (drawWidth - PROFILE_PHOTO_SIZE) / 2);
+  const maxOffsetY = Math.max(0, (drawHeight - PROFILE_PHOTO_SIZE) / 2);
+  const drawX = (PROFILE_PHOTO_SIZE - drawWidth) / 2 + crop.offsetX * maxOffsetX;
+  const drawY = (PROFILE_PHOTO_SIZE - drawHeight) / 2 + crop.offsetY * maxOffsetY;
+
+  context.drawImage(crop.image, drawX, drawY, drawWidth, drawHeight);
+  const dataUrl = canvas.toDataURL('image/webp', 0.82);
+
+  if (dataUrl.length > MAX_PROFILE_PHOTO_DATA_URL_LENGTH) {
+    throw new Error('optimizedTooLarge');
+  }
+
+  return dataUrl;
+}
+
+function clampCropOffset(value: number) {
+  return Math.max(-1, Math.min(1, value));
+}
+
+function getCropMaxOffsets(crop: PhotoCropState, previewSize = PROFILE_PHOTO_PREVIEW_SIZE) {
+  const baseScale = Math.max(
+    previewSize / crop.image.naturalWidth,
+    previewSize / crop.image.naturalHeight
+  );
+  const width = crop.image.naturalWidth * baseScale * crop.zoom;
+  const height = crop.image.naturalHeight * baseScale * crop.zoom;
+
+  return {
+    maxOffsetX: Math.max(0, (width - previewSize) / 2),
+    maxOffsetY: Math.max(0, (height - previewSize) / 2),
+    width,
+    height,
+  };
+}
+
+function getCropPreviewStyle(crop: PhotoCropState): React.CSSProperties {
+  const { maxOffsetX, maxOffsetY, width, height } = getCropMaxOffsets(crop);
+
+  return {
+    backgroundImage: `url(${crop.objectUrl})`,
+    backgroundSize: `${width}px ${height}px`,
+    backgroundPosition: `calc(50% + ${crop.offsetX * maxOffsetX}px) calc(50% + ${crop.offsetY * maxOffsetY}px)`,
+  };
 }
 
 export default function Profile() {
@@ -156,6 +220,16 @@ export default function Profile() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [isPushToggleBusy, setIsPushToggleBusy] = useState(false);
+  const [photoCrop, setPhotoCrop] = useState<PhotoCropState | null>(null);
+  const [photoDrag, setPhotoDrag] = useState<PhotoDragState | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (photoCrop) {
+        URL.revokeObjectURL(photoCrop.objectUrl);
+      }
+    };
+  }, [photoCrop]);
 
   // Inicializar formulario cuando carguen los datos
   useEffect(() => {
@@ -322,14 +396,28 @@ export default function Profile() {
     setIsEditing(false);
   };
 
+  const closePhotoCrop = () => {
+    setPhotoCrop((current) => {
+      if (current) {
+        URL.revokeObjectURL(current.objectUrl);
+      }
+      return null;
+    });
+  };
+
   const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
 
     try {
-      const photoDataUrl = await resizeProfilePhoto(file);
-      setFormData({ ...formData, photoDataUrl });
+      const crop = await loadProfilePhoto(file);
+      setPhotoCrop((current) => {
+        if (current) {
+          URL.revokeObjectURL(current.objectUrl);
+        }
+        return crop;
+      });
     } catch (error: any) {
       const messageByCode: Record<string, string> = {
         invalidType: tr('Elige una imagen JPG, PNG o WebP.', 'Aukeratu JPG, PNG edo WebP irudi bat.'),
@@ -338,6 +426,59 @@ export default function Profile() {
         loadFailed: tr('No se pudo leer la imagen.', 'Ezin izan da irudia irakurri.'),
       };
       showToast(messageByCode[error?.message] || tr('No se pudo preparar la foto.', 'Ezin izan da argazkia prestatu.'), 'error');
+    }
+  };
+
+  const handleApplyPhotoCrop = () => {
+    if (!photoCrop) return;
+
+    try {
+      const photoDataUrl = cropProfilePhoto(photoCrop);
+      setFormData({ ...formData, photoDataUrl });
+      closePhotoCrop();
+    } catch (error: any) {
+      const messageByCode: Record<string, string> = {
+        optimizedTooLarge: tr('La imagen sigue siendo demasiado grande. Prueba con otra foto.', 'Irudia handiegia da oraindik. Probatu beste argazki batekin.'),
+        loadFailed: tr('No se pudo leer la imagen.', 'Ezin izan da irudia irakurri.'),
+      };
+      showToast(messageByCode[error?.message] || tr('No se pudo preparar la foto.', 'Ezin izan da argazkia prestatu.'), 'error');
+    }
+  };
+
+  const handlePhotoCropPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!photoCrop) return;
+
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setPhotoDrag({
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      offsetX: photoCrop.offsetX,
+      offsetY: photoCrop.offsetY,
+    });
+  };
+
+  const handlePhotoCropPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!photoCrop || !photoDrag || photoDrag.pointerId !== event.pointerId) return;
+
+    const { maxOffsetX, maxOffsetY } = getCropMaxOffsets(photoCrop);
+    const nextOffsetX = maxOffsetX === 0
+      ? 0
+      : clampCropOffset(photoDrag.offsetX + (event.clientX - photoDrag.startX) / maxOffsetX);
+    const nextOffsetY = maxOffsetY === 0
+      ? 0
+      : clampCropOffset(photoDrag.offsetY + (event.clientY - photoDrag.startY) / maxOffsetY);
+
+    setPhotoCrop({
+      ...photoCrop,
+      offsetX: nextOffsetX,
+      offsetY: nextOffsetY,
+    });
+  };
+
+  const handlePhotoCropPointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (photoDrag?.pointerId === event.pointerId) {
+      setPhotoDrag(null);
     }
   };
 
@@ -399,6 +540,75 @@ export default function Profile() {
 
   return (
     <div className="space-y-6">
+      {photoCrop && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-slate-800 shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                {tr('Recortar foto de perfil', 'Profileko argazkia moztu')}
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                {tr('Coloca la cara dentro del círculo. Así se verá en la liga.', 'Jarri aurpegia zirkuluaren barruan. Horrela ikusiko da ligan.')}
+              </p>
+            </div>
+
+            <div className="p-6 space-y-5">
+              <div
+                className={`mx-auto h-72 w-72 touch-none select-none rounded-full bg-slate-100 dark:bg-slate-900 bg-no-repeat shadow-inner ring-4 ring-amber-300 dark:ring-amber-600 ${photoDrag ? 'cursor-grabbing' : 'cursor-grab'}`}
+                style={getCropPreviewStyle(photoCrop)}
+                role="slider"
+                aria-label={tr('Arrastra para colocar la foto dentro del círculo', 'Arrastatu argazkia zirkuluaren barruan kokatzeko')}
+                aria-valuemin={-1}
+                aria-valuemax={1}
+                aria-valuenow={Math.round(photoCrop.offsetX * 100) / 100}
+                tabIndex={0}
+                onPointerDown={handlePhotoCropPointerDown}
+                onPointerMove={handlePhotoCropPointerMove}
+                onPointerUp={handlePhotoCropPointerEnd}
+                onPointerCancel={handlePhotoCropPointerEnd}
+              />
+              <p className="text-center text-xs text-slate-500 dark:text-slate-400">
+                {tr('Arrastra la foto dentro del círculo para centrarla.', 'Arrastatu argazkia zirkuluaren barruan erdiratzeko.')}
+              </p>
+
+              <div className="space-y-4">
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    {tr('Zoom', 'Zooma')}
+                  </span>
+                  <input
+                    type="range"
+                    min="1"
+                    max="3"
+                    step="0.01"
+                    value={photoCrop.zoom}
+                    onChange={(event) => setPhotoCrop({ ...photoCrop, zoom: Number(event.target.value) })}
+                    className="mt-2 w-full accent-amber-500"
+                  />
+                </label>
+              </div>
+
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={closePhotoCrop}
+                  className="px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                >
+                  {tr('Cancelar', 'Utzi')}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApplyPhotoCrop}
+                  className="px-4 py-2 text-sm club-btn-yellow"
+                >
+                  {tr('Usar esta foto', 'Argazki hau erabili')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Encabezado */}
       {showBanner && (
         <div className="club-page-hero p-8 transition-all duration-300">

@@ -76,6 +76,25 @@ FreeLiga es una aplicacion full-stack para gestionar una liga de squash con grup
 - Web standalone: `npm run dev:web`.
 - Prisma: `npm run db:generate`, `npm run db:push`, `npm run db:studio`.
 
+## Convencion Git y releases (semantic-release)
+
+- Ramas:
+  - Usar `master` como rama principal de publicacion automatica.
+  - Feature/fix/chore en ramas cortas desde `master` con prefijo: `feat/`, `fix/`, `chore/`, `docs/`, `refactor/`, `test/`, `ci/`.
+  - Formato recomendado: `<tipo>/<scope-corto>-<descripcion-kebab-case>` (ej: `feat/web-profile-modal`).
+- Commits (Conventional Commits):
+  - Formato: `<type>(<scope opcional>): <descripcion en imperativo>`.
+  - Tipos validos: `feat`, `fix`, `perf`, `refactor`, `docs`, `test`, `build`, `ci`, `chore`, `revert`.
+  - Versionado automatico:
+    - `feat` => minor.
+    - `fix`/`perf` => patch.
+    - `BREAKING CHANGE:` o `!` (ej: `feat!:`) => major.
+- Publicacion:
+  - `semantic-release` publica automaticamente en cada push/merge a `master` si detecta commits releaseables.
+  - Genera tag `vX.Y.Z`, GitHub Release y actualiza `CHANGELOG.md`.
+  - No crear tags ni releases manuales salvo el baseline inicial `v1.0.0` o una incidencia operativa.
+  - El commit automatico de release usa `chore(release): <version> [skip ci]`.
+
 ## Comandos operativos frecuentes
 
 - Instalar dependencias: `npm install --workspaces`.
