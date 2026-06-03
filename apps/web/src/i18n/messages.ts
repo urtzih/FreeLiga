@@ -3,6 +3,9 @@
 const es = {
     'app.loadingModule': 'Cargando módulo...',
 
+    'avatar.openPhoto': 'Ampliar foto de perfil',
+    'avatar.openPhotoWithName': 'Ampliar foto de {name}',
+
     'language.label': 'Idioma',
     'language.es': 'Español',
     'language.eu': 'Euskera',
@@ -441,6 +444,9 @@ const es = {
 
 const eu: { [K in keyof typeof es]: string } = {
     'app.loadingModule': 'Modulua kargatzen...',
+
+    'avatar.openPhoto': 'Profileko argazkia handitu',
+    'avatar.openPhotoWithName': '{name}(r)en argazkia handitu',
 
     'language.label': 'Hizkuntza',
     'language.es': 'Gaztelania',
