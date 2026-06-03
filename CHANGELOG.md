@@ -1,3 +1,9 @@
+## [1.1.0](https://github.com/urtzih/FreeLiga/compare/v1.0.0...v1.1.0) (2026-06-03)
+
+### Nuevas funcionalidades
+
+* ampliar fotos de jugador en modal ([75c4f85](https://github.com/urtzih/FreeLiga/commit/75c4f85c37c4c83aa8328936a8f2717729d0c04a))
+
 ## 1.0.0 (2026-06-03)
 
 ### Nuevas funcionalidades
