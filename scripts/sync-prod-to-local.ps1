@@ -72,7 +72,23 @@ function Try-RailwaySshDump {
         }
 
         Write-Output "   Ejecutando mysqldump via railway ssh (servicio MySQL)..."
-        railway ssh --service MySQL 'mysqldump --default-character-set=utf8mb4 -u root -p$MYSQL_ROOT_PASSWORD --single-transaction --routines --triggers --events $MYSQLDATABASE' | Set-Content -Path $OutputFile -Encoding utf8
+        $dumpArgs = @(
+            "ssh",
+            "--service",
+            "MySQL",
+            'mysqldump --default-character-set=utf8mb4 -u root -p$MYSQL_ROOT_PASSWORD --single-transaction --routines --triggers --events $MYSQLDATABASE'
+        )
+        $errorFile = "$OutputFile.err"
+        $process = Start-Process -FilePath "railway" -ArgumentList $dumpArgs -NoNewWindow -Wait -PassThru -RedirectStandardOutput $OutputFile -RedirectStandardError $errorFile
+        if ($process.ExitCode -ne 0) {
+            if (Test-Path $errorFile) {
+                Write-Output "   $(Get-Content -Path $errorFile -Raw)"
+            }
+            return $false
+        }
+        if (Test-Path $errorFile) {
+            Remove-Item $errorFile -Force
+        }
 
         if (-not (Test-Path $OutputFile)) {
             Write-Output "   No se genero archivo de dump."
@@ -86,9 +102,10 @@ function Try-RailwaySshDump {
         }
 
         # El warning inicial de mysqldump rompe la restauracion SQL; lo removemos.
-        $lines = Get-Content -Path $OutputFile
+        $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+        $lines = [System.IO.File]::ReadAllLines($OutputFile, $utf8NoBom)
         if ($lines.Count -gt 1 -and $lines[0] -like "mysqldump:*") {
-            $lines[1..($lines.Count - 1)] | Set-Content -Path $OutputFile -Encoding utf8
+            [System.IO.File]::WriteAllLines($OutputFile, $lines[1..($lines.Count - 1)], $utf8NoBom)
             $fileSize = (Get-Item $OutputFile).Length
         }
 
@@ -220,7 +237,7 @@ $tempUncompressed = "$env:TEMP\prod_raw_$timestamp.sql"
 
 try {
     # Usar bash -c para asegurar que la contraseña se pase correctamente
-    $cmd = "mysqldump -h $($prodInfo.Host) -P $($prodInfo.Port) -u $($prodInfo.User) -p$($prodInfo.Pass) --single-transaction --routines --triggers --events $($prodInfo.Database) 2>/dev/null"
+    $cmd = "mysqldump --default-character-set=utf8mb4 -h $($prodInfo.Host) -P $($prodInfo.Port) -u $($prodInfo.User) -p$($prodInfo.Pass) --single-transaction --routines --triggers --events $($prodInfo.Database) 2>/dev/null"
     
     # Guardar directamente en archivo para evitar issues con variables
     docker exec freeliga-mysql bash -c "$cmd > /tmp/dump.sql" 2>&1 | Out-Null
@@ -262,20 +279,23 @@ if (-not $dockerSuccess) {
 
     if ($mysqldumpPath) {
         try {
-            & $mysqldumpPath `
-                -h $($prodInfo.Host) `
-                -P $($prodInfo.Port) `
-                -u $($prodInfo.User) `
-                -p$($prodInfo.Pass) `
-                --single-transaction `
-                --routines `
-                --triggers `
-                --events `
-                $($prodInfo.Database) > $tempUncompressed 2>&1
+            $dumpArgs = @(
+                "--default-character-set=utf8mb4",
+                "-h", $prodInfo.Host,
+                "-P", $prodInfo.Port,
+                "-u", $prodInfo.User,
+                "-p$($prodInfo.Pass)",
+                "--single-transaction",
+                "--routines",
+                "--triggers",
+                "--events",
+                $prodInfo.Database
+            )
+            $process = Start-Process -FilePath $mysqldumpPath -ArgumentList $dumpArgs -NoNewWindow -Wait -PassThru -RedirectStandardOutput $tempUncompressed -RedirectStandardError "$env:TEMP\prod_dump_error_$timestamp.log"
             
             $fileSize = if (Test-Path $tempUncompressed) { (Get-Item $tempUncompressed).Length } else { 0 }
             
-            if ($fileSize -gt 5000) {
+            if ($process.ExitCode -eq 0 -and $fileSize -gt 5000) {
                 $dockerSuccess = $true
                 Write-Output "   OK - $('{0:N0}' -f $fileSize) bytes"
             }
@@ -346,22 +366,22 @@ if ($fileSize -gt 5000) {
         docker cp $decompressed freeliga-mysql:/tmp/restore.sql 2>&1 | Out-Null
         
         # Restaurar en local
-        $restoreCmd = "mysql -u $($localInfo.User) -p$($localInfo.Pass) $($localInfo.Database) < /tmp/restore.sql"
+        $restoreCmd = "mysql --default-character-set=utf8mb4 -u $($localInfo.User) -p$($localInfo.Pass) $($localInfo.Database) < /tmp/restore.sql"
         docker exec freeliga-mysql bash -c $restoreCmd 2>&1 | Out-Null
         
         if ($LASTEXITCODE -eq 0) {
             if (Test-Path $decompressed) { Remove-Item $decompressed }
 
             Write-Output ""
-            Write-ColorOutput Yellow "4. Alineando esquema local con la rama actual (Prisma)..."
-            # Tras sincronizar datos de PROD, reaplicar schema local evita que falten columnas/tablas nuevas de desarrollo.
+            Write-ColorOutput Yellow "4. Aplicando migraciones locales de Prisma..."
+            # Tras sincronizar datos de PROD, aplicar migraciones versionadas valida el camino real de despliegue.
             $env:DATABASE_URL = $DATABASE_URL
             $schemaPath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\packages\database\prisma\schema.prisma"))
-            npx prisma db push --schema "$schemaPath" --skip-generate 2>&1 | Out-Null
+            npx prisma migrate deploy --schema "$schemaPath" 2>&1 | Out-Null
 
             if ($LASTEXITCODE -ne 0) {
-                Write-ColorOutput Red "[ERROR] Restauracion OK, pero fallo al alinear schema Prisma."
-                Write-Output "Ejecuta manualmente: npm run db:push"
+                Write-ColorOutput Red "[ERROR] Restauracion OK, pero fallo al aplicar migraciones Prisma."
+                Write-Output "Ejecuta manualmente: npx prisma migrate deploy --schema packages/database/prisma/schema.prisma"
                 Write-Output "Backup guardado: $backupFile"
                 exit 1
             }
@@ -370,7 +390,7 @@ if ($fileSize -gt 5000) {
             Write-ColorOutput Green "COMPLETADO!"
             Write-Output ""
             Write-ColorOutput Green "TU BD LOCAL TIENE DATOS FRESCOS DE PRODUCCION"
-            Write-ColorOutput Green "Y EL ESQUEMA LOCAL ACTUALIZADO CON LOS CAMBIOS DE TU RAMA"
+            Write-ColorOutput Green "Y LAS MIGRACIONES LOCALES APLICADAS"
             Write-Output ""
             Write-Host "Puedes:"
             Write-Host "  1. Trabajar en desarrollo con datos reales"

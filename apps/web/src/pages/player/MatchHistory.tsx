@@ -5,6 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import api from '../../lib/api';
 import EditMatchModal from '../../components/EditMatchModal';
 import Loader from '../../components/Loader';
+import PlayerAvatar from '../../components/PlayerAvatar';
 
 interface MatchHistoryEntry {
     id: string;
@@ -17,8 +18,8 @@ interface MatchHistoryEntry {
     matchStatus: 'PLAYED' | 'INJURY' | 'CANCELLED';
     date: string;
     scheduledDate?: string | null;
-    player1: { id: string; name: string; nickname?: string | null };
-    player2: { id: string; name: string; nickname?: string | null };
+    player1: { id: string; name: string; nickname?: string | null; photoDataUrl?: string | null };
+    player2: { id: string; name: string; nickname?: string | null; photoDataUrl?: string | null };
     group: {
         name: string;
         seasonId?: string;
@@ -593,6 +594,31 @@ export default function MatchHistory() {
                                                                 : String.fromCodePoint(0x1F3BE)
                                                 }
                                                 </div>
+                                                {showPersonalView ? (
+                                                    <PlayerAvatar
+                                                        name={opponent.name}
+                                                        photoDataUrl={opponent.photoDataUrl}
+                                                        size="md"
+                                                        alt={tr('Foto del oponente', 'Aurkariaren argazkia')}
+                                                    />
+                                                ) : (
+                                                    <div className="flex -space-x-2 shrink-0">
+                                                        <PlayerAvatar
+                                                            name={match.player1?.name}
+                                                            photoDataUrl={match.player1?.photoDataUrl}
+                                                            size="md"
+                                                            alt={tr('Foto del jugador 1', '1. jokalariaren argazkia')}
+                                                            className="ring-2 ring-white dark:ring-slate-800"
+                                                        />
+                                                        <PlayerAvatar
+                                                            name={match.player2?.name}
+                                                            photoDataUrl={match.player2?.photoDataUrl}
+                                                            size="md"
+                                                            alt={tr('Foto del jugador 2', '2. jokalariaren argazkia')}
+                                                            className="ring-2 ring-white dark:ring-slate-800"
+                                                        />
+                                                    </div>
+                                                )}
                                                 <div className="min-w-0">
                                                     {!isAdmin && (
                                                         <div className="flex items-center space-x-2 min-w-0">

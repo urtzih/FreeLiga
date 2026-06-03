@@ -200,6 +200,7 @@ export async function groupRoutes(fastify: FastifyInstance) {
             const players = groupPlayers.map(gp => ({
                 id: gp.player.id,
                 name: gp.player.name,
+                photoDataUrl: gp.player.photoDataUrl,
             }));
 
             return reply.send(players);

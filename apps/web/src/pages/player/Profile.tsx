@@ -1,21 +1,77 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
 import Spinner from '../../components/Spinner';
 import { useToast } from '../../contexts/ToastContext';
 import { usePushNotification } from '../../hooks/usePushNotification';
+import { useLanguage } from '../../contexts/LanguageContext';
+import PlayerAvatar from '../../components/PlayerAvatar';
+import { hasGenericEmail } from '../../utils/profileCompletion';
 
 interface PlayerProfile {
   id: string;
   name: string;
   nickname?: string;
   phone?: string;
+  photoDataUrl?: string | null;
   calendarEnabled?: boolean;
+}
+
+const MAX_PROFILE_PHOTO_SOURCE_BYTES = 5 * 1024 * 1024;
+const MAX_PROFILE_PHOTO_DATA_URL_LENGTH = 700_000;
+const PROFILE_PHOTO_SIZE = 320;
+
+async function resizeProfilePhoto(file: File): Promise<string> {
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    throw new Error('invalidType');
+  }
+
+  if (file.size > MAX_PROFILE_PHOTO_SOURCE_BYTES) {
+    throw new Error('sourceTooLarge');
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const element = new Image();
+      element.onload = () => resolve(element);
+      element.onerror = () => reject(new Error('loadFailed'));
+      element.src = objectUrl;
+    });
+
+    const scale = Math.min(PROFILE_PHOTO_SIZE / image.width, PROFILE_PHOTO_SIZE / image.height, 1);
+    const width = Math.max(1, Math.round(image.width * scale));
+    const height = Math.max(1, Math.round(image.height * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      throw new Error('loadFailed');
+    }
+
+    context.drawImage(image, 0, 0, width, height);
+    const dataUrl = canvas.toDataURL('image/webp', 0.82);
+
+    if (dataUrl.length > MAX_PROFILE_PHOTO_DATA_URL_LENGTH) {
+      throw new Error('optimizedTooLarge');
+    }
+
+    return dataUrl;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
 }
 
 export default function Profile() {
   const { user, refreshUser } = useAuth();
+  const { language } = useLanguage();
+  const [searchParams] = useSearchParams();
+  const tr = (es: string, eu: string) => (language === 'eu' ? eu : es);
   const queryClient = useQueryClient();
   const playerId = user?.player?.id;
   const [showBanner, setShowBanner] = useState(true);
@@ -84,6 +140,7 @@ export default function Profile() {
     name: '',
     nickname: '',
     phone: '',
+    photoDataUrl: null as string | null,
     calendarEnabled: false,
   });
 
@@ -107,6 +164,7 @@ export default function Profile() {
         name: player.name || '',
         nickname: player.nickname || '',
         phone: player.phone || '',
+        photoDataUrl: player.photoDataUrl || null,
         calendarEnabled: player.calendarEnabled ?? false,
       });
     }
@@ -117,6 +175,16 @@ export default function Profile() {
       setNewEmail(user.email);
     }
   }, [user]);
+
+  useEffect(() => {
+    if (searchParams.get('edit') === 'email') {
+      setIsEditingEmail(true);
+    }
+
+    if (searchParams.get('complete') === 'profile') {
+      setIsEditing(true);
+    }
+  }, [searchParams]);
 
   const updateMutation = useMutation({
     mutationFn: async (data: Partial<PlayerProfile>) => {
@@ -141,8 +209,9 @@ export default function Profile() {
       const { data: response } = await api.patch('/users/me/email', { newEmail });
       return response;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      await refreshUser();
       setIsEditingEmail(false);
       showToast('✅ Email actualizado correctamente. Por favor, vuelve a iniciar sesión.', 'success');
     },
@@ -246,10 +315,30 @@ export default function Profile() {
         name: player.name || '',
         nickname: player.nickname || '',
         phone: player.phone || '',
+        photoDataUrl: player.photoDataUrl || null,
         calendarEnabled: player.calendarEnabled ?? false,
       });
     }
     setIsEditing(false);
+  };
+
+  const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    try {
+      const photoDataUrl = await resizeProfilePhoto(file);
+      setFormData({ ...formData, photoDataUrl });
+    } catch (error: any) {
+      const messageByCode: Record<string, string> = {
+        invalidType: tr('Elige una imagen JPG, PNG o WebP.', 'Aukeratu JPG, PNG edo WebP irudi bat.'),
+        sourceTooLarge: tr('La imagen original no puede superar 5 MB.', 'Jatorrizko irudiak ezin ditu 5 MB gainditu.'),
+        optimizedTooLarge: tr('La imagen sigue siendo demasiado grande. Prueba con otra foto.', 'Irudia handiegia da oraindik. Probatu beste argazki batekin.'),
+        loadFailed: tr('No se pudo leer la imagen.', 'Ezin izan da irudia irakurri.'),
+      };
+      showToast(messageByCode[error?.message] || tr('No se pudo preparar la foto.', 'Ezin izan da argazkia prestatu.'), 'error');
+    }
   };
 
   const handleEmailCancel = () => {
@@ -263,6 +352,10 @@ export default function Profile() {
     e.preventDefault();
     if (!newEmail.trim() || !newEmail.includes('@')) {
       showToast('Introduce un email válido', 'warning');
+      return;
+    }
+    if (hasGenericEmail(newEmail)) {
+      showToast(tr('Introduce un email real, no uno de @ejemplo.com', 'Sartu benetako email bat, ez @ejemplo.com domeinukoa'), 'warning');
       return;
     }
     if (newEmail === user?.email) {
@@ -337,6 +430,49 @@ export default function Profile() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60">
+              <PlayerAvatar
+                name={formData.name || player?.name}
+                photoDataUrl={formData.photoDataUrl}
+                size="xl"
+                alt={tr('Foto de perfil', 'Profileko argazkia')}
+              />
+              <div className="flex-1 space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                    {tr('Foto de perfil', 'Profileko argazkia')}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    {tr('Visible solo para jugadores con sesión iniciada.', 'Saioa hasita duten jokalariek bakarrik ikusiko dute.')}
+                  </p>
+                </div>
+                {isEditing && (
+                  <div className="flex flex-wrap gap-2">
+                    <label className="px-4 py-2 text-sm club-btn-yellow cursor-pointer">
+                      {formData.photoDataUrl
+                        ? tr('Cambiar foto', 'Argazkia aldatu')
+                        : tr('Añadir foto', 'Argazkia gehitu')}
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handlePhotoChange}
+                        className="hidden"
+                      />
+                    </label>
+                    {formData.photoDataUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, photoDataUrl: null })}
+                        className="px-4 py-2 text-sm font-medium text-red-700 dark:text-red-300 rounded-lg border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                      >
+                        {tr('Quitar foto', 'Argazkia kendu')}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Nombre */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">

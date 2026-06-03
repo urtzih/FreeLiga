@@ -1,21 +1,29 @@
 import { useEffect, useState } from 'react';
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { formatMessage, TranslationKey } from '../i18n/messages';
 import LanguageSelector from './i18n/LanguageSelector';
+import { hasGenericEmail, hasMissingPhone, hasMissingPhoto } from '../utils/profileCompletion';
 
 export default function ProtectedLayout() {
     const { user, logout, isAdmin } = useAuth();
     const { t, language, setLanguage } = useLanguage();
     const navigate = useNavigate();
+    const location = useLocation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [showProfileCompletionModal, setShowProfileCompletionModal] = useState(false);
 
     const currentGroup = user?.player?.currentGroup;
     const calendarEnabled = user?.player?.calendarEnabled ?? false;
     const translate = (key: TranslationKey, params?: Record<string, string | number>) => {
         return isAdmin ? formatMessage('es', key, params) : t(key, params);
     };
+    const shouldPromptForRealEmail = user?.role === 'PLAYER' && hasGenericEmail(user.email);
+    const profileMissingItems = [
+        hasMissingPhone(user?.player?.phone) ? translate('profileCompletion.missingPhone') : null,
+        hasMissingPhoto(user?.player?.photoDataUrl) ? translate('profileCompletion.missingPhoto') : null,
+    ].filter(Boolean);
 
     const groupPrefix = translate('nav.groupPrefix');
     const groupLabel = currentGroup?.name
@@ -30,6 +38,12 @@ export default function ProtectedLayout() {
         setMobileMenuOpen(false);
     };
 
+    const handleCompleteProfile = () => {
+        setShowProfileCompletionModal(false);
+        setMobileMenuOpen(false);
+        navigate('/profile?edit=email&complete=profile');
+    };
+
     const closeMobileMenu = () => setMobileMenuOpen(false);
 
     useEffect(() => {
@@ -37,6 +51,10 @@ export default function ProtectedLayout() {
             setLanguage('es');
         }
     }, [isAdmin, language, setLanguage]);
+
+    useEffect(() => {
+        setShowProfileCompletionModal(!!shouldPromptForRealEmail);
+    }, [shouldPromptForRealEmail, location.pathname, location.search]);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-amber-50 via-slate-50 to-amber-100/70 dark:from-[#0f0f0f] dark:via-[#151515] dark:to-[#201908]">
@@ -314,6 +332,60 @@ export default function ProtectedLayout() {
                     </div>
                 </div>
             </footer>
+
+            {showProfileCompletionModal && shouldPromptForRealEmail && (
+                <div
+                    className="fixed inset-0 z-[80] flex items-center justify-center bg-zinc-950/70 px-4 py-6 backdrop-blur-sm"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="profile-completion-title"
+                >
+                    <div className="w-full max-w-lg rounded-2xl border border-amber-300/50 bg-white shadow-2xl dark:border-amber-500/40 dark:bg-zinc-950">
+                        <div className="border-b border-amber-200/70 px-6 py-5 dark:border-amber-500/25">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-amber-700 dark:text-amber-300">
+                                {translate('profileCompletion.eyebrow')}
+                            </p>
+                            <h2 id="profile-completion-title" className="mt-2 text-2xl font-bold text-slate-950 dark:text-white">
+                                {translate('profileCompletion.title')}
+                            </h2>
+                        </div>
+                        <div className="space-y-4 px-6 py-5 text-slate-700 dark:text-slate-200">
+                            <p>{translate('profileCompletion.body')}</p>
+                            {profileMissingItems.length > 0 && (
+                                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-500/35 dark:bg-amber-500/10 dark:text-amber-100">
+                                    <p className="font-semibold">{translate('profileCompletion.extraTitle')}</p>
+                                    <p className="mt-1">
+                                        {translate('profileCompletion.extraBody', { items: profileMissingItems.join(', ') })}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex flex-col-reverse gap-3 border-t border-slate-200 px-6 py-4 sm:flex-row sm:justify-end dark:border-zinc-800">
+                            <button
+                                type="button"
+                                onClick={() => setShowProfileCompletionModal(false)}
+                                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 dark:border-zinc-700 dark:text-slate-200 dark:hover:bg-zinc-900"
+                            >
+                                {translate('common.close')}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleLogout}
+                                className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-900/20"
+                            >
+                                {translate('nav.logout')}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleCompleteProfile}
+                                className="club-btn-primary px-5 py-2 text-sm"
+                            >
+                                {translate('profileCompletion.primaryAction')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

@@ -98,7 +98,7 @@ try {
     if ($Environment -eq "prod") {
         # Generar dump dentro del contenedor y copiarlo al host para evitar contaminación del stream
         $dumpPath = "/tmp/prod_dump_${timestamp}.sql"
-        $dumpCmd = "mysqldump -h $($dbInfo.Host) -P $($dbInfo.Port) -u $($dbInfo.User) -p$($dbInfo.Pass) --single-transaction --routines --triggers --events $($dbInfo.Database) > $dumpPath 2>/dev/null"
+        $dumpCmd = "mysqldump --default-character-set=utf8mb4 -h $($dbInfo.Host) -P $($dbInfo.Port) -u $($dbInfo.User) -p$($dbInfo.Pass) --single-transaction --routines --triggers --events $($dbInfo.Database) > $dumpPath 2>/dev/null"
         docker exec freeliga-mysql bash -c $dumpCmd 2>$null | Out-Null
         
         # Copiar el dump del contenedor al host
@@ -107,15 +107,11 @@ try {
         # Limpiar el archivo temporal en el contenedor
         docker exec freeliga-mysql rm -f $dumpPath 2>$null | Out-Null
     } else {
-        docker exec freeliga-mysql mysqldump `
-            -h 127.0.0.1 `
-            -u $($dbInfo.User) `
-            -p$($dbInfo.Pass) `
-            --single-transaction `
-            --routines `
-            --triggers `
-            --events `
-            $($dbInfo.Database) > $backupFileTemp 2>&1
+        $dumpPath = "/tmp/local_dump_${timestamp}.sql"
+        $dumpCmd = "mysqldump --default-character-set=utf8mb4 -h 127.0.0.1 -u $($dbInfo.User) -p$($dbInfo.Pass) --single-transaction --routines --triggers --events $($dbInfo.Database) > $dumpPath 2>/dev/null"
+        docker exec freeliga-mysql bash -c $dumpCmd 2>$null | Out-Null
+        docker cp "freeliga-mysql:$dumpPath" $backupFileTemp 2>$null | Out-Null
+        docker exec freeliga-mysql rm -f $dumpPath 2>$null | Out-Null
     }
     
     $fileSize = if (Test-Path $backupFileTemp) { (Get-Item $backupFileTemp).Length } else { 0 }

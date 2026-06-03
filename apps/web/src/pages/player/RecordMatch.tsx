@@ -6,6 +6,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { useToast } from '../../contexts/ToastContext';
 import Spinner from '../../components/Spinner';
 import api from '../../lib/api';
+import PlayerAvatar from '../../components/PlayerAvatar';
 
 type SingleInjuryTarget = 'SELF' | 'OPPONENT';
 
@@ -73,6 +74,7 @@ export default function RecordMatch() {
         },
         enabled: !!formData.groupId,
     });
+    const selectedOpponent = group?.groupPlayers?.find((gp: any) => gp.playerId === formData.player2Id)?.player;
 
     const availableOpponents = useMemo(() => {
         if (!group?.groupPlayers || !user?.player?.id) {
@@ -275,6 +277,24 @@ export default function RecordMatch() {
                                         </option>
                                     ))}
                                 </select>
+                                {selectedOpponent && (
+                                    <div className="mt-3 flex items-center gap-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3">
+                                        <PlayerAvatar
+                                            name={selectedOpponent.name}
+                                            photoDataUrl={selectedOpponent.photoDataUrl}
+                                            size="md"
+                                            alt={t('recordMatch.selectedOpponentPhoto')}
+                                        />
+                                        <div>
+                                            <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                                                {selectedOpponent.name}
+                                            </p>
+                                            {selectedOpponent.nickname && (
+                                                <p className="text-xs text-slate-500 dark:text-slate-400">"{selectedOpponent.nickname}"</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                                 {availableOpponents.length === 0 && group && !isLoadingGroup && (
                                     <p className="mt-2 text-sm text-yellow-600 dark:text-yellow-400">
                                         {t('recordMatch.noOpponentsAvailable')}
@@ -368,7 +388,7 @@ export default function RecordMatch() {
                                     {formData.gamesP1} - {formData.gamesP2}
                                     </span>
                                     <span className={`font-bold shrink-0 whitespace-nowrap ${formData.gamesP2 > formData.gamesP1 ? 'text-green-600 dark:text-green-400' : 'text-slate-900 dark:text-white'}`}>
-                                    {group?.groupPlayers.find((gp: any) => gp.playerId === formData.player2Id)?.player.name}
+                                    {selectedOpponent?.name}
                                     </span>
                                 </div>
                             </div>

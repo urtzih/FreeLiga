@@ -1,4 +1,4 @@
- Script rapido para hacer un backup antes de trabajar
+# Script rapido para hacer un backup antes de trabajar
 
 Set-Location (Split-Path -Parent $PSScriptRoot)
 

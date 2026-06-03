@@ -20,6 +20,8 @@ interface User {
         id: string;
         name: string;
         nickname?: string;
+        phone?: string | null;
+        photoDataUrl?: string | null;
         calendarEnabled?: boolean;
         currentGroup?: CurrentGroup;
     };

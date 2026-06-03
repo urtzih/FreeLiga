@@ -80,19 +80,11 @@ if (-not $containerStatus) {
 try {
     Write-Output "Extrayendo datos de BD..."
     
-    $cmd = @(
-        "docker", "exec", $containerName, "mysqldump",
-        "-h", "127.0.0.1",
-        "-u", $dbUser,
-        "-p$dbPass",
-        "--single-transaction",
-        "--routines",
-        "--triggers",
-        "--events",
-        $dbName
-    )
-    
-    & $cmd[0] $cmd[1..($cmd.Length-1)] > $backupFileTemp 2>&1
+    $dumpPath = "/tmp/local_backup_${timestamp}.sql"
+    $dumpCmd = "mysqldump --default-character-set=utf8mb4 -h 127.0.0.1 -u $dbUser -p$dbPass --single-transaction --routines --triggers --events $dbName > $dumpPath 2>/tmp/local_backup_${timestamp}.err"
+    docker exec $containerName bash -c $dumpCmd 2>$null | Out-Null
+    docker cp "${containerName}:$dumpPath" $backupFileTemp 2>$null | Out-Null
+    docker exec $containerName rm -f $dumpPath "/tmp/local_backup_${timestamp}.err" 2>$null | Out-Null
     
     $fileSize = if (Test-Path $backupFileTemp) { (Get-Item $backupFileTemp).Length } else { 0 }
     

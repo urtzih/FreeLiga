@@ -83,6 +83,10 @@ export default function GroupsSummary() {
             const { data } = await api.get(`/groups?seasonId=${selectedSeasonId}`);
             return data as Group[];
         },
+        staleTime: 0,
+        gcTime: 0,
+        refetchOnMount: 'always',
+        refetchOnWindowFocus: true,
     });
 
     const classificationQueries = useQueries({
@@ -93,7 +97,10 @@ export default function GroupsSummary() {
                 const { data } = await api.get(`/classification?groupId=${group.id}`);
                 return data as ClassificationRow[];
             },
-            staleTime: 1000 * 60,
+            staleTime: 0,
+            gcTime: 0,
+            refetchOnMount: 'always' as const,
+            refetchOnWindowFocus: true,
         })),
     });
 
@@ -105,7 +112,10 @@ export default function GroupsSummary() {
                 const { data } = await api.get(`/groups/${group.id}`);
                 return data as GroupDetail;
             },
-            staleTime: 1000 * 60,
+            staleTime: 0,
+            gcTime: 0,
+            refetchOnMount: 'always' as const,
+            refetchOnWindowFocus: true,
         })),
     });
 

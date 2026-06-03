@@ -109,6 +109,7 @@ model Player {
   name           String
   nickname       String?
   phone          String?
+  photoDataUrl   String?  @db.LongText
   calendarEnabled Boolean @default(false)
   annualFeesPaid String   @default("[]") // JSON array of years as string
   createdAt      DateTime @default(now())

@@ -4,6 +4,9 @@ import { getPlayerCurrentGroup } from '../utils/playerHelpers';
 import { cacheService } from '../services/cache.service';
 
 export async function playerRoutes(fastify: FastifyInstance) {
+    const MAX_PLAYER_PHOTO_DATA_URL_LENGTH = 700_000;
+    const PLAYER_PHOTO_DATA_URL_PATTERN = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
+
     const getPlayerCacheKeys = (playerId: string) => ({
         profile: `private:player:${playerId}:profile`,
         stats: `private:player:${playerId}:stats`,
@@ -19,6 +22,27 @@ export async function playerRoutes(fastify: FastifyInstance) {
         cacheService.invalidate(keys.progress);
         cacheService.invalidate(keys.matchesByDate);
         cacheService.invalidate(keys.movements);
+    };
+
+    const validatePhotoDataUrl = (value: unknown) => {
+        if (value === null || value === undefined) return null;
+        if (typeof value !== 'string') return 'Photo must be a valid image';
+        if (value.length > MAX_PLAYER_PHOTO_DATA_URL_LENGTH) return 'Photo is too large';
+        if (!PLAYER_PHOTO_DATA_URL_PATTERN.test(value)) return 'Photo must be a JPEG, PNG or WebP data URL';
+        return null;
+    };
+
+    const invalidatePlayerGroupCaches = async (playerId: string) => {
+        const memberships = await prisma.groupPlayer.findMany({
+            where: { playerId },
+            select: { groupId: true },
+        });
+
+        memberships.forEach((membership) => {
+            cacheService.invalidate(`private:group:${membership.groupId}:detail`);
+            cacheService.invalidatePattern(`^private:classification:[^:]*:${membership.groupId}:`);
+        });
+        cacheService.invalidatePattern('^private:classification:[^:]*:all:');
     };
 
     const legacyExposureKey = (groupId: string, playerId: string) => `${groupId}:${playerId}`;
@@ -126,6 +150,7 @@ export async function playerRoutes(fastify: FastifyInstance) {
                     name: true,
                     nickname: true,
                     phone: true,
+                    photoDataUrl: true,
                     calendarEnabled: true,
                     annualFeesPaid: true,
                     createdAt: true,
@@ -446,6 +471,10 @@ export async function playerRoutes(fastify: FastifyInstance) {
             const decoded = request.user as any;
             const { id } = request.params as { id: string };
             const body = request.body as any;
+            const photoValidationError = validatePhotoDataUrl(body.photoDataUrl);
+            if (photoValidationError) {
+                return reply.status(400).send({ error: photoValidationError });
+            }
 
             // Get the player associated with the current user
             const userPlayer = await prisma.player.findUnique({
@@ -463,6 +492,10 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 phone: body.phone,
             };
 
+            if (Object.prototype.hasOwnProperty.call(body, 'photoDataUrl')) {
+                updateData.photoDataUrl = body.photoDataUrl;
+            }
+
             // Allow updating calendarEnabled
             if (body.calendarEnabled !== undefined) {
                 updateData.calendarEnabled = body.calendarEnabled;
@@ -474,6 +507,7 @@ export async function playerRoutes(fastify: FastifyInstance) {
             });
 
             invalidatePlayerCache(id);
+            await invalidatePlayerGroupCaches(id);
 
             // Parse annualFeesPaid - handle null case
             const fees = player.annualFeesPaid ? JSON.parse(player.annualFeesPaid) : [];
