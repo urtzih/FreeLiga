@@ -26,6 +26,7 @@ const updateUserSchema = z.object({
     phone: z.string().optional(),
     role: z.enum(['PLAYER', 'ADMIN']).optional(),
     isActive: z.boolean().optional(),
+    competitionStatus: z.enum(['ACTIVE', 'FROZEN']).optional(),
     calendarEnabled: z.boolean().optional(),
 });
 
@@ -61,7 +62,7 @@ export async function userRoutes(fastify: FastifyInstance) {
                 return reply.status(403).send({ error: 'Forbidden' });
             }
 
-            const { page = '1', limit = '50', search = '', isActive } = request.query as { page?: string; limit?: string; search?: string; isActive?: string };
+            const { page = '1', limit = '50', search = '', isActive, competitionStatus } = request.query as { page?: string; limit?: string; search?: string; isActive?: string; competitionStatus?: string };
             const skip = (parseInt(page) - 1) * parseInt(limit);
 
             const where: any = {};
@@ -78,6 +79,12 @@ export async function userRoutes(fastify: FastifyInstance) {
                 where.isActive = true;
             } else if (isActive === 'false') {
                 where.isActive = false;
+            }
+            if (competitionStatus === 'ACTIVE' || competitionStatus === 'FROZEN') {
+                where.player = {
+                    ...(where.player || {}),
+                    competitionStatus,
+                };
             }
 
             const [users, total] = await Promise.all([
@@ -299,12 +306,13 @@ export async function userRoutes(fastify: FastifyInstance) {
                 });
 
                 // Actualizar player si existe (name, nickname, phone)
-                if (updated.player && (body.name || body.nickname !== undefined || body.phone !== undefined || body.calendarEnabled !== undefined)) {
+                if (updated.player && (body.name || body.nickname !== undefined || body.phone !== undefined || body.calendarEnabled !== undefined || body.competitionStatus !== undefined)) {
                     const playerUpdate: any = {};
                     if (body.name) playerUpdate.name = body.name;
                     if (body.nickname !== undefined) playerUpdate.nickname = body.nickname || null;
                     if (body.phone !== undefined) playerUpdate.phone = body.phone || null;
                     if (body.calendarEnabled !== undefined) playerUpdate.calendarEnabled = body.calendarEnabled;
+                    if (body.competitionStatus !== undefined) playerUpdate.competitionStatus = body.competitionStatus;
 
                     await tx.player.update({
                         where: { id: updated.player.id },
@@ -326,6 +334,7 @@ export async function userRoutes(fastify: FastifyInstance) {
                     email: body.email ? { from: user.email, to: body.email } : undefined,
                     role: body.role ? { from: user.role, to: body.role } : undefined,
                     isActive: body.isActive !== undefined ? { from: user.isActive, to: body.isActive } : undefined,
+                    competitionStatus: body.competitionStatus !== undefined ? { from: user.player?.competitionStatus, to: body.competitionStatus } : undefined,
                     name: body.name ? { from: user.player?.name, to: body.name } : undefined,
                     nickname: body.nickname !== undefined ? { from: user.player?.nickname, to: body.nickname } : undefined,
                     phone: body.phone !== undefined ? { from: user.player?.phone, to: body.phone } : undefined,

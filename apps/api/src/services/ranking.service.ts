@@ -3,6 +3,7 @@ import { prisma } from '@freesquash/database';
 interface PlayerStanding {
     playerId: string;
     playerName: string;
+    competitionStatus?: 'ACTIVE' | 'FROZEN';
     matchesWon: number;
     losses: number;
     setsWon: number;
@@ -77,11 +78,12 @@ function buildRankingContext(groupPlayers: any[], allGroupMatches: any[]) {
 
     const standings: PlayerStanding[] = groupPlayers.map((gp) => {
         const playerId = gp.playerId;
+        const competitionStatus = gp.player.competitionStatus;
         const playerMatches = matches.filter((m) => m.player1Id === playerId || m.player2Id === playerId);
         const playedByPlayer = playedMatches.filter((m) => m.player1Id === playerId || m.player2Id === playerId);
         const matchesWon = playedByPlayer.filter((m) => m.winnerId === playerId).length;
         const losses = playedByPlayer.filter((m) => m.winnerId && m.winnerId !== playerId).length;
-        const injuryAsSelf = playerMatches
+        const injuryAsSelfBase = playerMatches
             .filter((m) => m.matchStatus === 'INJURY')
             .filter((m) => isPlayerInjuredInMatch(m, playerId, legacyExposure))
             .length;
@@ -105,11 +107,16 @@ function buildRankingContext(groupPlayers: any[], allGroupMatches: any[]) {
             closedOpponents.add(opponentId);
         });
 
-        const remainingPlayable = Math.max(expectedMatches - closedOpponents.size, 0);
+        const unresolvedOpponents = Math.max(expectedMatches - closedOpponents.size, 0);
+        const remainingPlayable = competitionStatus === 'FROZEN' ? 0 : unresolvedOpponents;
+        const injuryAsSelf = competitionStatus === 'FROZEN'
+            ? injuryAsSelfBase + unresolvedOpponents
+            : injuryAsSelfBase;
 
         return {
             playerId,
             playerName: gp.player.name,
+            competitionStatus,
             matchesWon,
             losses,
             setsWon,
@@ -129,14 +136,7 @@ export async function calculateGroupRankings(groupId: string): Promise<void> {
         // Single query to get all active groupPlayers and their matches at once
         const [groupPlayers, matches] = await Promise.all([
             prisma.groupPlayer.findMany({
-                where: {
-                    groupId,
-                    player: {
-                        user: {
-                            isActive: true,
-                        },
-                    },
-                },
+                where: { groupId },
                 include: { player: true },
             }),
             prisma.match.findMany({
@@ -146,16 +146,6 @@ export async function calculateGroupRankings(groupId: string): Promise<void> {
                         { matchStatus: 'PLAYED' },
                         { matchStatus: 'INJURY' },
                     ],
-                    player1: {
-                        user: {
-                            isActive: true,
-                        },
-                    },
-                    player2: {
-                        user: {
-                            isActive: true,
-                        },
-                    },
                 },
                 select: {
                     id: true,
@@ -206,6 +196,15 @@ function resolveTies(standings: PlayerStanding[], matches: any[]): PlayerStandin
 }
 
 function resolveByFairLossesWhenNoRemaining(players: PlayerStanding[], matches: any[]): PlayerStanding[] {
+    const activePlayers = players.filter((player) => player.competitionStatus !== 'FROZEN');
+    const frozenPlayers = players.filter((player) => player.competitionStatus === 'FROZEN');
+    if (activePlayers.length > 0 && frozenPlayers.length > 0) {
+        return [
+            ...resolveByFairLossesWhenNoRemaining(activePlayers, matches),
+            ...resolveByFairLossesWhenNoRemaining(frozenPlayers, matches),
+        ];
+    }
+
     if (!players.every((player) => player.remainingPlayable === 0)) {
         return resolveByStandardTieBreak(players, matches);
     }
@@ -407,53 +406,90 @@ export async function computeSeasonClosure(seasonId: string) {
     }
 
     const entriesData: any[] = [];
+    const groupCapacities = refreshedOrdered.map((group) => group.groupPlayers.length);
+    const eligiblePlayersByGroup = refreshedOrdered.map((group) =>
+        [...group.groupPlayers]
+            .sort((a, b) => a.rankingPosition - b.rankingPosition)
+            .filter((gp) => gp.player.user.isActive && gp.player.competitionStatus === 'ACTIVE')
+    );
+    const targetIndexByPlayerId = new Map<string, number>();
+    const movementTypeByPlayerId = new Map<string, 'STAY' | 'PROMOTION' | 'RELEGATION'>();
+
+    for (let idx = 0; idx < refreshedOrdered.length; idx++) {
+        const rankedPlayers = [...refreshedOrdered[idx].groupPlayers].sort((a, b) => a.rankingPosition - b.rankingPosition);
+        const eligiblePlayers = eligiblePlayersByGroup[idx];
+        const isTop = idx === 0;
+        const isBottom = idx === refreshedOrdered.length - 1;
+        const promotionIds = !isBottom ? eligiblePlayers.slice(0, 2).map((p) => p.playerId) : [];
+        const relegationIds = !isTop
+            ? rankedPlayers
+                .slice(-2)
+                .filter((gp) => gp.player.user.isActive && gp.player.competitionStatus === 'ACTIVE')
+                .map((gp) => gp.playerId)
+            : [];
+
+        for (const gp of eligiblePlayers) {
+            let targetIdx = idx;
+            let movementType: 'STAY' | 'PROMOTION' | 'RELEGATION' = 'STAY';
+
+            if (promotionIds.includes(gp.playerId)) {
+                targetIdx = idx - 1;
+                movementType = 'PROMOTION';
+            } else if (relegationIds.includes(gp.playerId)) {
+                targetIdx = idx + 1;
+                movementType = 'RELEGATION';
+            }
+
+            targetIndexByPlayerId.set(gp.playerId, targetIdx);
+            movementTypeByPlayerId.set(gp.playerId, movementType);
+        }
+    }
+
+    const assignedEligibleByTarget = refreshedOrdered.map(() => new Set<string>());
+    for (const [playerId, targetIdx] of targetIndexByPlayerId.entries()) {
+        if (targetIdx >= 0 && targetIdx < assignedEligibleByTarget.length) {
+            assignedEligibleByTarget[targetIdx].add(playerId);
+        }
+    }
+
+    // Si nevera o cuentas bloqueadas dejan huecos, promovemos extra desde el grupo inmediatamente inferior.
+    for (let idx = 0; idx < refreshedOrdered.length - 1; idx++) {
+        while (assignedEligibleByTarget[idx].size < groupCapacities[idx]) {
+            const donorGroupIdx = idx + 1;
+            const donorId = eligiblePlayersByGroup[donorGroupIdx]
+                .map((gp) => gp.playerId)
+                .find((playerId) => targetIndexByPlayerId.get(playerId) === donorGroupIdx);
+
+            if (!donorId) {
+                break;
+            }
+
+            assignedEligibleByTarget[donorGroupIdx].delete(donorId);
+            assignedEligibleByTarget[idx].add(donorId);
+            targetIndexByPlayerId.set(donorId, idx);
+            movementTypeByPlayerId.set(donorId, 'PROMOTION');
+        }
+    }
 
     for (let idx = 0; idx < refreshedOrdered.length; idx++) {
         const group = refreshedOrdered[idx];
         const players = [...group.groupPlayers].sort((a, b) => a.rankingPosition - b.rankingPosition);
-        const isTop = idx === 0; 
-        const isBottom = idx === refreshedOrdered.length - 1;
-        const targetAbove = !isTop ? refreshedOrdered[idx - 1] : null;
-        const targetBelow = !isBottom ? refreshedOrdered[idx + 1] : null;
-
-        const promotions: string[] = [];
-        const relegations: string[] = [];
-
-        // Players with isActive = false are automatic relegations (leaving the league)
-        const inactivePlayers = players.filter(p => !p.player.user?.isActive);
-        relegations.push(...inactivePlayers.map(p => p.playerId));
-
-        // Regular relegations: last 2 active (non-relegated) players
-        const activePlayers = players.filter(p => p.player.user?.isActive);
-        if (!isTop && activePlayers.length > 0) { 
-            // Get the last 2 active players for relegation
-            relegations.push(...activePlayers.slice(-2).map(p => p.playerId));
-        }
-
-        // Promotions: first 2 active players
-        if (!isBottom && activePlayers.length > 0) {
-            promotions.push(...activePlayers.slice(0, 2).map(p => p.playerId));
-        }
 
         for (const gp of players) {
-            const isInactive = !gp.player.user?.isActive;
-            let movementType = 'STAY';
-            
-            if (isInactive) {
-                movementType = 'RELEGATION'; // Inactive players always relegate
-            } else if (promotions.includes(gp.playerId)) {
-                movementType = 'PROMOTION';
-            } else if (relegations.includes(gp.playerId)) {
-                movementType = 'RELEGATION';
-            }
-            
+            const isEligibleForNextSeason = gp.player.user.isActive && gp.player.competitionStatus === 'ACTIVE';
+            const targetIdx = isEligibleForNextSeason ? (targetIndexByPlayerId.get(gp.playerId) ?? idx) : idx;
+            const movementType = isEligibleForNextSeason
+                ? (movementTypeByPlayerId.get(gp.playerId) ?? 'STAY')
+                : 'STAY';
+
             const playerMatches = allMatches.filter(m => m.groupId === group.id && (m.player1Id === gp.playerId || m.player2Id === gp.playerId) && m.matchStatus === 'PLAYED');
             const matchesWon = playerMatches.filter(m => m.winnerId === gp.playerId).length;
+
             entriesData.push({
                 closureId: closure.id,
                 playerId: gp.playerId,
                 fromGroupId: group.id,
-                toGroupId: movementType === 'PROMOTION' ? targetAbove?.id : movementType === 'RELEGATION' ? targetBelow?.id : null,
+                toGroupId: isEligibleForNextSeason && targetIdx !== idx ? refreshedOrdered[targetIdx]?.id ?? null : null,
                 movementType,
                 finalRank: gp.rankingPosition,
                 matchesWon,
@@ -479,14 +515,7 @@ export async function getGroupRankings(groupId: string): Promise<RankingResult[]
     try {
         const [groupPlayers, matches] = await Promise.all([
             prisma.groupPlayer.findMany({
-                where: {
-                    groupId,
-                    player: {
-                        user: {
-                            isActive: true,
-                        },
-                    },
-                },
+                where: { groupId },
                 include: { player: true },
             }),
             prisma.match.findMany({
@@ -496,16 +525,6 @@ export async function getGroupRankings(groupId: string): Promise<RankingResult[]
                         { matchStatus: 'PLAYED' },
                         { matchStatus: 'INJURY' },
                     ],
-                    player1: {
-                        user: {
-                            isActive: true,
-                        },
-                    },
-                    player2: {
-                        user: {
-                            isActive: true,
-                        },
-                    },
                 },
                 select: {
                     id: true,

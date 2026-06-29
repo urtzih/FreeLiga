@@ -385,17 +385,18 @@ export async function seasonRoutes(fastify: FastifyInstance) {
 
             // Create new season and groups, then assign players
             // Pre-fetch active players to avoid queries inside transaction
-            let activePlayers: Set<string> = new Set();
+            let eligiblePlayers: Set<string> = new Set();
             if (season.closure && season.closure.status === 'APPROVED' && season.closure.entries.length > 0) {
                 const playerIds = season.closure.entries.map(e => e.playerId);
                 const players = await prisma.player.findMany({
                     where: { 
                         id: { in: playerIds },
+                        competitionStatus: 'ACTIVE',
                         user: { isActive: true }
                     },
                     select: { id: true }
                 });
-                activePlayers = new Set(players.map(p => p.id));
+                eligiblePlayers = new Set(players.map(p => p.id));
             }
 
             const next = await prisma.$transaction(async (tx) => {
@@ -428,7 +429,7 @@ export async function seasonRoutes(fastify: FastifyInstance) {
                     
                     for (const entry of season.closure.entries) {
                         // Verificar si el jugador está activo (ya pre-filtrado)
-                        if (!activePlayers.has(entry.playerId)) {
+                        if (!eligiblePlayers.has(entry.playerId)) {
                             continue;
                         }
 

@@ -63,6 +63,31 @@ export default function Help() {
                 </ul>
             </Section>
 
+            <Section title={tr('Nevera: qué significa y cómo cambiarla', 'Izoztea: zer den eta nola aldatu')} tone="info">
+                <p>
+                    {tr(
+                        'La nevera es una pausa competitiva temporal. No bloquea tu cuenta ni borra tu historial.',
+                        'Izoztea lehiaketako aldi baterako etenaldia da. Ez du zure kontua blokeatzen eta ez du zure historia ezabatzen.',
+                    )}
+                </p>
+                <ul className="list-disc list-inside space-y-1">
+                    <li>{tr('Si estás en nevera, puedes seguir entrando en la app normalmente.', 'Izoztean bazaude, aplikazioan normaltasunez sartzen jarraitu dezakezu.')}</li>
+                    <li>{tr('Tu grupo actual, tus partidos y tu clasificación ya jugada no se borran.', 'Zure uneko taldea, partidak eta jokatutako sailkapena ez dira ezabatzen.')}</li>
+                    <li>{tr('Mientras sigas en nevera, no se te añadirá automáticamente a la siguiente temporada ni a sus grupos.', 'Izoztean jarraitzen duzun bitartean, ez zaituzte automatikoki hurrengo denboraldira edo haren taldeetara gehituko.')}</li>
+                </ul>
+                <p>
+                    {tr(
+                        'Cómo cambiarlo: entra en "Perfil" y busca la sección "Estado de competición". Allí puedes usar "Ponerme en nevera" o "Salir de nevera".',
+                        'Nola aldatu: sartu "Profilean" eta bilatu "Lehiaketa egoera" atala. Han "Izoztean jarri" edo "Izoztetik atera" erabil dezakezu.',
+                    )}
+                </p>
+                <div>
+                    <Link to="/profile" className="text-amber-600 dark:text-amber-400 font-semibold hover:underline">
+                        {tr('Ir a Perfil', 'Joan Profilera')}
+                    </Link>
+                </div>
+            </Section>
+
             <Section title={tr('Como se resuelven los empates', 'Berdinketak nola ebazten diren')} tone="info">
                 <p>
                     {tr(

@@ -87,8 +87,7 @@ export default function ManageGroups() {
 
  const candidatePlayers = (usersData.users || []).filter((u: any) => {
  if (!u.player) return false;
- // sin grupo o inactivo o no asignado al grupo expandido
- return !u.player.currentGroup || u.isActive === false;
+ return !u.player.currentGroup && u.player.competitionStatus !== 'FROZEN';
  });
 
  // Mutations
@@ -244,16 +243,12 @@ export default function ManageGroups() {
  <option 
  key={player.player.id} 
  value={player.player.id}
- style={{
- color: player.isActive === false ? '#ef4444' : '#10b981',
- fontWeight: player.isActive === false ? 'normal' : '500'
- }}
  >
- {player.isActive === false ? '(Inactivo) ' : ''}{player.player.name} {!player.player.currentGroup ? '(Sin grupo)' : ''}
+ {player.player.competitionStatus === 'FROZEN' ? '(Nevera) ' : ''}{player.player.name} {!player.player.currentGroup ? '(Sin grupo)' : ''}
  </option>
  ))}
  </select>
- <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Activo | Inactivo</p>
+ <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Solo aparecen jugadores sin grupo y fuera de nevera</p>
  </div>
  <div className="flex justify-end gap-2">
  <button
@@ -380,7 +375,7 @@ export default function ManageGroups() {
  }}
  className="px-3 py-2 text-xs rounded-lg font-semibold bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
  disabled={!candidatePlayers.length}
- title={candidatePlayers.length ? 'Añadir jugador inactivo o sin grupo' : 'No hay jugadores disponibles'}
+ title={candidatePlayers.length ? 'Añadir jugador disponible y sin grupo' : 'No hay jugadores disponibles'}
  >
  + Player
  </button>

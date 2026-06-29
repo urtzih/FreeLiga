@@ -138,8 +138,7 @@ export default function SeasonProposals() {
  const candidatePlayers = (candidateUsers || []).filter((u: any) => {
  if (!u.player) return false;
  const noGroup = !u.player.currentGroup;
- const inactive = u.isActive === false;
- return noGroup || inactive;
+ return noGroup && u.player.competitionStatus !== 'FROZEN';
  });
 
  const saveMutation = useMutation({
@@ -177,15 +176,15 @@ export default function SeasonProposals() {
  }
  });
 
- const toggleActiveMutation = useMutation({
- mutationFn: async (userId: string) => {
- await api.post(`/users/${userId}/toggle-active`);
+ const toggleFrozenMutation = useMutation({
+ mutationFn: async ({ playerId, competitionStatus }: { playerId: string; competitionStatus: 'ACTIVE' | 'FROZEN' }) => {
+ await api.patch(`/players/${playerId}/competition-status`, { competitionStatus });
  },
  onSuccess: () => {
  queryClient.invalidateQueries({ queryKey: ['season-proposal', seasonId] });
  },
  onError: () => {
- alert('Error al cambiar el estado del jugador');
+ alert('Error al cambiar el estado de nevera');
  }
  });
 
@@ -254,6 +253,8 @@ export default function SeasonProposals() {
 
  // Count players per group after movements
  localEntries.forEach((entry: any) => {
+ const isFrozen = entry.player?.competitionStatus === 'FROZEN';
+ if (isFrozen) return;
  const targetGroupId = entry.toGroupId || entry.fromGroupId;
  if (targetGroupId && distribution[targetGroupId]) {
  distribution[targetGroupId].count++;
@@ -387,11 +388,22 @@ export default function SeasonProposals() {
  <div className="text-3xl font-bold text-slate-900 dark:text-slate-100">{stays}</div>
  </div>
  <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-4 border border-orange-200 dark:border-orange-700">
- <div className="text-sm font-medium text-orange-600 dark:text-orange-400">Desactivados</div>
- <div className="text-3xl font-bold text-orange-900 dark:text-orange-100">
- {localEntries.filter((e: any) => e.player?.user?.isActive === false).length}
+ <div className="text-sm font-medium text-cyan-600 dark:text-cyan-400">En nevera</div>
+ <div className="text-3xl font-bold text-cyan-900 dark:text-cyan-100">
+ {localEntries.filter((e: any) => e.player?.competitionStatus === 'FROZEN').length}
  </div>
  </div>
+ </div>
+
+ <div className="rounded-xl border border-cyan-200 bg-cyan-50 p-4 text-sm text-cyan-900 dark:border-cyan-800 dark:bg-cyan-950/20 dark:text-cyan-100">
+ <p className="font-semibold">Cómo afecta la nevera a la siguiente temporada</p>
+ <ul className="mt-2 list-disc list-inside space-y-1">
+ <li>Un jugador en nevera no ocupa plaza en la siguiente temporada, aunque siga visible en esta propuesta.</li>
+ <li>Si queda entre los dos primeros, no asciende y sube el siguiente jugador elegible.</li>
+ <li>Si queda entre los dos últimos, no baja y no hacemos bajar a uno más para compensar.</li>
+ <li>Si queda en mitad de tabla, tampoco ocupa plaza en la siguiente temporada.</li>
+ <li>Cuando la nevera deja huecos, esos huecos se rellenan con ascensos extra desde el grupo inferior hasta completar el grupo si hay jugadores elegibles.</li>
+ </ul>
  </div>
 
  {isApproved && (
@@ -446,7 +458,7 @@ export default function SeasonProposals() {
  setSelectedPlayerId(candidatePlayers[0]?.player?.id || '');
  }}
  className="text-xs px-3 py-1 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
- title={candidatePlayers.length ? 'Añadir jugador inactivo o sin grupo' : 'No hay jugadores disponibles'}
+ title={candidatePlayers.length ? 'Añadir jugador disponible y sin grupo' : 'No hay jugadores disponibles'}
  >
  + Player
  </button>
@@ -469,8 +481,8 @@ export default function SeasonProposals() {
  if (movement === 'PROMOTION') statusColor = 'text-green-600 dark:text-green-400';
  if (movement === 'RELEGATION') statusColor = 'text-red-600 dark:text-red-400';
 
- const isActive = entry.player?.user?.isActive !== false;
- const userId = entry.player?.user?.id;
+ const isFrozen = entry.player?.competitionStatus === 'FROZEN';
+ const playerId = entry.player?.id;
  const playerStats = season?.statsByPlayerId?.[entry.playerId] || { losses: 0, remaining: 0, injuries: 0, setAverage: 0 };
  const wins = entry.matchesWon || 0;
  const tieOnWins = (winsCountByValue[wins] || 0) > 1;
@@ -480,8 +492,8 @@ export default function SeasonProposals() {
  <div 
  key={entry.playerId} 
  className={`px-4 py-2 hover:transition-colors ${
- !isActive 
- ? 'bg-red-50 dark:bg-red-900/20 opacity-60' 
+ isFrozen
+ ? 'bg-cyan-50 dark:bg-cyan-900/20 opacity-80' 
  : movement === 'PROMOTION'
  ? 'bg-green-50 dark:bg-green-900/20'
  : movement === 'RELEGATION'
@@ -494,12 +506,12 @@ export default function SeasonProposals() {
  <span className="font-mono text-sm text-slate-400 w-6 shrink-0">#{entry.finalRank}</span>
  <div className="min-w-0">
  <div className="flex flex-wrap items-center gap-2">
- <span className={`font-medium leading-tight whitespace-normal ${isActive ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`}>
+ <span className={`font-medium leading-tight whitespace-normal ${isFrozen ? 'text-cyan-800 dark:text-cyan-200' : 'text-slate-900 dark:text-white'}`}>
  {entry.player.name}
  </span>
- {!isActive && (
- <span className="text-xs px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-full font-medium shrink-0">
- Desactivado
+ {isFrozen && (
+ <span className="text-xs px-2 py-0.5 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 rounded-full font-medium shrink-0">
+ ❄ Nevera
  </span>
  )}
  </div>
@@ -523,21 +535,21 @@ export default function SeasonProposals() {
  {movement === 'PROMOTION' && 'Asciende'}
  {movement === 'RELEGATION' && 'Desciende'}
  </div>
- {userId && (
+ {playerId && (
  <select
  value=""
  onChange={(e) => {
  const selectedValue = e.target.value;
  if (selectedValue !== 'TOGGLE') return;
 
- if (window.confirm(`¿${isActive ? 'Desactivar' : 'Activar'} a ${entry.player.name}? ${!isActive ? 'Podrá participar en la siguiente temporada.' : 'NO participará en la siguiente temporada.'}`)) {
- toggleActiveMutation.mutate(userId);
+ if (window.confirm(`¿${isFrozen ? 'Sacar de nevera' : 'Poner en nevera'} a ${entry.player.name}? ${isFrozen ? 'Volverá a ser elegible para la siguiente temporada.' : 'No se añadirá a ningún grupo en la siguiente temporada.'}`)) {
+ toggleFrozenMutation.mutate({ playerId, competitionStatus: isFrozen ? 'ACTIVE' : 'FROZEN' });
  }
  }}
  className="text-xs bg-transparent border-none focus:ring-0 cursor-pointer text-slate-500 dark:text-slate-300 min-w-0"
  >
  <option value="">Acción </option>
- <option value="TOGGLE">{isActive ? 'Desactivar' : 'Activar'}</option>
+ <option value="TOGGLE">{isFrozen ? 'Sacar de nevera' : 'Poner en nevera'}</option>
  </select>
  )}
  </div>
@@ -548,9 +560,9 @@ export default function SeasonProposals() {
  const selectedValue = e.target.value;
 
  if (selectedValue.startsWith('TOGGLE:')) {
- if (!userId) return;
- if (window.confirm(`¿${isActive ? 'Desactivar' : 'Activar'} a ${entry.player.name}? ${!isActive ? 'Podrá participar en la siguiente temporada.' : 'NO participará en la siguiente temporada.'}`)) {
- toggleActiveMutation.mutate(userId);
+ if (!playerId) return;
+ if (window.confirm(`¿${isFrozen ? 'Sacar de nevera' : 'Poner en nevera'} a ${entry.player.name}? ${isFrozen ? 'Volverá a ser elegible para la siguiente temporada.' : 'No se añadirá a ningún grupo en la siguiente temporada.'}`)) {
+ toggleFrozenMutation.mutate({ playerId, competitionStatus: isFrozen ? 'ACTIVE' : 'FROZEN' });
  }
  return;
  }
@@ -562,9 +574,9 @@ export default function SeasonProposals() {
  <option value="STAY">Mantiene </option>
  <option value="PROMOTION">Asciende </option>
  <option value="RELEGATION">Desciende </option>
- {userId && (
- <option value={`TOGGLE:${userId}`}>
- {isActive ? 'Desactivar' : 'Activar'}
+ {playerId && (
+ <option value={`TOGGLE:${playerId}`}>
+ {isFrozen ? 'Sacar de nevera' : 'Poner en nevera'}
  </option>
  )}
  </select>
@@ -599,7 +611,7 @@ export default function SeasonProposals() {
  >
  {candidatePlayers.map((u: any) => (
  <option key={u.player.id} value={u.player.id}>
- {u.player.name} ({u.email}) {u.isActive === false ? '⬢ Inactivo' : ''} {u.player.currentGroup ? '⬢ Tiene grupo' : '⬢ Sin grupo'}
+ {u.player.name} ({u.email}) {u.player.competitionStatus === 'FROZEN' ? '⬢ Nevera' : ''} {u.player.currentGroup ? '⬢ Tiene grupo' : '⬢ Sin grupo'}
  </option>
  ))}
  </select>

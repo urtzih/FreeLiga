@@ -155,6 +155,9 @@ export default function GroupView() {
     const isClosedMatchForClassification = (match: any) =>
         (match.matchStatus === 'PLAYED' && match.gamesP1 !== null && match.gamesP2 !== null) ||
         match.matchStatus === 'INJURY';
+    const competitionStatusByPlayer = new Map<string, 'ACTIVE' | 'FROZEN' | undefined>(
+        group.groupPlayers.map((gp: any) => [String(gp.playerId), gp.player?.competitionStatus]),
+    );
 
     const getClassificationProgress = (playerId: string) => {
         const completedOpponents = new Set<string>();
@@ -179,10 +182,11 @@ export default function GroupView() {
         });
 
         const remaining = Math.max(0, (totalPlayers - 1) - completedOpponents.size);
+        const isFrozenPlayer = competitionStatusByPlayer.get(String(playerId)) === 'FROZEN';
 
         return {
-            remaining,
-            injuries: injuryOpponents.size,
+            remaining: isFrozenPlayer ? 0 : remaining,
+            injuries: isFrozenPlayer ? injuryOpponents.size + remaining : injuryOpponents.size,
         };
     };
 
@@ -468,6 +472,7 @@ export default function GroupView() {
                                             const remaining = progress.remaining;
                                             const injuries = progress.injuries;
                                             const isInjuredPlayer = isActuallyInjuredPlayer(row.playerId);
+                                            const isFrozenPlayer = competitionStatusByPlayer.get(String(row.playerId)) === 'FROZEN';
                                             const displayInjuries = injuries;
                                             const setDifference = row.setsWon - row.setsLost;
                                             const isCurrentUser = String(row.playerId) === String(user?.player?.id);
@@ -495,14 +500,19 @@ export default function GroupView() {
                                                                 alt={tr('Foto de jugador', 'Jokalariaren argazkia')}
                                                             />
                                                             <span className={isCurrentUser ? 'font-bold' : ''}>{row.playerName}</span>
+                                                            {isFrozenPlayer && (
+                                                                <span className="text-[11px] px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300">
+                                                                    {String.fromCodePoint(0x2744)} {tr('En nevera', 'Izoztean')}
+                                                                </span>
+                                                            )}
                                                             {isCurrentUser && (
                                                                 <span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 dark:bg-amber-700/40 dark:text-amber-100 font-semibold">
                                                                     {tr('Tu', 'Zu')}
                                                                 </span>
                                                             )}
-                                                            {isInjuredPlayer && (
+                                                            {isInjuredPlayer && !isFrozenPlayer && (
                                                                 <span className="text-[11px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
-                                                                    {String.fromCodePoint(0x1F915)} {tr('Lesiónado', 'Lesiónatua')}
+                                                                    {String.fromCodePoint(0x1F915)} {tr('Lesionado', 'Lesionatua')}
                                                                 </span>
                                                             )}
                                                         </span>
@@ -542,6 +552,7 @@ export default function GroupView() {
                                             const remaining = progress.remaining;
                                             const isInjuredPlayer = isActuallyInjuredPlayer(row.playerId);
                                             const isCurrentUser = String(row.playerId) === String(user?.player?.id);
+                                            const isFrozenPlayer = competitionStatusByPlayer.get(String(row.playerId)) === 'FROZEN';
                                             
                                             // Calculate set difference
                                             const setDifference = row.setsWon - row.setsLost;
@@ -569,12 +580,17 @@ export default function GroupView() {
                                                                 alt={tr('Foto de jugador', 'Jokalariaren argazkia')}
                                                             />
                                                             <span>{row.playerName}</span>
+                                                            {isFrozenPlayer && (
+                                                                <span className="text-[10px] px-1 py-0.5 rounded bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300">
+                                                                    {String.fromCodePoint(0x2744)}
+                                                                </span>
+                                                            )}
                                                             {isCurrentUser && (
                                                                 <span className="text-[10px] px-1 py-0.5 rounded bg-amber-200 text-amber-900 dark:bg-amber-700/40 dark:text-amber-100 font-semibold">
                                                                     {tr('Tu', 'Zu')}
                                                                 </span>
                                                             )}
-                                                            {isInjuredPlayer && (
+                                                            {isInjuredPlayer && !isFrozenPlayer && (
                                                                 <span className="text-[10px] px-1 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
                                                                     {String.fromCodePoint(0x1F915)}
                                                                 </span>
@@ -656,6 +672,11 @@ export default function GroupView() {
                                                         <p className={`font-medium ${isCurrentUser ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`}>
                                                     {gp.player.name} {isCurrentUser && tr('(Tu)', '(Zu)')}
                                                         </p>
+                                                        {gp.player?.competitionStatus === 'FROZEN' && (
+                                                            <span className="mt-1 inline-flex text-[11px] px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300">
+                                                                {String.fromCodePoint(0x2744)} {tr('En nevera', 'Izoztean')}
+                                                            </span>
+                                                        )}
                                                         {gp.player.nickname && (
                                                             <p className="text-sm text-slate-500 dark:text-slate-400">"{gp.player.nickname}"</p>
                                                         )}
@@ -744,6 +765,11 @@ export default function GroupView() {
                                                         </div>
                                                     )}
                                                 </div>
+                                                {gp.player?.competitionStatus === 'FROZEN' && (
+                                                    <span className="mt-1 inline-flex text-[11px] px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300">
+                                                        {String.fromCodePoint(0x2744)} {tr('En nevera', 'Izoztean')}
+                                                    </span>
+                                                )}
                                                 {gp.player.nickname && (
                                                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">"{gp.player.nickname}"</p>
                                                 )}

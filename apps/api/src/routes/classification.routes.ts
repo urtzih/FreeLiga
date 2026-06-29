@@ -35,14 +35,7 @@ export async function classificationRoutes(fastify: FastifyInstance) {
             if (groupId && !opponentId && !startDate && !endDate) {
                 const [groupPlayers, matches, rankings] = await Promise.all([
                     prisma.groupPlayer.findMany({
-                        where: {
-                            groupId,
-                            player: {
-                                user: {
-                                    isActive: true,
-                                },
-                            },
-                        },
+                        where: { groupId },
                         include: {
                             player: true,
                         },
@@ -53,16 +46,6 @@ export async function classificationRoutes(fastify: FastifyInstance) {
                             matchStatus: 'PLAYED',
                             gamesP1: { not: null },
                             gamesP2: { not: null },
-                            player1: {
-                                user: {
-                                    isActive: true,
-                                },
-                            },
-                            player2: {
-                                user: {
-                                    isActive: true,
-                                },
-                            },
                         },
                     }),
                     getGroupRankings(groupId),
@@ -190,14 +173,7 @@ export async function classificationRoutes(fastify: FastifyInstance) {
             if (groupId) {
                 // If filtering by group, get only players in that group
                 const groupPlayers = await prisma.groupPlayer.findMany({
-                    where: {
-                        groupId,
-                        player: {
-                            user: {
-                                isActive: true,
-                            },
-                        },
-                    },
+                    where: { groupId },
                     include: { player: true }
                 });
                 players = groupPlayers.map(gp => gp.player);
@@ -205,11 +181,7 @@ export async function classificationRoutes(fastify: FastifyInstance) {
             } else {
                 // Otherwise get all players
                 players = await prisma.player.findMany({
-                    where: {
-                        user: {
-                            isActive: true,
-                        },
-                    },
+                    where: {},
                 });
             }
 

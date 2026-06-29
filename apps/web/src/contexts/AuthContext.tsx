@@ -23,6 +23,7 @@ interface User {
         phone?: string | null;
         photoDataUrl?: string | null;
         calendarEnabled?: boolean;
+        competitionStatus?: 'ACTIVE' | 'FROZEN';
         currentGroup?: CurrentGroup;
     };
 }

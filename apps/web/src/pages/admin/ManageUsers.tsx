@@ -17,6 +17,7 @@ interface User {
  nickname?: string;
  phone?: string;
  annualFeesPaid?: number[];
+ competitionStatus?: 'ACTIVE' | 'FROZEN';
  currentGroup?: {
  id: string;
  name: string;
@@ -50,9 +51,10 @@ export default function ManageUsers() {
  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
  const [filterGroup, setFilterGroup] = useState('');
  const [filterActive, setFilterActive] = useState<'all' | 'active' | 'inactive'>('all');
+ const [filterCompetition, setFilterCompetition] = useState<'all' | 'ACTIVE' | 'FROZEN'>('all');
  const [filterFeeYears, setFilterFeeYears] = useState<number[]>([new Date().getFullYear()]); // Default to current year
  const [filterFeeStatus, setFilterFeeStatus] = useState<'all' | 'paid' | 'unpaid'>('all');
- const [sortField, setSortField] = useState<'email' | 'name' | 'phone' | 'group' | 'role' | 'isActive' | 'createdAt' | 'lastConnection'>('createdAt');
+ const [sortField, setSortField] = useState<'email' | 'name' | 'phone' | 'group' | 'role' | 'isActive' | 'competitionStatus' | 'createdAt' | 'lastConnection'>('createdAt');
  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
  const [editingFees, setEditingFees] = useState<number[]>([]);
 
@@ -151,13 +153,16 @@ export default function ManageUsers() {
 
  // Fetch users (paginated & filtered)
  const { data, isLoading } = useAdminQuery<UsersResponse>({
- queryKey: ['users', page, debouncedSearchTerm, filterActive],
+ queryKey: ['users', page, debouncedSearchTerm, filterActive, filterCompetition],
  queryFn: async () => {
  let url = `/users?page=${page}&limit=20&search=${encodeURIComponent(debouncedSearchTerm)}`;
  if (filterActive === 'active') {
  url += '&isActive=true';
  } else if (filterActive === 'inactive') {
  url += '&isActive=false';
+ }
+ if (filterCompetition !== 'all') {
+ url += `&competitionStatus=${filterCompetition}`;
  }
  const { data } = await api.get(url);
  return data;
@@ -210,6 +215,8 @@ export default function ManageUsers() {
  aVal = a.role; bVal = b.role; break;
  case 'isActive':
  aVal = a.isActive ? 1 : 0; bVal = b.isActive ? 1 : 0; break;
+ case 'competitionStatus':
+ aVal = a.player?.competitionStatus || ''; bVal = b.player?.competitionStatus || ''; break;
  case 'createdAt':
  aVal = new Date(a.createdAt).getTime(); bVal = new Date(b.createdAt).getTime(); break;
  case 'lastConnection':
@@ -336,10 +343,10 @@ export default function ManageUsers() {
  }
  });
 
- const markInjuryMutation = useMutation({
- mutationFn: async (playerId: string) => {
- const { data } = await api.post('/matches/mark-injury', { playerId });
- return data;
+const markInjuryMutation = useMutation({
+mutationFn: async (playerId: string) => {
+const { data } = await api.post('/matches/mark-injury', { playerId });
+return data;
  },
  onSuccess: () => {
  queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -352,6 +359,21 @@ export default function ManageUsers() {
  },
  onError: (error: any) => {
  alert(`Error al marcar lesión: ${error.response?.data?.error || error.message}`);
+ }
+ });
+
+ const updateCompetitionStatusMutation = useMutation({
+ mutationFn: async ({ playerId, competitionStatus }: { playerId: string; competitionStatus: 'ACTIVE' | 'FROZEN' }) => {
+ const { data } = await api.patch(`/players/${playerId}/competition-status`, { competitionStatus });
+ return data;
+ },
+ onSuccess: () => {
+ queryClient.invalidateQueries({ queryKey: ['users'] });
+ queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+ alert('Estado competitivo actualizado correctamente');
+ },
+ onError: (error: any) => {
+ alert(`Error al actualizar estado competitivo: ${error.response?.data?.error || error.message}`);
  }
  });
 
@@ -444,7 +466,16 @@ export default function ManageUsers() {
  const handleExportCSV = async () => {
  try {
  // Fetch ALL users (no pagination) for export
- const { data: allUsersData } = await api.get(`/users?page=1&limit=10000&search=${encodeURIComponent(debouncedSearchTerm)}`);
+ let exportUrl = `/users?page=1&limit=10000&search=${encodeURIComponent(debouncedSearchTerm)}`;
+ if (filterActive === 'active') {
+ exportUrl += '&isActive=true';
+ } else if (filterActive === 'inactive') {
+ exportUrl += '&isActive=false';
+ }
+ if (filterCompetition !== 'all') {
+ exportUrl += `&competitionStatus=${filterCompetition}`;
+ }
+ const { data: allUsersData } = await api.get(exportUrl);
  const allUsers = allUsersData.users || [];
 
  // Apply client-side filters (group, sort)
@@ -462,6 +493,7 @@ export default function ManageUsers() {
  case 'group': aVal = a.player?.currentGroup?.name || ''; bVal = b.player?.currentGroup?.name || ''; break;
  case 'role': aVal = a.role; bVal = b.role; break;
  case 'isActive': aVal = a.isActive ? 1 : 0; bVal = b.isActive ? 1 : 0; break;
+ case 'competitionStatus': aVal = a.player?.competitionStatus || ''; bVal = b.player?.competitionStatus || ''; break;
  case 'createdAt': aVal = new Date(a.createdAt).getTime(); bVal = new Date(b.createdAt).getTime(); break;
  default: return 0;
  }
@@ -480,7 +512,7 @@ export default function ManageUsers() {
  return `"${stringField.replace(/"/g, '""')}"`;
  };
 
- const headers = ['Email', 'Nombre', 'Apodo', 'Teléfono', 'Grupo', 'Rol', 'Fecha Registro', 'Estado'];
+ const headers = ['Email', 'Nombre', 'Apodo', 'Teléfono', 'Grupo', 'Rol', 'Fecha Registro', 'Cuenta', 'Competición'];
  const rows = exportUsers.map((user: User) => [
  escapeCsvField(user.email),
  escapeCsvField(user.player?.name || ''),
@@ -489,7 +521,8 @@ export default function ManageUsers() {
  escapeCsvField(user.player?.currentGroup?.name || ''),
  escapeCsvField(user.role),
  escapeCsvField(new Date(user.createdAt).toLocaleDateString('es-ES')),
- escapeCsvField(user.isActive ? 'Activo' : 'Inactivo')
+ escapeCsvField(user.isActive ? 'Activa' : 'Bloqueada'),
+ escapeCsvField(user.player?.competitionStatus === 'FROZEN' ? 'En nevera' : 'Disponible')
  ]);
 
  const csvContent = '\uFEFF' + [headers.join(';'), ...rows.map((r: any) => r.join(';'))].join('\n');
@@ -569,7 +602,7 @@ export default function ManageUsers() {
  <>
  {/* Filters */}
  <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 mb-6">
- <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+ <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
  <div>
  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
  Buscar por nombre o email
@@ -612,7 +645,7 @@ export default function ManageUsers() {
  </div>
  <div>
  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
- Filtrar por estado
+ Filtrar por cuenta
  </label>
  <select
  value={filterActive}
@@ -623,9 +656,29 @@ export default function ManageUsers() {
  className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
  >
  <option value="all">Todos los estados</option>
- <option value="active"> Activos</option>
- <option value="inactive"> Inactivos</option>
+ <option value="active">Activas</option>
+ <option value="inactive">Bloqueadas</option>
  </select>
+ </div>
+ <div>
+ <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+ Filtrar por competición
+ </label>
+ <select
+ value={filterCompetition}
+ onChange={e => {
+ setFilterCompetition(e.target.value as 'all' | 'ACTIVE' | 'FROZEN');
+ setPage(1);
+ }}
+ className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500"
+ >
+ <option value="all">Todos</option>
+ <option value="ACTIVE">Disponibles</option>
+ <option value="FROZEN">En nevera</option>
+ </select>
+ <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+ Nevera = el jugador puede seguir entrando, pero no se le añadirá a la siguiente temporada mientras siga así.
+ </p>
  </div>
  <div>
  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
@@ -749,7 +802,15 @@ export default function ManageUsers() {
  </div>
  </td>
  <td className="px-6 py-4 whitespace-nowrap">
- <div className="text-sm text-slate-600 dark:text-slate-400">{user.player?.name || '-'}</div>
+ <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+ <span>{user.player?.name || '-'}</span>
+ {user.player?.competitionStatus === 'FROZEN' && (
+ <span className="rounded-full bg-cyan-100 px-2 py-0.5 text-xs font-medium text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300">❄ Nevera</span>
+ )}
+ {!user.isActive && (
+ <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700 dark:bg-red-900/30 dark:text-red-300">Cuenta bloqueada</span>
+ )}
+ </div>
  {user.player?.nickname && <div className="text-xs text-slate-400">{user.player.nickname}</div>}
  </td>
  <td className="px-6 py-4 whitespace-nowrap">
@@ -779,9 +840,9 @@ export default function ManageUsers() {
  className={`text-sm px-3 py-1 rounded-lg font-medium transition-colors ${user.isActive
  ? 'bg-green-600 text-white hover:bg-green-700'
  : 'bg-red-600 text-white hover:bg-red-700'}`}
- title={user.isActive ? 'Desactivar usuario' : 'Activar usuario'}
+ title={user.isActive ? 'Bloquear acceso a la cuenta' : 'Reactivar acceso a la cuenta'}
  >
- {user.isActive ? ' Activo' : ' Inactivo'}
+ {user.isActive ? 'Bloquear cuenta' : 'Reactivar cuenta'}
  </button>
  <button onClick={() => handleOpenEditModal(user)} className="text-sm px-3 py-1 club-btn-yellow">Editar</button>
  <button
@@ -802,6 +863,22 @@ export default function ManageUsers() {
  title="Marcar lesión de temporada"
  >
  Lesionar
+ </button>
+ )}
+ {user.player?.id && (
+ <button
+ onClick={() => updateCompetitionStatusMutation.mutate({
+ playerId: user.player!.id,
+ competitionStatus: user.player?.competitionStatus === 'FROZEN' ? 'ACTIVE' : 'FROZEN',
+ })}
+ className={`text-sm px-3 py-1 rounded-lg font-medium transition-colors ${
+ user.player?.competitionStatus === 'FROZEN'
+ ? 'bg-cyan-600 text-white hover:bg-cyan-700'
+ : 'bg-slate-200 text-slate-900 hover:bg-slate-300 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600'
+ }`}
+ title={user.player?.competitionStatus === 'FROZEN' ? 'Sacar de nevera' : 'Poner en nevera'}
+ >
+ {user.player?.competitionStatus === 'FROZEN' ? 'Sacar de nevera' : 'Poner en nevera'}
  </button>
  )}
  </div>

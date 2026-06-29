@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../lib/api';
 import Spinner from '../../components/Spinner';
@@ -17,6 +17,7 @@ interface PlayerProfile {
   phone?: string;
   photoDataUrl?: string | null;
   calendarEnabled?: boolean;
+  competitionStatus?: 'ACTIVE' | 'FROZEN';
 }
 
 const MAX_PROFILE_PHOTO_SOURCE_BYTES = 5 * 1024 * 1024;
@@ -304,6 +305,28 @@ export default function Profile() {
       setIsEditingPassword(false);
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       showToast('✅ Contraseña actualizada correctamente', 'success');
+    },
+    onError: (error: any) => {
+      const errorMessage = getErrorMessage(error);
+      showToast(`Error: ${errorMessage}`, 'error');
+    }
+  });
+
+  const updateCompetitionStatusMutation = useMutation({
+    mutationFn: async (competitionStatus: 'ACTIVE' | 'FROZEN') => {
+      const { data: response } = await api.patch(`/players/${playerId}/competition-status`, { competitionStatus });
+      return response;
+    },
+    onSuccess: async () => {
+      queryClient.invalidateQueries({ queryKey: ['player', playerId] });
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+      await refreshUser();
+      showToast(
+        player?.competitionStatus === 'FROZEN'
+          ? tr('Has salido de nevera. Volverás a entrar en futuras temporadas.', 'Izoztetik atera zara. Etorkizuneko denboraldietan berriz sartuko zara.')
+          : tr('Te hemos puesto en nevera. No se te añadirá a la siguiente temporada.', 'Izozte egoeran jarri zaitugu. Ez zaituzte hurrengo denboraldian sartuko.'),
+        'success'
+      );
     },
     onError: (error: any) => {
       const errorMessage = getErrorMessage(error);
@@ -865,6 +888,56 @@ export default function Profile() {
               </div>
             )}
           </form>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">{tr('Estado de competición', 'Lehiaketa egoera')}</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              {tr('Controla si quieres seguir entrando en próximas temporadas.', 'Kontrolatu ea hurrengo denboraldietan sartzen jarraitu nahi duzun.')}
+            </p>
+          </div>
+          <span className={`rounded-full px-3 py-1 text-sm font-semibold ${
+            player?.competitionStatus === 'FROZEN'
+              ? 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300'
+              : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+          }`}>
+            {player?.competitionStatus === 'FROZEN' ? tr('❄ En nevera', '❄ Izoztean') : tr('Disponible', 'Prest')}
+          </span>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div className="rounded-xl border border-cyan-200 bg-cyan-50 p-4 text-sm text-cyan-900 dark:border-cyan-800 dark:bg-cyan-950/20 dark:text-cyan-100">
+            <p>{tr('Si te pones en nevera seguirás pudiendo entrar en la app, tu historial no se borra y tu temporada actual no se recalcula.', 'Izoztean jartzen bazara, aplikazioan sartzen jarraitu ahal izango duzu, zure historia ez da ezabatuko eta uneko denboraldia ez da berriz kalkulatuko.')}</p>
+            <p className="mt-2">{tr('Lo que sí cambia es que no se te añadirá automáticamente a la siguiente temporada ni a sus grupos.', 'Aldatuko dena da ez zaituztela automatikoki hurrengo denboraldira eta haren taldeetara gehituko.')}</p>
+            <Link
+              to="/help"
+              className="mt-3 inline-flex text-sm font-semibold text-cyan-700 underline decoration-cyan-400 underline-offset-2 hover:text-cyan-800 dark:text-cyan-300 dark:hover:text-cyan-200"
+            >
+              {tr('¿Qué significa nevera y cómo se cambia?', 'Zer da izoztea eta nola aldatzen da?')}
+            </Link>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              disabled={updateCompetitionStatusMutation.isPending}
+              onClick={() => updateCompetitionStatusMutation.mutate(player?.competitionStatus === 'FROZEN' ? 'ACTIVE' : 'FROZEN')}
+              className={`px-5 py-3 rounded-xl font-semibold transition-colors disabled:opacity-50 ${
+                player?.competitionStatus === 'FROZEN'
+                  ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                  : 'bg-cyan-600 text-white hover:bg-cyan-700'
+              }`}
+            >
+              {updateCompetitionStatusMutation.isPending
+                ? tr('Actualizando...', 'Eguneratzen...')
+                : player?.competitionStatus === 'FROZEN'
+                  ? tr('Salir de nevera', 'Izoztetik atera')
+                  : tr('Ponerme en nevera', 'Izoztean jarri')}
+            </button>
+          </div>
         </div>
       </div>
 

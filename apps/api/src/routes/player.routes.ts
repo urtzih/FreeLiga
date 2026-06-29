@@ -1,7 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '@freesquash/database';
+import { z } from 'zod';
 import { getPlayerCurrentGroup } from '../utils/playerHelpers';
 import { cacheService } from '../services/cache.service';
+import { closePlayerSeasonByInjury } from '../services/seasonInjury.service';
 
 export async function playerRoutes(fastify: FastifyInstance) {
     const MAX_PLAYER_PHOTO_DATA_URL_LENGTH = 700_000;
@@ -516,6 +518,52 @@ export async function playerRoutes(fastify: FastifyInstance) {
                 annualFeesPaid: fees,
             };
         } catch (error) {
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Internal server error' });
+        }
+    });
+
+    fastify.patch('/:id/competition-status', {
+        onRequest: [fastify.authenticate],
+    }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            const { id } = request.params as { id: string };
+            const body = z.object({
+                competitionStatus: z.enum(['ACTIVE', 'FROZEN']),
+            }).parse(request.body);
+
+            const player = await prisma.player.findUnique({
+                where: { id },
+            });
+
+            if (!player) {
+                return reply.status(404).send({ error: 'Player not found' });
+            }
+
+            if (decoded.role !== 'ADMIN' && decoded.playerId !== id) {
+                return reply.status(403).send({ error: 'Forbidden' });
+            }
+
+            const updated = await prisma.player.update({
+                where: { id },
+                data: {
+                    competitionStatus: body.competitionStatus,
+                },
+            });
+
+            if (player.competitionStatus !== 'FROZEN' && body.competitionStatus === 'FROZEN') {
+                await closePlayerSeasonByInjury(id, decoded.id);
+            }
+
+            invalidatePlayerCache(id);
+            await invalidatePlayerGroupCaches(id);
+
+            return updated;
+        } catch (error) {
+            if (error instanceof z.ZodError) {
+                return reply.status(400).send({ error: error.errors });
+            }
             fastify.log.error(error);
             return reply.status(500).send({ error: 'Internal server error' });
         }
@@ -1090,13 +1138,6 @@ export async function playerRoutes(fastify: FastifyInstance) {
                     groups: {
                         include: {
                             groupPlayers: {
-                                where: {
-                                    player: {
-                                        user: {
-                                            isActive: true,
-                                        },
-                                    },
-                                },
                                 include: {
                                     player: true,
                                 },
@@ -1226,13 +1267,6 @@ export async function playerRoutes(fastify: FastifyInstance) {
                     groups: {
                         include: {
                             groupPlayers: {
-                                where: {
-                                    player: {
-                                        user: {
-                                            isActive: true,
-                                        },
-                                    },
-                                },
                                 include: {
                                     player: true,
                                 },

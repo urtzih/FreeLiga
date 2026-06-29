@@ -20,7 +20,7 @@
  <ul className="list-disc list-inside ml-4 space-y-1">
  <li><strong>Crear y activar temporadas:</strong> Decides cuándo empieza y termina cada período de competición</li>
  <li><strong>Organizar grupos:</strong> Distribuyes a los jugadores en grupos según su nivel</li>
- <li><strong>Gestionar jugadores:</strong> Das de alta nuevos jugadores, actualizas sus datos, o los desactivas si se dan de baja</li>
+ <li><strong>Gestionar jugadores:</strong> Das de alta nuevos jugadores, actualizas sus datos, los pones en nevera si descansan un ciclo, o bloqueas su cuenta si hay una baja real</li>
  <li><strong>Cerrar temporadas:</strong> Al final de cada temporada, decides quién sube, quién baja y quién se mantiene en su grupo</li>
  <li><strong>Resolver problemas:</strong> Atiendes los reportes de bugs y dudas de los jugadores</li>
  </ul>
@@ -46,7 +46,7 @@
  <p>Cuando inicias sesión como administrador, ves un menú especial en la parte superior de la página con estas opciones:</p>
  <ul className="list-disc list-inside ml-4 space-y-2">
  <li><strong>Dashboard:</strong> Página principal con estadísticas generales</li>
- <li><strong>Usuarios:</strong> Lista de todos los jugadores, donde puedes crear, editar o desactivar usuarios</li>
+ <li><strong>Usuarios:</strong> Lista de todos los jugadores, donde puedes crear, editar, bloquear cuentas o poner jugadores en nevera</li>
  <li><strong>Temporadas:</strong> Gestión de todas las temporadas (crear nuevas, activar, ver detalles)</li>
  <li><strong>Grupos:</strong> Creación y gestión de grupos de jugadores</li>
  <li><strong>Bugs:</strong> Reportes de problemas enviados por los jugadores</li>
@@ -102,8 +102,18 @@
  <p>Puedes modificar todos los datos del usuario excepto el email. Actualiza nombre, apodo, teléfono o cambia el grupo del jugador.</p>
  </div>
  <div>
- <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Activar/Desactivar Usuarios</h3>
- <p>Los usuarios desactivados no pueden iniciar sesión ni aparecen en las propuestas de nueva temporada. Útil para jugadores que se dan de baja temporalmente.</p>
+ <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Bloquear cuentas y usar nevera</h3>
+ <p>Ahora hay dos acciones distintas: bloquear una cuenta impide iniciar sesión; poner a un jugador en nevera mantiene su acceso, pero evita que entre en la siguiente temporada.</p>
+ </div>
+ <div className="bg-cyan-50 dark:bg-cyan-900/20 border-l-4 border-cyan-400 p-4">
+ <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Qué significa "nevera" y cómo cambiarla</h3>
+ <ul className="list-disc list-inside space-y-1 text-sm">
+ <li><strong>Nevera:</strong> pausa competitiva temporal. El jugador puede seguir entrando en la app.</li>
+ <li><strong>No rompe la temporada actual:</strong> mantiene grupo, clasificación, partidos e historial ya existentes.</li>
+ <li><strong>Sí afecta a la siguiente temporada:</strong> no se le añade a nuevos grupos mientras siga en nevera.</li>
+ <li><strong>Cómo cambiarlo como admin:</strong> ve a "Usuarios", filtra por competición si hace falta y usa el botón "Poner en nevera" o "Sacar de nevera".</li>
+ <li><strong>Cómo cambiarlo el propio jugador:</strong> puede hacerlo desde su perfil en la sección "Estado de competición".</li>
+ </ul>
  </div>
  <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-4">
  <p className="text-sm"><strong> Nota:</strong> No se pueden eliminar usuarios, solo desactivarlos para preservar el historial.</p>
@@ -340,10 +350,10 @@
  </div>
 
  <div>
- <p className="font-medium text-slate-900 dark:text-white mb-2"> Desactivar jugadores</p>
+ <p className="font-medium text-slate-900 dark:text-white mb-2"> Poner jugadores en nevera</p>
  <ul className="list-disc list-inside ml-4 space-y-1">
- <li>Si alguien no va a continuar, márcalo como inactivo</li>
- <li>Los jugadores desactivados no aparecerán en la siguiente temporada</li>
+ <li>Si alguien quiere descansar el próximo ciclo, ponlo en nevera</li>
+ <li>Los jugadores en nevera no aparecerán en la siguiente temporada</li>
  <li>Su historial se conserva pero quedan fuera de los grupos activos</li>
  </ul>
  </div>
@@ -402,7 +412,7 @@
  <ul className="list-disc list-inside ml-6 mt-1">
  <li>Lee la propuesta que acabas de aprobar</li>
  <li>Coloca a cada jugador en el grupo correspondiente según sus ascensos/descensos</li>
- <li>Los jugadores desactivados NO se añaden</li>
+ <li>Los jugadores en nevera NO se añaden</li>
  <li>Los jugadores nuevos se colocan en los grupos que especificaste</li>
  </ul>
  </li>

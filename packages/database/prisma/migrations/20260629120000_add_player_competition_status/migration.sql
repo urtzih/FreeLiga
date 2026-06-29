@@ -1,0 +1,2 @@
+ALTER TABLE `players`
+    ADD COLUMN `competitionStatus` ENUM('ACTIVE', 'FROZEN') NOT NULL DEFAULT 'ACTIVE';

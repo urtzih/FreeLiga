@@ -57,6 +57,11 @@ enum NotificationTargetType {
   USER
 }
 
+enum CompetitionStatus {
+  ACTIVE
+  FROZEN
+}
+
 model User {
   id                        String   @id @default(cuid())
   email                     String   @unique
@@ -111,6 +116,7 @@ model Player {
   phone          String?
   photoDataUrl   String?  @db.LongText
   calendarEnabled Boolean @default(false)
+  competitionStatus CompetitionStatus @default(ACTIVE)
   annualFeesPaid String   @default("[]") // JSON array of years as string
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

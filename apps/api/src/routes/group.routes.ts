@@ -50,7 +50,15 @@ export async function groupRoutes(fastify: FastifyInstance) {
                     season: true,
                     groupPlayers: {
                         include: {
-                            player: true,
+                            player: {
+                                include: {
+                                    user: {
+                                        select: {
+                                            isActive: true,
+                                        },
+                                    },
+                                },
+                            },
                         },
                         orderBy: {
                             rankingPosition: 'asc',
@@ -180,14 +188,7 @@ export async function groupRoutes(fastify: FastifyInstance) {
             const { id } = request.params as { id: string };
 
             const groupPlayers = await prisma.groupPlayer.findMany({
-                where: {
-                    groupId: id,
-                    player: {
-                        user: {
-                            isActive: true,
-                        },
-                    },
-                },
+                where: { groupId: id },
                 include: {
                     player: true,
                 },

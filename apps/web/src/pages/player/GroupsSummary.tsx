@@ -11,7 +11,12 @@ interface Group {
     id: string;
     name: string;
     seasonId: string;
-    groupPlayers: Array<{ playerId: string }>;
+    groupPlayers: Array<{
+        playerId: string;
+        player?: {
+            competitionStatus?: 'ACTIVE' | 'FROZEN';
+        };
+    }>;
     _count: { matches: number; groupPlayers: number };
 }
 
@@ -215,6 +220,9 @@ export default function GroupsSummary() {
                     const activeGroupPlayerIds = new Set(
                         group.groupPlayers.map((gp) => gp.playerId),
                     );
+                    const competitionStatusByPlayer = new Map<string, 'ACTIVE' | 'FROZEN' | undefined>(
+                        group.groupPlayers.map((gp) => [gp.playerId, gp.player?.competitionStatus]),
+                    );
 
                     const legacyInjuryExposureByPlayer = new Map<string, number>();
                     groupMatches.forEach((match) => {
@@ -259,10 +267,13 @@ export default function GroupsSummary() {
                             }
                         }
 
+                        const remainingMatches = Math.max(0, (players - 1) - completedOpponents.size);
+                        const isFrozenPlayer = competitionStatusByPlayer.get(playerId) === 'FROZEN';
+
                         return {
-                            remainingMatches: Math.max(0, (players - 1) - completedOpponents.size),
-                            injuryCount: injuryOpponents.size,
-                            isInjuredPlayer: injuryOpponents.size > 0,
+                            remainingMatches: isFrozenPlayer ? 0 : remainingMatches,
+                            injuryCount: isFrozenPlayer ? injuryOpponents.size + remainingMatches : injuryOpponents.size,
+                            isInjuredPlayer: isFrozenPlayer ? injuryOpponents.size + remainingMatches > 0 : injuryOpponents.size > 0,
                         };
                     };
 
@@ -316,6 +327,9 @@ export default function GroupsSummary() {
                                                         const progress = getPlayerProgress(playerRow.playerId);
                                                         progressByPlayer.set(playerRow.playerId, progress);
                                                     });
+                                                    const competitionStatusByPlayer = new Map<string, 'ACTIVE' | 'FROZEN' | undefined>(
+                                                        group.groupPlayers.map((gp) => [gp.playerId, gp.player?.competitionStatus]),
+                                                    );
 
                                                     return classification.map((row, idx) => {
                                                         const setsDiff = row.setsWon - row.setsLost;
@@ -326,6 +340,7 @@ export default function GroupsSummary() {
                                                             progress.injuryCount >= seasonInjuryThreshold &&
                                                             remainingMatches === 0;
                                                         const isCurrentUser = String(row.playerId) === String(user?.player?.id);
+                                                        const isFrozenPlayer = competitionStatusByPlayer.get(row.playerId) === 'FROZEN';
 
                                                         const isTopLeagueChampion = isFirstGroup && idx === 0;
                                                         const isPromotion = !isFirstGroup && idx < 2;
@@ -356,7 +371,12 @@ export default function GroupsSummary() {
                                                                                 {tr('Tu', 'Zu')}
                                                                             </span>
                                                                         )}
-                                                                        {isInjuredPlayer && (
+                                                                        {isFrozenPlayer && (
+                                                                            <span className="text-[11px] px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300">
+                                                                                {String.fromCodePoint(0x2744)} {tr('En nevera', 'Izoztean')}
+                                                                            </span>
+                                                                        )}
+                                                                        {isInjuredPlayer && !isFrozenPlayer && (
                                                                             <span className="text-[11px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
                                                                                 {String.fromCodePoint(0x1F915)} {tr('Lesionado', 'Lesionatua')}
                                                                             </span>
