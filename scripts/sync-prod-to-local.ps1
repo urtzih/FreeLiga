@@ -59,18 +59,68 @@ function Compress-GzipFile {
     }
 }
 
+function Test-RailwayCliAuth {
+    try {
+        $railwayCmd = Get-Command railway -ErrorAction SilentlyContinue
+        if (-not $railwayCmd) {
+            return @{
+                Available = $false
+                Authenticated = $false
+                Output = "Railway CLI no encontrada en PATH."
+            }
+        }
+
+        $authOutput = & railway whoami 2>&1
+        $authText = (($authOutput | ForEach-Object { "$_" }) -join [Environment]::NewLine).Trim()
+
+        if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrWhiteSpace($authText)) {
+            return @{
+                Available = $true
+                Authenticated = $true
+                Output = $authText
+            }
+        }
+
+        return @{
+            Available = $true
+            Authenticated = $false
+            Output = $authText
+        }
+    }
+    catch {
+        return @{
+            Available = $true
+            Authenticated = $false
+            Output = $_.Exception.Message
+        }
+    }
+}
+
 function Try-RailwaySshDump {
     param(
         [string]$OutputFile
     )
 
     try {
-        $railwayCmd = Get-Command railway -ErrorAction SilentlyContinue
-        if (-not $railwayCmd) {
+        $railwayAuth = Test-RailwayCliAuth
+        if (-not $railwayAuth.Available) {
             Write-Output "   Railway CLI no encontrada en PATH."
             return $false
         }
 
+        Write-Output "   Verificando Railway CLI con: railway whoami"
+        if (-not $railwayAuth.Authenticated) {
+            Write-Output "   Railway CLI sin sesion valida."
+            if (-not [string]::IsNullOrWhiteSpace($railwayAuth.Output)) {
+                Write-Output "   $($railwayAuth.Output)"
+            }
+            Write-Output "   Rehaz el login con: railway login"
+            Write-Output "   Comprueba la sesion con: railway whoami"
+            Write-Output "   Si hace falta relinkar el proyecto: railway link"
+            return $false
+        }
+
+        Write-Output "   Sesion Railway OK: $($railwayAuth.Output)"
         Write-Output "   Ejecutando mysqldump via railway ssh (servicio MySQL)..."
         $dumpArgs = @(
             "ssh",
@@ -78,20 +128,27 @@ function Try-RailwaySshDump {
             "MySQL",
             'mysqldump --default-character-set=utf8mb4 -u root -p$MYSQL_ROOT_PASSWORD --single-transaction --routines --triggers --events $MYSQLDATABASE'
         )
-        $errorFile = "$OutputFile.err"
-        $process = Start-Process -FilePath "railway" -ArgumentList $dumpArgs -NoNewWindow -Wait -PassThru -RedirectStandardOutput $OutputFile -RedirectStandardError $errorFile
-        if ($process.ExitCode -ne 0) {
-            if (Test-Path $errorFile) {
-                Write-Output "   $(Get-Content -Path $errorFile -Raw)"
+        $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+        $dumpOutput = & railway @dumpArgs 2>&1
+        $exitCode = $LASTEXITCODE
+        $dumpText = (($dumpOutput | ForEach-Object { "$_" }) -join [Environment]::NewLine)
+
+        if ($exitCode -ne 0) {
+            if (-not [string]::IsNullOrWhiteSpace($dumpText)) {
+                Write-Output "   $dumpText"
             }
             return $false
         }
-        if (Test-Path $errorFile) {
-            Remove-Item $errorFile -Force
-        }
+
+        [System.IO.File]::WriteAllText($OutputFile, $dumpText, $utf8NoBom)
 
         if (-not (Test-Path $OutputFile)) {
             Write-Output "   No se genero archivo de dump."
+            return $false
+        }
+
+        if ([string]::IsNullOrWhiteSpace($dumpText)) {
+            Write-Output "   Dump vacio."
             return $false
         }
 
@@ -102,7 +159,6 @@ function Try-RailwaySshDump {
         }
 
         # El warning inicial de mysqldump rompe la restauracion SQL; lo removemos.
-        $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
         $lines = [System.IO.File]::ReadAllLines($OutputFile, $utf8NoBom)
         if ($lines.Count -gt 1 -and $lines[0] -like "mysqldump:*") {
             [System.IO.File]::WriteAllLines($OutputFile, $lines[1..($lines.Count - 1)], $utf8NoBom)
@@ -140,6 +196,72 @@ function Test-TcpPort {
     catch {
         return $false
     }
+}
+
+function Test-WorkspacePackageHealthy {
+    param(
+        [string]$PackageName
+    )
+
+    try {
+        $lsOutput = npm ls $PackageName 2>&1
+        $lsText = (($lsOutput | ForEach-Object { "$_" }) -join [Environment]::NewLine).Trim()
+
+        if ($LASTEXITCODE -eq 0 -and $lsText -notmatch '\binvalid\b' -and $lsText -notmatch '\bUNMET\b') {
+            return @{
+                Healthy = $true
+                Output = $lsText
+            }
+        }
+
+        return @{
+            Healthy = $false
+            Output = $lsText
+        }
+    }
+    catch {
+        return @{
+            Healthy = $false
+            Output = $_.Exception.Message
+        }
+    }
+}
+
+function Ensure-WorkspaceDependencies {
+    param(
+        [string]$PackageName
+    )
+
+    $packageStatus = Test-WorkspacePackageHealthy -PackageName $PackageName
+    if ($packageStatus.Healthy) {
+        Write-Output "   Workspace OK: $PackageName"
+        return $true
+    }
+
+    Write-Output "   Detectado workspace invalido o incompleto para $PackageName."
+    if (-not [string]::IsNullOrWhiteSpace($packageStatus.Output)) {
+        Write-Output "   $($packageStatus.Output)"
+    }
+
+    Write-Output "   Reparando workspaces con: npm install --workspaces"
+    npm install --workspaces 2>&1 | Out-Null
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Output "   Fallo al ejecutar npm install --workspaces"
+        return $false
+    }
+
+    $recheck = Test-WorkspacePackageHealthy -PackageName $PackageName
+    if (-not $recheck.Healthy) {
+        Write-Output "   El workspace sigue invalido tras la reparacion."
+        if (-not [string]::IsNullOrWhiteSpace($recheck.Output)) {
+            Write-Output "   $($recheck.Output)"
+        }
+        return $false
+    }
+
+    Write-Output "   Workspace reparado correctamente: $PackageName"
+    return $true
 }
 
 Write-Output ""
@@ -334,9 +456,11 @@ if (-not $dockerSuccess) {
     Write-Output "  5. Ejecuta: npm run restore"
     Write-Output ""
     Write-ColorOutput Yellow "ALTERNATIVA B: Revisar Railway CLI"
-    Write-Output "  1. railway status"
-    Write-Output "  2. railway service link MySQL"
-    Write-Output "  3. Luego intenta: npm run sync"
+    Write-Output "  1. railway login"
+    Write-Output "  2. railway whoami"
+    Write-Output "  3. railway link"
+    Write-Output "  4. railway service link MySQL"
+    Write-Output "  5. Luego intenta: npm run sync"
     exit 1
 }
 
@@ -385,12 +509,23 @@ if ($fileSize -gt 5000) {
                 Write-Output "Backup guardado: $backupFile"
                 exit 1
             }
+
+            Write-Output ""
+            Write-ColorOutput Yellow "5. Verificando workspaces locales..."
+            $workspaceOk = Ensure-WorkspaceDependencies -PackageName "@freesquash/database"
+            if (-not $workspaceOk) {
+                Write-ColorOutput Red "[ERROR] Sync completado, pero el workspace @freesquash/database sigue invalido."
+                Write-Output "Prueba manualmente: npm install --workspaces"
+                Write-Output "Backup guardado: $backupFile"
+                exit 1
+            }
             
             Write-Output ""
             Write-ColorOutput Green "COMPLETADO!"
             Write-Output ""
             Write-ColorOutput Green "TU BD LOCAL TIENE DATOS FRESCOS DE PRODUCCION"
             Write-ColorOutput Green "Y LAS MIGRACIONES LOCALES APLICADAS"
+            Write-ColorOutput Green "Y LOS WORKSPACES VERIFICADOS"
             Write-Output ""
             Write-Host "Puedes:"
             Write-Host "  1. Trabajar en desarrollo con datos reales"
