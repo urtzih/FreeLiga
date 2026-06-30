@@ -925,12 +925,15 @@ export default function Profile() {
               type="button"
               disabled={updateCompetitionStatusMutation.isPending}
               onClick={() => updateCompetitionStatusMutation.mutate(player?.competitionStatus === 'FROZEN' ? 'ACTIVE' : 'FROZEN')}
-              className={`px-5 py-3 rounded-xl font-semibold transition-colors disabled:opacity-50 ${
+              className={`inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                 player?.competitionStatus === 'FROZEN'
                   ? 'bg-emerald-600 text-white hover:bg-emerald-700'
                   : 'bg-cyan-600 text-white hover:bg-cyan-700'
               }`}
             >
+              {updateCompetitionStatusMutation.isPending && (
+                <Spinner size="sm" className="[&_svg]:h-4 [&_svg]:w-4 [&_svg]:text-white" />
+              )}
               {updateCompetitionStatusMutation.isPending
                 ? tr('Actualizando...', 'Eguneratzen...')
                 : player?.competitionStatus === 'FROZEN'

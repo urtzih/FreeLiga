@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../lib/api';
 import PlayerHistory from './PlayerHistory';
 import { useAdminQuery } from '../../hooks/useAdminQuery';
+import Spinner from '../../components/Spinner';
 
 interface User {
  id: string;
@@ -47,6 +48,9 @@ export default function ManageUsers() {
  const [showFeesModal, setShowFeesModal] = useState(false);
  const [showInjuryModal, setShowInjuryModal] = useState(false);
  const [injuryTarget, setInjuryTarget] = useState<User | null>(null);
+ const [pendingActivationUserId, setPendingActivationUserId] = useState<string | null>(null);
+ const [pendingCompetitionPlayerId, setPendingCompetitionPlayerId] = useState<string | null>(null);
+ const [pendingInjuryPlayerId, setPendingInjuryPlayerId] = useState<string | null>(null);
  const [searchTerm, setSearchTerm] = useState('');
  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
  const [filterGroup, setFilterGroup] = useState('');
@@ -318,12 +322,18 @@ export default function ManageUsers() {
  const { data } = await api.put(`/users/${userId}`, { isActive });
  return data;
  },
+ onMutate: ({ userId }) => {
+ setPendingActivationUserId(userId);
+ },
  onSuccess: () => {
  queryClient.invalidateQueries({ queryKey: ['users'] });
  alert('Estado de usuario actualizado correctamente');
  },
  onError: (error: any) => {
  alert(`Error al actualizar estado: ${error.response?.data?.error || error.message}`);
+ },
+ onSettled: () => {
+ setPendingActivationUserId(null);
  }
  });
 
@@ -348,6 +358,9 @@ mutationFn: async (playerId: string) => {
 const { data } = await api.post('/matches/mark-injury', { playerId });
 return data;
  },
+ onMutate: (playerId: string) => {
+ setPendingInjuryPlayerId(playerId);
+ },
  onSuccess: () => {
  queryClient.invalidateQueries({ queryKey: ['users'] });
  queryClient.invalidateQueries({ queryKey: ['adminStatsForUsers'] });
@@ -359,6 +372,9 @@ return data;
  },
  onError: (error: any) => {
  alert(`Error al marcar lesión: ${error.response?.data?.error || error.message}`);
+ },
+ onSettled: () => {
+ setPendingInjuryPlayerId(null);
  }
  });
 
@@ -367,6 +383,9 @@ return data;
  const { data } = await api.patch(`/players/${playerId}/competition-status`, { competitionStatus });
  return data;
  },
+ onMutate: ({ playerId }) => {
+ setPendingCompetitionPlayerId(playerId);
+ },
  onSuccess: () => {
  queryClient.invalidateQueries({ queryKey: ['users'] });
  queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
@@ -374,6 +393,9 @@ return data;
  },
  onError: (error: any) => {
  alert(`Error al actualizar estado competitivo: ${error.response?.data?.error || error.message}`);
+ },
+ onSettled: () => {
+ setPendingCompetitionPlayerId(null);
  }
  });
 
@@ -772,7 +794,12 @@ return data;
  </tr>
  </thead>
  <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
- {filteredUsers.map(user => (
+ {filteredUsers.map(user => {
+ const isActivationPending = toggleActivationMutation.isPending && pendingActivationUserId === user.id;
+ const isCompetitionPending =
+ updateCompetitionStatusMutation.isPending && pendingCompetitionPlayerId === user.player?.id;
+
+ return (
  <tr key={user.id} className={`hover:bg-slate-50 dark:hover:bg-slate-900 ${user.role === 'ADMIN' ? 'bg-amber-50 dark:bg-amber-950/20' : ''}`}>
  <td className="px-6 py-4 whitespace-nowrap">
  <div className="flex items-center gap-2">
@@ -837,12 +864,16 @@ return data;
  <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
  <button
  onClick={() => toggleActivationMutation.mutate({ userId: user.id, isActive: !user.isActive })}
- className={`text-sm px-3 py-1 rounded-lg font-medium transition-colors ${user.isActive
+ disabled={toggleActivationMutation.isPending}
+ className={`inline-flex items-center gap-2 text-sm px-3 py-1 rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${user.isActive
  ? 'bg-green-600 text-white hover:bg-green-700'
  : 'bg-red-600 text-white hover:bg-red-700'}`}
  title={user.isActive ? 'Bloquear acceso a la cuenta' : 'Reactivar acceso a la cuenta'}
  >
- {user.isActive ? 'Bloquear cuenta' : 'Reactivar cuenta'}
+ {isActivationPending && <Spinner size="sm" className="[&_svg]:h-4 [&_svg]:w-4 [&_svg]:text-white" />}
+ {isActivationPending
+ ? (user.isActive ? 'Bloqueando cuenta...' : 'Reactivando cuenta...')
+ : (user.isActive ? 'Bloquear cuenta' : 'Reactivar cuenta')}
  </button>
  <button onClick={() => handleOpenEditModal(user)} className="text-sm px-3 py-1 club-btn-yellow">Editar</button>
  <button
@@ -859,7 +890,8 @@ return data;
  {user.player?.currentGroup?.id && (
  <button
  onClick={() => handleOpenInjuryModal(user)}
- className="text-sm px-3 py-1 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+ disabled={markInjuryMutation.isPending}
+ className="text-sm px-3 py-1 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
  title="Marcar lesión de temporada"
  >
  Lesionar
@@ -871,20 +903,30 @@ return data;
  playerId: user.player!.id,
  competitionStatus: user.player?.competitionStatus === 'FROZEN' ? 'ACTIVE' : 'FROZEN',
  })}
- className={`text-sm px-3 py-1 rounded-lg font-medium transition-colors ${
+ disabled={updateCompetitionStatusMutation.isPending}
+ className={`inline-flex items-center gap-2 text-sm px-3 py-1 rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
  user.player?.competitionStatus === 'FROZEN'
  ? 'bg-cyan-600 text-white hover:bg-cyan-700'
  : 'bg-slate-200 text-slate-900 hover:bg-slate-300 dark:bg-slate-700 dark:text-white dark:hover:bg-slate-600'
  }`}
  title={user.player?.competitionStatus === 'FROZEN' ? 'Sacar de nevera' : 'Poner en nevera'}
  >
- {user.player?.competitionStatus === 'FROZEN' ? 'Sacar de nevera' : 'Poner en nevera'}
+ {isCompetitionPending && (
+ <Spinner
+ size="sm"
+ className={user.player?.competitionStatus === 'FROZEN' ? '[&_svg]:h-4 [&_svg]:w-4 [&_svg]:text-white' : '[&_svg]:h-4 [&_svg]:w-4'}
+ />
+ )}
+ {isCompetitionPending
+ ? (user.player?.competitionStatus === 'FROZEN' ? 'Sacando de nevera...' : 'Poniendo en nevera...')
+ : (user.player?.competitionStatus === 'FROZEN' ? 'Sacar de nevera' : 'Poner en nevera')}
  </button>
  )}
  </div>
  </td>
  </tr>
- ))}
+ );
+ })}
  </tbody>
  </table>
  </div>
@@ -1290,10 +1332,13 @@ return data;
  </button>
  <button
  onClick={() => markInjuryMutation.mutate(injuryTarget.player!.id)}
- className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+ className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
  disabled={markInjuryMutation.isPending}
  >
- {markInjuryMutation.isPending ? 'Marcando...' : 'Confirmar lesión'}
+ {markInjuryMutation.isPending && pendingInjuryPlayerId === injuryTarget.player.id && (
+ <Spinner size="sm" className="[&_svg]:h-4 [&_svg]:w-4 [&_svg]:text-white" />
+ )}
+ {markInjuryMutation.isPending ? 'Marcando lesión...' : 'Confirmar lesión'}
  </button>
  </div>
  </div>

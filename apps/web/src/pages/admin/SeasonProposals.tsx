@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import api from '../../lib/api';
 import { useAdminQuery } from '../../hooks/useAdminQuery';
+import Spinner from '../../components/Spinner';
 
 export default function SeasonProposals() {
  const { seasonId } = useParams();
@@ -15,6 +16,7 @@ export default function SeasonProposals() {
  const [selectedPlayerId, setSelectedPlayerId] = useState('');
  const [showConfirmModal, setShowConfirmModal] = useState(false);
  const [groupDistribution, setGroupDistribution] = useState<Record<string, { name: string; count: number }>>({});
+ const [pendingFrozenPlayerId, setPendingFrozenPlayerId] = useState<string | null>(null);
 
  const getPlayerStatsFromGroup = (groupDetail: any) => {
  const expectedMatches = Math.max((groupDetail?.groupPlayers?.length || 0) - 1, 0);
@@ -180,11 +182,17 @@ export default function SeasonProposals() {
  mutationFn: async ({ playerId, competitionStatus }: { playerId: string; competitionStatus: 'ACTIVE' | 'FROZEN' }) => {
  await api.patch(`/players/${playerId}/competition-status`, { competitionStatus });
  },
+ onMutate: ({ playerId }) => {
+ setPendingFrozenPlayerId(playerId);
+ },
  onSuccess: () => {
  queryClient.invalidateQueries({ queryKey: ['season-proposal', seasonId] });
  },
  onError: () => {
  alert('Error al cambiar el estado de nevera');
+ },
+ onSettled: () => {
+ setPendingFrozenPlayerId(null);
  }
  });
 
@@ -483,6 +491,7 @@ export default function SeasonProposals() {
 
  const isFrozen = entry.player?.competitionStatus === 'FROZEN';
  const playerId = entry.player?.id;
+ const isFrozenTogglePending = toggleFrozenMutation.isPending && pendingFrozenPlayerId === playerId;
  const playerStats = season?.statsByPlayerId?.[entry.playerId] || { losses: 0, remaining: 0, injuries: 0, setAverage: 0 };
  const wins = entry.matchesWon || 0;
  const tieOnWins = (winsCountByValue[wins] || 0) > 1;
@@ -535,9 +544,11 @@ export default function SeasonProposals() {
  {movement === 'PROMOTION' && 'Asciende'}
  {movement === 'RELEGATION' && 'Desciende'}
  </div>
+ {isFrozenTogglePending && <Spinner size="sm" className="[&_svg]:h-4 [&_svg]:w-4" />}
  {playerId && (
  <select
  value=""
+ disabled={toggleFrozenMutation.isPending}
  onChange={(e) => {
  const selectedValue = e.target.value;
  if (selectedValue !== 'TOGGLE') return;
@@ -546,9 +557,9 @@ export default function SeasonProposals() {
  toggleFrozenMutation.mutate({ playerId, competitionStatus: isFrozen ? 'ACTIVE' : 'FROZEN' });
  }
  }}
- className="text-xs bg-transparent border-none focus:ring-0 cursor-pointer text-slate-500 dark:text-slate-300 min-w-0"
+ className="text-xs bg-transparent border-none focus:ring-0 cursor-pointer text-slate-500 dark:text-slate-300 min-w-0 disabled:cursor-not-allowed disabled:opacity-60"
  >
- <option value="">Acción </option>
+ <option value="">{isFrozenTogglePending ? 'Actualizando...' : 'Acción '}</option>
  <option value="TOGGLE">{isFrozen ? 'Sacar de nevera' : 'Poner en nevera'}</option>
  </select>
  )}
@@ -556,6 +567,7 @@ export default function SeasonProposals() {
  ) : (
  <select
  value={movement}
+ disabled={toggleFrozenMutation.isPending}
  onChange={(e) => {
  const selectedValue = e.target.value;
 
@@ -569,7 +581,7 @@ export default function SeasonProposals() {
 
  handleMovementChange(entry.playerId, selectedValue);
  }}
- className={`text-xs font-bold bg-transparent border-none focus:ring-0 cursor-pointer ${statusColor} whitespace-nowrap w-full min-w-0`}
+ className={`text-xs font-bold bg-transparent border-none focus:ring-0 cursor-pointer ${statusColor} whitespace-nowrap w-full min-w-0 disabled:cursor-not-allowed disabled:opacity-60`}
  >
  <option value="STAY">Mantiene </option>
  <option value="PROMOTION">Asciende </option>
