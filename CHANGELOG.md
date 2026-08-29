@@ -1,3 +1,9 @@
+## [1.3.4](https://github.com/urtzih/FreeLiga/compare/v1.3.3...v1.3.4) (2026-08-29)
+
+### Correcciones
+
+* **web:** show the player's current group on dashboard ([299a09c](https://github.com/urtzih/FreeLiga/commit/299a09cac75e19e9aca135a6d1037cbfb7342cac))
+
 ## [1.3.3](https://github.com/urtzih/FreeLiga/compare/v1.3.2...v1.3.3) (2026-08-29)
 
 ### Correcciones
