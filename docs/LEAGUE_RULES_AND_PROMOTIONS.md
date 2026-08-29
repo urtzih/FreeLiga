@@ -21,7 +21,7 @@ When a season ends, the system automatically calculates promotions, relegations,
 
 **Vacancies:**
 - Players in the freezer or with an inactive account do not occupy a place in the next season.
-- Vacancies are filled in ranking order with additional promotions from the immediately lower group.
+- Vacancies are filled in ranking order with additional promotions from the immediately lower group until each non-bottom group reaches 8 eligible players.
 - If that creates another vacancy, filling continues down the hierarchy. No player can skip a group.
 - The bottom group can remain below its previous size when there are not enough eligible players.
 

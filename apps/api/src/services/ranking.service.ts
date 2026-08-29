@@ -1,4 +1,6 @@
-import { prisma } from '@freesquash/database';
+import { Prisma, prisma } from '@freesquash/database';
+
+type DatabaseClient = typeof prisma | Prisma.TransactionClient;
 
 interface PlayerStanding {
     playerId: string;
@@ -131,15 +133,15 @@ function buildRankingContext(groupPlayers: any[], allGroupMatches: any[]) {
     return { standings, playedMatches };
 }
 
-export async function calculateGroupRankings(groupId: string): Promise<void> {
+export async function calculateGroupRankings(groupId: string, db: DatabaseClient = prisma): Promise<void> {
     try {
         // Single query to get all active groupPlayers and their matches at once
         const [groupPlayers, matches] = await Promise.all([
-            prisma.groupPlayer.findMany({
+            db.groupPlayer.findMany({
                 where: { groupId },
                 include: { player: true },
             }),
-            prisma.match.findMany({
+            db.match.findMany({
                 where: {
                     groupId,
                     OR: [
@@ -167,7 +169,7 @@ export async function calculateGroupRankings(groupId: string): Promise<void> {
 
         // Batch update all positions at once instead of individual updates
         const updateOperations = rankedPlayers.map((player, index) =>
-            prisma.groupPlayer.update({
+            db.groupPlayer.update({
                 where: { groupId_playerId: { groupId, playerId: player.playerId } },
                 data: { rankingPosition: index + 1 },
             })
@@ -354,8 +356,8 @@ function resolveByGlobalAverage(players: PlayerStanding[]): PlayerStanding[] {
  * - Intermedios: 2 ascensos (top 2) y 2 descensos (bottom 2)
  * - Resto STAY
  */
-export async function computeSeasonClosure(seasonId: string) {
-    const season = await prisma.season.findUnique({
+export async function computeSeasonClosure(seasonId: string, db: DatabaseClient = prisma) {
+    const season = await db.season.findUnique({
         where: { id: seasonId },
         include: {
             groups: { include: { groupPlayers: true } },
@@ -373,11 +375,11 @@ export async function computeSeasonClosure(seasonId: string) {
 
     // Recalcular ranking para cada grupo
     for (const g of orderedGroups) {
-        await calculateGroupRankings(g.id);
+        await calculateGroupRankings(g.id, db);
     }
 
     // Releer grupos con posiciones actualizadas
-    const refreshedGroups = await prisma.group.findMany({
+    const refreshedGroups = await db.group.findMany({
         where: { seasonId },
         include: { 
             groupPlayers: { 
@@ -393,23 +395,29 @@ export async function computeSeasonClosure(seasonId: string) {
     const refreshedOrdered = [...refreshedGroups].sort(compareGroupNames);
 
     // Obtener matches para calcular victorias por jugador
-    const allMatches = await prisma.match.findMany({
+    const allMatches = await db.match.findMany({
         where: { group: { seasonId } }
     });
 
     // Preparar cierre (crear o limpiar existente PENDING)
-    let closure = await prisma.seasonClosure.findUnique({ where: { seasonId } });
+    let closure = await db.seasonClosure.findUnique({ where: { seasonId } });
     if (!closure) {
-        closure = await prisma.seasonClosure.create({ data: { seasonId, status: 'PENDING' } });
+        closure = await db.seasonClosure.create({ data: { seasonId, status: 'PENDING' } });
     } else if (closure.status === 'APPROVED') {
         // Si ya aprobado, devolver directamente con entries
-        return await prisma.seasonClosure.findUnique({ where: { seasonId }, include: { entries: { include: { player: { include: { user: { select: { isActive: true, id: true } } } }, fromGroup: true, toGroup: true } } } });
+        return await db.seasonClosure.findUnique({ where: { seasonId }, include: { entries: { include: { player: { include: { user: { select: { isActive: true, id: true } } } }, fromGroup: true, toGroup: true } } } });
     } else {
-        await prisma.seasonClosureEntry.deleteMany({ where: { closureId: closure.id } });
+        await db.seasonClosureEntry.deleteMany({ where: { closureId: closure.id } });
     }
 
     const entriesData: any[] = [];
-    const groupCapacities = refreshedOrdered.map((group) => group.groupPlayers.length);
+    // Los grupos competitivos tienen un objetivo de 8 plazas. No debemos usar
+    // su tamaño histórico porque puede incluir jugadores añadidos de más o en
+    // nevera y provocaría ascensos extra hasta volver a ese tamaño accidental.
+    // El último grupo no se rellena desde otro inferior y puede conservar el
+    // excedente de jugadores de la liga.
+    const targetGroupSize = 8;
+    const groupCapacities = refreshedOrdered.map(() => targetGroupSize);
     const eligiblePlayersByGroup = refreshedOrdered.map((group) =>
         [...group.groupPlayers]
             .sort((a, b) => a.rankingPosition - b.rankingPosition)
@@ -501,10 +509,10 @@ export async function computeSeasonClosure(seasonId: string) {
     }
 
     if (entriesData.length > 0) {
-        await prisma.seasonClosureEntry.createMany({ data: entriesData });
+        await db.seasonClosureEntry.createMany({ data: entriesData });
     }
 
-    return await prisma.seasonClosure.findUnique({
+    return await db.seasonClosure.findUnique({
         where: { seasonId },
         include: { entries: { include: { player: { include: { user: { select: { isActive: true, id: true } } } }, fromGroup: true, toGroup: true } } }
     });

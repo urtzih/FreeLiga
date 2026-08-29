@@ -194,6 +194,25 @@ export default function SeasonProposals() {
  }
  });
 
+ const reopenMutation = useMutation({
+ mutationFn: async () => {
+ const { data } = await api.post(`/seasons/${seasonId}/closure/reopen`);
+ return data;
+ },
+ onSuccess: async (data: any) => {
+ await queryClient.invalidateQueries({ queryKey: ['season-proposal', seasonId] });
+ await queryClient.invalidateQueries({ queryKey: ['seasons'] });
+ await refetch();
+ const deletedSeasonMessage = data.deletedSeason
+ ? ` También se ha eliminado la temporada programada "${data.deletedSeason.name}".`
+ : '';
+ alert(`Propuesta reabierta y recalculada correctamente.${deletedSeasonMessage} Ya puedes corregir los movimientos antes de aprobarla de nuevo.`);
+ },
+ onError: (error: any) => {
+ alert('No se pudo reabrir la propuesta: ' + (error?.response?.data?.error || error?.message || 'Error desconocido'));
+ }
+ });
+
  const toggleFrozenMutation = useMutation({
  mutationFn: async ({ playerId, competitionStatus }: { playerId: string; competitionStatus: 'ACTIVE' | 'FROZEN' }) => {
  await api.patch(`/players/${playerId}/competition-status`, { competitionStatus });
@@ -407,6 +426,22 @@ export default function SeasonProposals() {
  {rolloverMutation.isPending ? 'Generando...' : 'Generar Siguiente Temporada'}
  </button>
  )}
+
+ {isApproved && (
+ <button
+ onClick={() => {
+ const generatedSeasonWarning = generatedSeason
+ ? ` También se eliminará la temporada programada "${generatedSeason.name}" y sus grupos.`
+ : '';
+ const warning = `¿Deshacer la aprobación y reabrir esta propuesta? Se eliminará el historial de estos movimientos.${generatedSeasonWarning} Después se recalculará la propuesta con las reglas actuales.`;
+ if (window.confirm(warning)) reopenMutation.mutate();
+ }}
+ disabled={reopenMutation.isPending || rolloverMutation.isPending}
+ className="px-4 py-2 rounded-lg border border-red-500 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50"
+ >
+ {reopenMutation.isPending ? 'Reabriendo...' : 'Deshacer aprobación y reabrir propuesta'}
+ </button>
+ )}
  </div>
  </div>
 
@@ -443,7 +478,7 @@ export default function SeasonProposals() {
  <li>Si queda entre los dos primeros, no asciende y sube el siguiente jugador elegible.</li>
  <li>Si queda entre los dos últimos, no baja y no hacemos bajar a uno más para compensar.</li>
  <li>Si queda en mitad de tabla, tampoco ocupa plaza en la siguiente temporada.</li>
- <li>Cuando la nevera deja huecos, esos huecos se rellenan con ascensos extra desde el grupo inferior hasta completar el grupo si hay jugadores elegibles.</li>
+ <li>Cuando la nevera deja huecos, esos huecos se rellenan con ascensos extra desde el grupo inferior hasta alcanzar 8 plazas si hay jugadores elegibles.</li>
  <li>Los ascensos adicionales aparecen marcados como <strong>cubre vacante</strong> y puedes corregirlos antes de aprobar.</li>
  </ul>
  </div>
@@ -479,7 +514,7 @@ export default function SeasonProposals() {
  </div>
  )}
 
- <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
+ <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
  {season.groups.map((group: any) => {
  // Get entries for this group to have correct ranking
  const groupEntries = localEntries.filter((e: any) => e.fromGroupId === group.id).sort((a: any, b: any) => a.finalRank - b.finalRank);
@@ -502,7 +537,7 @@ export default function SeasonProposals() {
  );
 
  return (
- <div key={group.id} className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+ <div key={group.id} className="min-w-0 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
  <div className="bg-slate-50 dark:bg-slate-900/50 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
  <div>
  <h3 className="font-bold text-lg text-slate-900 dark:text-white">{group.name}</h3>
@@ -533,7 +568,9 @@ export default function SeasonProposals() {
  }
  </div>
  </div>
- <div className="grid grid-cols-[minmax(150px,1fr)_40px_34px_34px_34px_44px_minmax(120px,1fr)] px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70">
+ <div className="overflow-x-auto">
+ <div className="min-w-[540px]">
+ <div className="grid grid-cols-[minmax(150px,1fr)_40px_34px_34px_34px_44px_minmax(120px,1fr)] gap-2 px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70">
  <span className="pl-9">Jugador</span>
  <span className="text-center">W</span>
  <span className="text-center">D</span>
@@ -664,6 +701,8 @@ export default function SeasonProposals() {
  </div>
  );
  })}
+ </div>
+ </div>
  </div>
  </div>
  );

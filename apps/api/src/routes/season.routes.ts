@@ -435,6 +435,151 @@ export async function seasonRoutes(fastify: FastifyInstance) {
         }
     });
 
+    // Reopen an approved closure, removing only the history created by that approval.
+    fastify.post('/:id/closure/reopen', { onRequest: [fastify.authenticate] }, async (request, reply) => {
+        try {
+            const decoded = request.user as any;
+            const { id } = request.params as { id: string };
+            if (decoded.role !== 'ADMIN') return reply.status(403).send({ error: 'Forbidden' });
+
+            const result = await prisma.$transaction(async (tx) => {
+                const season = await tx.season.findUnique({
+                    where: { id },
+                    include: {
+                        closure: { include: { entries: true } },
+                        nextSeasons: {
+                            include: {
+                                groups: { select: { id: true } },
+                                closure: { select: { id: true } },
+                                nextSeasons: { select: { id: true } },
+                            },
+                            orderBy: { createdAt: 'asc' },
+                        },
+                    },
+                });
+
+                if (!season) throw new Error('SEASON_NOT_FOUND');
+                if (!season.closure) throw new Error('CLOSURE_NOT_FOUND');
+                if (season.closure.status !== 'APPROVED') throw new Error('CLOSURE_NOT_APPROVED');
+                if (season.nextSeasons.length > 1) throw new Error('MULTIPLE_NEXT_SEASONS');
+
+                const nextSeason = season.nextSeasons[0] ?? null;
+                if (nextSeason) {
+                    const nextGroupIds = nextSeason.groups.map(group => group.id);
+                    const [matches, histories, stats, promotionRecords] = await Promise.all([
+                        tx.match.count({ where: { groupId: { in: nextGroupIds } } }),
+                        tx.playerGroupHistory.count({ where: { seasonId: nextSeason.id } }),
+                        tx.playerSeasonStats.count({ where: { seasonId: nextSeason.id } }),
+                        nextGroupIds.length > 0
+                            ? tx.promotionRecord.count({
+                                where: {
+                                    OR: [
+                                        { fromGroupId: { in: nextGroupIds } },
+                                        { toGroupId: { in: nextGroupIds } },
+                                    ],
+                                },
+                            })
+                            : Promise.resolve(0),
+                    ]);
+
+                    if (nextSeason.isActive) throw new Error('NEXT_SEASON_ACTIVE');
+                    if (nextSeason.closure) throw new Error('NEXT_SEASON_HAS_CLOSURE');
+                    if (nextSeason.nextSeasons.length > 0) throw new Error('NEXT_SEASON_HAS_SUCCESSOR');
+                    if (matches > 0) throw new Error('NEXT_SEASON_HAS_MATCHES');
+                    if (histories > 0 || stats > 0 || promotionRecords > 0) {
+                        throw new Error('NEXT_SEASON_HAS_HISTORY');
+                    }
+                }
+
+                const approvalHistories = await tx.playerGroupHistory.findMany({
+                    where: { seasonId: id },
+                    select: {
+                        id: true,
+                        playerId: true,
+                        groupId: true,
+                        finalRank: true,
+                        movementType: true,
+                    },
+                });
+
+                if (approvalHistories.length !== season.closure.entries.length) {
+                    throw new Error('APPROVAL_HISTORY_MISMATCH');
+                }
+
+                const historyBySignature = new Map<string, string[]>();
+                for (const history of approvalHistories) {
+                    const signature = [
+                        history.playerId,
+                        history.groupId ?? '',
+                        history.finalRank ?? '',
+                        history.movementType ?? '',
+                    ].join('|');
+                    const ids = historyBySignature.get(signature) ?? [];
+                    ids.push(history.id);
+                    historyBySignature.set(signature, ids);
+                }
+
+                const historyIds: string[] = [];
+                for (const entry of season.closure.entries) {
+                    const signature = [
+                        entry.playerId,
+                        entry.toGroupId ?? entry.fromGroupId ?? '',
+                        entry.finalRank,
+                        entry.movementType,
+                    ].join('|');
+                    const ids = historyBySignature.get(signature);
+                    if (!ids || ids.length !== 1) throw new Error('APPROVAL_HISTORY_MISMATCH');
+                    historyIds.push(ids[0]);
+                    historyBySignature.delete(signature);
+                }
+
+                if (historyBySignature.size > 0) throw new Error('APPROVAL_HISTORY_MISMATCH');
+
+                if (nextSeason) {
+                    await tx.season.delete({ where: { id: nextSeason.id } });
+                }
+                await tx.playerGroupHistory.deleteMany({ where: { id: { in: historyIds } } });
+                await tx.seasonClosure.update({
+                    where: { id: season.closure.id },
+                    data: { status: 'PENDING', approvedAt: null },
+                });
+
+                const closure = await computeSeasonClosure(id, tx);
+                if (!closure) throw new Error('CLOSURE_RECALCULATION_FAILED');
+
+                return {
+                    closure,
+                    deletedSeason: nextSeason
+                        ? { id: nextSeason.id, name: nextSeason.name }
+                        : null,
+                    deletedHistoryCount: historyIds.length,
+                };
+            }, { timeout: 30000 });
+
+            cacheService.invalidatePattern('public:');
+            cacheService.invalidatePattern('private:');
+            return result;
+        } catch (error: any) {
+            const errors: Record<string, { status: number; message: string }> = {
+                SEASON_NOT_FOUND: { status: 404, message: 'Temporada no encontrada' },
+                CLOSURE_NOT_FOUND: { status: 404, message: 'Propuesta no encontrada' },
+                CLOSURE_NOT_APPROVED: { status: 409, message: 'Solo se puede reabrir una propuesta aprobada' },
+                MULTIPLE_NEXT_SEASONS: { status: 409, message: 'Hay varias temporadas generadas desde este cierre y no se puede determinar cuál eliminar' },
+                NEXT_SEASON_ACTIVE: { status: 409, message: 'No se puede reabrir porque la temporada siguiente está activa' },
+                NEXT_SEASON_HAS_CLOSURE: { status: 409, message: 'No se puede reabrir porque la temporada siguiente ya tiene un cierre' },
+                NEXT_SEASON_HAS_SUCCESSOR: { status: 409, message: 'No se puede reabrir porque la temporada siguiente ya generó otra temporada' },
+                NEXT_SEASON_HAS_MATCHES: { status: 409, message: 'No se puede reabrir porque la temporada siguiente contiene partidos' },
+                NEXT_SEASON_HAS_HISTORY: { status: 409, message: 'No se puede reabrir porque la temporada siguiente contiene datos históricos' },
+                APPROVAL_HISTORY_MISMATCH: { status: 409, message: 'El historial no coincide exactamente con esta aprobación. No se ha modificado ningún dato' },
+                CLOSURE_RECALCULATION_FAILED: { status: 500, message: 'No se pudo recalcular la propuesta. No se ha modificado ningún dato' },
+            };
+            const knownError = errors[error?.message];
+            if (knownError) return reply.status(knownError.status).send({ error: knownError.message });
+            fastify.log.error(error);
+            return reply.status(500).send({ error: 'Error interno al reabrir la propuesta' });
+        }
+    });
+
     // Rollover season -> create next season cloning groups and importing players
     fastify.post('/:id/rollover', { onRequest: [fastify.authenticate] }, async (request, reply) => {
         try {
