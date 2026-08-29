@@ -164,6 +164,22 @@ export default function SeasonProposals() {
  }
  });
 
+ const recalculateMutation = useMutation({
+ mutationFn: async () => {
+ const { data } = await api.post(`/seasons/${seasonId}/closure/preview`);
+ return data;
+ },
+ onSuccess: async () => {
+ setHasChanges(false);
+ await queryClient.invalidateQueries({ queryKey: ['season-proposal', seasonId] });
+ await refetch();
+ alert('Propuesta recalculada con las reglas actuales. Revísala antes de aprobarla.');
+ },
+ onError: (error: any) => {
+ alert('No se pudo recalcular la propuesta: ' + (error?.response?.data?.error || error?.message || 'Error desconocido'));
+ }
+ });
+
  const approveMutation = useMutation({
  mutationFn: async () => {
  await api.post(`/seasons/${seasonId}/closure/approve`);
@@ -247,29 +263,29 @@ export default function SeasonProposals() {
  setHasChanges(true);
  };
 
- const handleSave = () => {
- // Calculate final player distribution
+ const isEligibleEntry = (entry: any) =>
+ entry.player?.competitionStatus !== 'FROZEN' && entry.player?.user?.isActive !== false;
+
+ const calculateProjectedDistribution = () => {
  const distribution: Record<string, { name: string; count: number }> = {};
- 
- // Initialize with all groups
+
  season?.groups?.forEach((group: any) => {
- distribution[group.id] = {
- name: group.name,
- count: 0
- };
+ distribution[group.id] = { name: group.name, count: 0 };
  });
 
- // Count players per group after movements
  localEntries.forEach((entry: any) => {
- const isFrozen = entry.player?.competitionStatus === 'FROZEN';
- if (isFrozen) return;
+ if (!isEligibleEntry(entry)) return;
  const targetGroupId = entry.toGroupId || entry.fromGroupId;
  if (targetGroupId && distribution[targetGroupId]) {
  distribution[targetGroupId].count++;
  }
  });
 
- setGroupDistribution(distribution);
+ return distribution;
+ };
+
+ const handleSave = () => {
+ setGroupDistribution(calculateProjectedDistribution());
  setShowConfirmModal(true);
  };
 
@@ -314,11 +330,13 @@ export default function SeasonProposals() {
  }
 
  const isApproved = season.closure?.status === 'APPROVED';
+ const generatedSeason = season.nextSeasons?.[0];
 
  // Calculate statistics
  const promotions = localEntries.filter(e => e.movementType === 'PROMOTION').length;
  const relegations = localEntries.filter(e => e.movementType === 'RELEGATION').length;
  const stays = localEntries.filter(e => e.movementType === 'STAY').length;
+ const projectedDistribution = calculateProjectedDistribution();
 
  return (
  <div className="space-y-8">
@@ -347,6 +365,21 @@ export default function SeasonProposals() {
  </button>
  )}
 
+ {!isApproved && (
+ <button
+ onClick={() => {
+ const warning = hasChanges
+ ? 'Hay cambios manuales sin guardar. Recalcular los descartará y generará de nuevo toda la propuesta. ¿Continuar?'
+ : 'Se generará de nuevo toda la propuesta con las reglas actuales. ¿Continuar?';
+ if (window.confirm(warning)) recalculateMutation.mutate();
+ }}
+ disabled={recalculateMutation.isPending || saveMutation.isPending}
+ className="px-4 py-2 rounded-lg border border-amber-500 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 disabled:opacity-50"
+ >
+ {recalculateMutation.isPending ? 'Recalculando...' : 'Recalcular Propuesta'}
+ </button>
+ )}
+
  {!isApproved && !hasChanges && (
  <button
  onClick={() => {
@@ -361,7 +394,7 @@ export default function SeasonProposals() {
  </button>
  )}
 
- {isApproved && (
+ {isApproved && !generatedSeason && (
  <button
  onClick={() => {
  if (window.confirm('¿Generar la siguiente temporada importando estos jugadores?')) {
@@ -411,6 +444,7 @@ export default function SeasonProposals() {
  <li>Si queda entre los dos últimos, no baja y no hacemos bajar a uno más para compensar.</li>
  <li>Si queda en mitad de tabla, tampoco ocupa plaza en la siguiente temporada.</li>
  <li>Cuando la nevera deja huecos, esos huecos se rellenan con ascensos extra desde el grupo inferior hasta completar el grupo si hay jugadores elegibles.</li>
+ <li>Los ascensos adicionales aparecen marcados como <strong>cubre vacante</strong> y puedes corregirlos antes de aprobar.</li>
  </ul>
  </div>
 
@@ -433,6 +467,18 @@ export default function SeasonProposals() {
  </div>
  )}
 
+ {generatedSeason && (
+ <div className="rounded-xl border border-blue-200 bg-blue-50 p-5 text-blue-900 dark:border-blue-800 dark:bg-blue-950/20 dark:text-blue-100">
+ <h3 className="font-bold">Siguiente temporada ya generada</h3>
+ <p className="mt-1 text-sm">
+ Este cierre ya generó <strong>{generatedSeason.name}</strong>. Se ha bloqueado la generación duplicada.
+ </p>
+ <Link to="/admin/seasons" className="mt-3 inline-flex text-sm font-semibold underline">
+ Ver temporadas
+ </Link>
+ </div>
+ )}
+
  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-6">
  {season.groups.map((group: any) => {
  // Get entries for this group to have correct ranking
@@ -445,11 +491,25 @@ export default function SeasonProposals() {
  const winsValues = groupEntries.map((entry: any) => entry.matchesWon || 0);
  const minWins = winsValues.length ? Math.min(...winsValues) : 0;
  const maxWins = winsValues.length ? Math.max(...winsValues) : 0;
+ const groupIndex = season.groups.findIndex((item: any) => item.id === group.id);
+ const isTopGroup = groupIndex === 0;
+ const isBottomGroup = groupIndex === season.groups.length - 1;
+ const eligibleRankedEntries = groupEntries.filter(isEligibleEntry);
+ const currentEligibleCount = eligibleRankedEntries.length;
+ const projectedCount = projectedDistribution[group.id]?.count ?? 0;
+ const regularPromotionIds = new Set(
+ isTopGroup ? [] : eligibleRankedEntries.slice(0, 2).map((entry: any) => entry.playerId)
+ );
 
  return (
  <div key={group.id} className="bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
  <div className="bg-slate-50 dark:bg-slate-900/50 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3">
+ <div>
  <h3 className="font-bold text-lg text-slate-900 dark:text-white">{group.name}</h3>
+ <p className="text-xs text-slate-500 dark:text-slate-400">
+ Actual elegibles: {currentEligibleCount} · Siguiente temporada: <strong>{projectedCount}</strong>
+ </p>
+ </div>
  <div className="flex items-center gap-2">
  <Link
  to={`/groups/${group.id}`}
@@ -458,7 +518,7 @@ export default function SeasonProposals() {
  >
  Ver más
  </Link>
- <button
+ {!isApproved && <button
  disabled={!candidatePlayers.length || addPlayerMutation.isPending}
  onClick={() => {
  setSelectedGroupId(group.id);
@@ -470,6 +530,7 @@ export default function SeasonProposals() {
  >
  + Player
  </button>
+ }
  </div>
  </div>
  <div className="grid grid-cols-[minmax(150px,1fr)_40px_34px_34px_34px_44px_minmax(120px,1fr)] px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/70">
@@ -492,6 +553,7 @@ export default function SeasonProposals() {
  const isFrozen = entry.player?.competitionStatus === 'FROZEN';
  const playerId = entry.player?.id;
  const isFrozenTogglePending = toggleFrozenMutation.isPending && pendingFrozenPlayerId === playerId;
+ const isVacancyPromotion = movement === 'PROMOTION' && !regularPromotionIds.has(entry.playerId);
  const playerStats = season?.statsByPlayerId?.[entry.playerId] || { losses: 0, remaining: 0, injuries: 0, setAverage: 0 };
  const wins = entry.matchesWon || 0;
  const tieOnWins = (winsCountByValue[wins] || 0) > 1;
@@ -521,6 +583,11 @@ export default function SeasonProposals() {
  {isFrozen && (
  <span className="text-xs px-2 py-0.5 bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 rounded-full font-medium shrink-0">
  ❄ Nevera
+ </span>
+ )}
+ {isVacancyPromotion && (
+ <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200 font-semibold">
+ cubre vacante
  </span>
  )}
  </div>
@@ -584,8 +651,8 @@ export default function SeasonProposals() {
  className={`text-xs font-bold bg-transparent border-none focus:ring-0 cursor-pointer ${statusColor} whitespace-nowrap w-full min-w-0 disabled:cursor-not-allowed disabled:opacity-60`}
  >
  <option value="STAY">Mantiene </option>
- <option value="PROMOTION">Asciende </option>
- <option value="RELEGATION">Desciende </option>
+ <option value="PROMOTION" disabled={isTopGroup}>Asciende </option>
+ <option value="RELEGATION" disabled={isBottomGroup}>Desciende </option>
  {playerId && (
  <option value={`TOGGLE:${playerId}`}>
  {isFrozen ? 'Sacar de nevera' : 'Poner en nevera'}

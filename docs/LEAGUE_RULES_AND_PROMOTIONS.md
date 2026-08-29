@@ -19,10 +19,11 @@ When a season ends, the system automatically calculates promotions, relegations,
 | **Middle Groups (2-7)** | 2 players (positions 1-2) → Group above | 2 players (positions 7-8) → Group below |
 | **Bottom Group** | 2 players (positions 1-2) → Group above | None (no lower group) |
 
-**Additional Relegations (Groups >8):**
-- If a group has >8 players, extra relegations apply:
-  - `total_relegations = 2 + (group_size - 8)`
-  - Example: 10-player group → 2 + (10 - 8) = **4 relegations**
+**Vacancies:**
+- Players in the freezer or with an inactive account do not occupy a place in the next season.
+- Vacancies are filled in ranking order with additional promotions from the immediately lower group.
+- If that creates another vacancy, filling continues down the hierarchy. No player can skip a group.
+- The bottom group can remain below its previous size when there are not enough eligible players.
 
 **Tie-Breaking Rules** (when players are tied on position):
 1. **Head-to-head** (only 2 players)
@@ -55,6 +56,8 @@ On this page you'll see:
 - Player name
 - `🏆 X` = Wins count
 - Movement selector dropdown
+- Current eligible players and projected next-season size
+- `cubre vacante` marker for promotions beyond the regular top two
 
 ### Step 3: Edit Movements (Optional)
 1. Click movement dropdown for any player
@@ -64,10 +67,14 @@ On this page you'll see:
    - **Desciende 📉** = Moves down one group
 3. Click **"Guardar Cambios"** when done
 
+Use **"Recalcular Propuesta"** to discard the pending proposal and generate it again with the current rankings and eligibility. This also discards unsaved manual edits.
+
 **Default Rules** (auto-applied if unchanged):
 - **Top 2** of each group promoted (except top group)
 - **Bottom 2** of each group relegated (except bottom group)
 - **All others** stay in current group
+- **Additional ranked players** can promote to fill vacancies left by freezer/inactive players
+- The top group never promotes and the bottom group never relegates
 
 ### Step 4: Approve Proposal
 1. Review all movements

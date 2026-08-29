@@ -70,7 +70,11 @@ export async function seasonRoutes(fastify: FastifyInstance) {
                                 }
                             }
                         }
-                    }
+                    },
+                    nextSeasons: {
+                        select: { id: true, name: true, startDate: true, endDate: true },
+                        orderBy: { createdAt: 'asc' },
+                    },
                 },
             });
             if (!season) return reply.status(404).send({ error: 'Season not found' });
@@ -189,15 +193,73 @@ export async function seasonRoutes(fastify: FastifyInstance) {
             const { id } = request.params as { id: string };
             if (decoded.role !== 'ADMIN') return reply.status(403).send({ error: 'Forbidden' });
 
-            const body = request.body as { entries: Array<{ id: string; movementType: string; toGroupId: string | null }> };
+            const body = z.object({
+                entries: z.array(z.object({
+                    id: z.string().min(1),
+                    movementType: z.enum(['STAY', 'PROMOTION', 'RELEGATION']),
+                    toGroupId: z.string().min(1).nullable(),
+                })).min(1),
+            }).parse(request.body);
 
-            // Update each entry
+            const closure = await prisma.seasonClosure.findUnique({
+                where: { seasonId: id },
+                include: {
+                    entries: {
+                        include: { player: { include: { user: { select: { isActive: true } } } } },
+                    },
+                    season: { include: { groups: true } },
+                },
+            });
+
+            if (!closure) return reply.status(404).send({ error: 'Propuesta no encontrada' });
+            if (closure.status !== 'PENDING') {
+                return reply.status(400).send({ error: 'Una propuesta aprobada ya no se puede editar' });
+            }
+
+            const entryIds = new Set(body.entries.map(entry => entry.id));
+            if (entryIds.size !== body.entries.length || body.entries.length !== closure.entries.length) {
+                return reply.status(400).send({ error: 'La propuesta debe incluir una única actualización para cada jugador' });
+            }
+
+            const existingById = new Map(closure.entries.map(entry => [entry.id, entry]));
+            const orderedGroups = [...closure.season.groups].sort((a, b) =>
+                a.name.localeCompare(b.name, 'es', { numeric: true, sensitivity: 'base' })
+            );
+            const groupIndexById = new Map(orderedGroups.map((group, index) => [group.id, index]));
+
+            const normalizedEntries = body.entries.map(entry => {
+                const existing = existingById.get(entry.id);
+                if (!existing || !existing.fromGroupId) {
+                    throw new Error('INVALID_CLOSURE_ENTRY');
+                }
+
+                const fromIndex = groupIndexById.get(existing.fromGroupId);
+                if (fromIndex === undefined) throw new Error('INVALID_FROM_GROUP');
+
+                const isEligible = existing.player.user.isActive && existing.player.competitionStatus === 'ACTIVE';
+                if (!isEligible && entry.movementType !== 'STAY') {
+                    throw new Error('INELIGIBLE_PLAYER_MOVEMENT');
+                }
+
+                if (entry.movementType === 'STAY') {
+                    return { ...entry, toGroupId: null };
+                }
+
+                const targetIndex = entry.movementType === 'PROMOTION' ? fromIndex - 1 : fromIndex + 1;
+                const expectedGroupId = orderedGroups[targetIndex]?.id;
+                if (!expectedGroupId || entry.toGroupId !== expectedGroupId) {
+                    throw new Error('INVALID_MOVEMENT_TARGET');
+                }
+
+                return entry;
+            });
+
             await prisma.$transaction(
-                body.entries.map(entry =>
+                normalizedEntries.map(entry =>
                     prisma.seasonClosureEntry.update({
                         where: { id: entry.id },
                         data: {
-                            movementType: entry.movementType as any,
+                            movementType: entry.movementType,
                             toGroupId: entry.toGroupId
                         }
                     })
@@ -205,7 +267,7 @@ export async function seasonRoutes(fastify: FastifyInstance) {
             );
 
             // Return updated closure
-            const closure = await prisma.seasonClosure.findUnique({
+            const updatedClosure = await prisma.seasonClosure.findUnique({
                 where: { seasonId: id },
                 include: {
                     entries: {
@@ -218,8 +280,18 @@ export async function seasonRoutes(fastify: FastifyInstance) {
                 }
             });
 
-            return closure;
-        } catch (error) {
+            return updatedClosure;
+        } catch (error: any) {
+            if (error instanceof z.ZodError) return reply.status(400).send({ error: error.errors });
+            const validationErrors: Record<string, string> = {
+                INVALID_CLOSURE_ENTRY: 'La propuesta contiene jugadores que no pertenecen a este cierre',
+                INVALID_FROM_GROUP: 'El grupo de origen no pertenece a esta temporada',
+                INELIGIBLE_PLAYER_MOVEMENT: 'Los jugadores inactivos o en nevera deben permanecer sin movimiento',
+                INVALID_MOVEMENT_TARGET: 'Los ascensos y descensos solo pueden hacerse al grupo adyacente',
+            };
+            if (validationErrors[error?.message]) {
+                return reply.status(400).send({ error: validationErrors[error.message] });
+            }
             fastify.log.error(error);
             return reply.status(500).send({ error: 'Internal server error' });
         }
@@ -243,6 +315,28 @@ export async function seasonRoutes(fastify: FastifyInstance) {
             if (!closure) {
                 closure = await prisma.seasonClosure.create({ data: { seasonId: id, status: 'PENDING' } });
             }
+            if (closure.status !== 'PENDING') {
+                return reply.status(400).send({ error: 'Una propuesta aprobada ya no se puede editar' });
+            }
+
+            const [targetGroup, player, existingEntry] = await Promise.all([
+                prisma.group.findFirst({ where: { id: body.toGroupId, seasonId: id }, select: { id: true } }),
+                prisma.player.findUnique({
+                    where: { id: body.playerId },
+                    include: { user: { select: { isActive: true } } },
+                }),
+                prisma.seasonClosureEntry.findFirst({
+                    where: { closureId: closure.id, playerId: body.playerId },
+                    select: { id: true },
+                }),
+            ]);
+
+            if (!targetGroup) return reply.status(400).send({ error: 'El grupo destino no pertenece a esta temporada' });
+            if (!player) return reply.status(404).send({ error: 'Jugador no encontrado' });
+            if (!player.user.isActive || player.competitionStatus !== 'ACTIVE') {
+                return reply.status(400).send({ error: 'El jugador debe estar activo y fuera de la nevera' });
+            }
+            if (existingEntry) return reply.status(409).send({ error: 'El jugador ya está incluido en la propuesta' });
 
             // Determine a final rank placing this player at the end of the target group list
             const rank = (await prisma.seasonClosureEntry.count({
@@ -359,6 +453,21 @@ export async function seasonRoutes(fastify: FastifyInstance) {
             });
 
             if (!season) return reply.status(404).send({ error: 'Season not found' });
+            if (!season.closure || season.closure.status !== 'APPROVED') {
+                return reply.status(400).send({ error: 'Debes aprobar la propuesta antes de generar la siguiente temporada' });
+            }
+
+            const existingNextSeason = await prisma.season.findFirst({
+                where: { previousSeasonId: id },
+                select: { id: true, name: true, startDate: true, endDate: true },
+                orderBy: { createdAt: 'asc' },
+            });
+            if (existingNextSeason) {
+                return reply.status(409).send({
+                    error: `Ya existe una temporada generada desde este cierre: ${existingNextSeason.name}`,
+                    season: existingNextSeason,
+                });
+            }
 
             // Derive next season name intelligently
             const newStart = addMonths(season.startDate, nMonths);

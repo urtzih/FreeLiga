@@ -365,8 +365,11 @@ export async function computeSeasonClosure(seasonId: string) {
     if (!season) throw new Error(`Season not found: ${seasonId}`);
     if (!season.groups || season.groups.length === 0) throw new Error(`No groups found for season: ${seasonId}`);
 
-    // Ordenar grupos por nombre (asumiendo jerarquía A,B,C,...)
-    const orderedGroups = [...season.groups].sort((a, b) => a.name.localeCompare(b.name));
+    // El primer grupo es el nivel superior. La comparación numérica evita
+    // ordenar "Grupo 10" antes de "Grupo 2".
+    const compareGroupNames = (a: { name: string }, b: { name: string }) =>
+        a.name.localeCompare(b.name, 'es', { numeric: true, sensitivity: 'base' });
+    const orderedGroups = [...season.groups].sort(compareGroupNames);
 
     // Recalcular ranking para cada grupo
     for (const g of orderedGroups) {
@@ -387,7 +390,7 @@ export async function computeSeasonClosure(seasonId: string) {
             } 
         }
     });
-    const refreshedOrdered = [...refreshedGroups].sort((a, b) => a.name.localeCompare(b.name));
+    const refreshedOrdered = [...refreshedGroups].sort(compareGroupNames);
 
     // Obtener matches para calcular victorias por jugador
     const allMatches = await prisma.match.findMany({
@@ -420,8 +423,8 @@ export async function computeSeasonClosure(seasonId: string) {
         const eligiblePlayers = eligiblePlayersByGroup[idx];
         const isTop = idx === 0;
         const isBottom = idx === refreshedOrdered.length - 1;
-        const promotionIds = !isBottom ? eligiblePlayers.slice(0, 2).map((p) => p.playerId) : [];
-        const relegationIds = !isTop
+        const promotionIds = !isTop ? eligiblePlayers.slice(0, 2).map((p) => p.playerId) : [];
+        const relegationIds = !isBottom
             ? rankedPlayers
                 .slice(-2)
                 .filter((gp) => gp.player.user.isActive && gp.player.competitionStatus === 'ACTIVE')
