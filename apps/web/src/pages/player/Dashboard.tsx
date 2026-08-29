@@ -286,7 +286,7 @@ export default function Dashboard() {
             {currentGroup && (
                 <div className="bg-white dark:bg-slate-800 rounded-xl md:rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
                     <div className="px-3 md:px-6 py-3 md:py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex items-center justify-between gap-3">
-                        <h3 className="text-lg md:text-2xl font-bold text-slate-900 dark:text-white">Grupo 3</h3>
+                        <h3 className="text-lg md:text-2xl font-bold text-slate-900 dark:text-white">{currentGroup.name}</h3>
                         <Link
                             to={`/groups/${currentGroup.id}`}
                             className="inline-flex items-center px-3 md:px-4 py-2 text-sm md:text-base club-btn-yellow whitespace-nowrap"
