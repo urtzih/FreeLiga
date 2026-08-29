@@ -1,3 +1,13 @@
+## [1.3.1](https://github.com/urtzih/FreeLiga/compare/v1.3.0...v1.3.1) (2026-08-29)
+
+### Correcciones
+
+* **seasons:** corregir propuestas de movimientos ([3e2dc06](https://github.com/urtzih/FreeLiga/commit/3e2dc060443bdd95d9c1f7166a244991c3b7fbf9))
+
+### CI
+
+* **release:** fijar preset de changelog compatible ([481050e](https://github.com/urtzih/FreeLiga/commit/481050e9d0fca7d363359660a800851811b43897))
+
 ## [1.3.0](https://github.com/urtzih/FreeLiga/compare/v1.2.0...v1.3.0) (2026-06-30)
 
 ## [1.2.0](https://github.com/urtzih/FreeLiga/compare/v1.1.0...v1.2.0) (2026-06-29)
