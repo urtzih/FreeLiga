@@ -1,3 +1,9 @@
+## [1.3.2](https://github.com/urtzih/FreeLiga/compare/v1.3.1...v1.3.2) (2026-08-29)
+
+### Correcciones
+
+* **seasons:** reabrir cierres y limitar vacantes a ocho plazas ([213f302](https://github.com/urtzih/FreeLiga/commit/213f30241d7e6dc6c65d3ce55416a8f9d79e433c))
+
 ## [1.3.1](https://github.com/urtzih/FreeLiga/compare/v1.3.0...v1.3.1) (2026-08-29)
 
 ### Correcciones
