@@ -442,7 +442,7 @@ export async function seasonRoutes(fastify: FastifyInstance) {
             const { id } = request.params as { id: string };
             if (decoded.role !== 'ADMIN') return reply.status(403).send({ error: 'Forbidden' });
 
-            const result = await prisma.$transaction(async (tx) => {
+            const reset = await prisma.$transaction(async (tx) => {
                 const season = await tx.season.findUnique({
                     where: { id },
                     include: {
@@ -539,16 +539,15 @@ export async function seasonRoutes(fastify: FastifyInstance) {
                     await tx.season.delete({ where: { id: nextSeason.id } });
                 }
                 await tx.playerGroupHistory.deleteMany({ where: { id: { in: historyIds } } });
+                // Dejar la propuesta limpia para que el recálculo posterior no
+                // conserve movimientos de la aprobación anterior.
+                await tx.seasonClosureEntry.deleteMany({ where: { closureId: season.closure.id } });
                 await tx.seasonClosure.update({
                     where: { id: season.closure.id },
                     data: { status: 'PENDING', approvedAt: null },
                 });
 
-                const closure = await computeSeasonClosure(id, tx);
-                if (!closure) throw new Error('CLOSURE_RECALCULATION_FAILED');
-
                 return {
-                    closure,
                     deletedSeason: nextSeason
                         ? { id: nextSeason.id, name: nextSeason.name }
                         : null,
@@ -556,9 +555,22 @@ export async function seasonRoutes(fastify: FastifyInstance) {
                 };
             }, { timeout: 30000 });
 
+            // El recálculo actualiza el ranking de todos los grupos y puede
+            // superar el timeout de una transacción interactiva en Railway.
+            // La reversión queda protegida por la transacción corta anterior;
+            // si el recálculo falla, la propuesta permanece PENDING y se puede
+            // volver a generar sin repetir la eliminación del historial.
+            let closure;
+            try {
+                closure = await computeSeasonClosure(id);
+            } catch (error) {
+                fastify.log.error(error, 'Closure reopened but recalculation failed');
+                throw new Error('CLOSURE_RECALCULATION_FAILED');
+            }
+
             cacheService.invalidatePattern('public:');
             cacheService.invalidatePattern('private:');
-            return result;
+            return { ...reset, closure };
         } catch (error: any) {
             const errors: Record<string, { status: number; message: string }> = {
                 SEASON_NOT_FOUND: { status: 404, message: 'Temporada no encontrada' },
@@ -571,7 +583,7 @@ export async function seasonRoutes(fastify: FastifyInstance) {
                 NEXT_SEASON_HAS_MATCHES: { status: 409, message: 'No se puede reabrir porque la temporada siguiente contiene partidos' },
                 NEXT_SEASON_HAS_HISTORY: { status: 409, message: 'No se puede reabrir porque la temporada siguiente contiene datos históricos' },
                 APPROVAL_HISTORY_MISMATCH: { status: 409, message: 'El historial no coincide exactamente con esta aprobación. No se ha modificado ningún dato' },
-                CLOSURE_RECALCULATION_FAILED: { status: 500, message: 'No se pudo recalcular la propuesta. No se ha modificado ningún dato' },
+                CLOSURE_RECALCULATION_FAILED: { status: 503, message: 'La propuesta se ha reabierto, pero no se pudo recalcular. Puedes volver a generar la propuesta' },
             };
             const knownError = errors[error?.message];
             if (knownError) return reply.status(knownError.status).send({ error: knownError.message });
