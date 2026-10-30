@@ -1,12 +1,12 @@
 # Multi-stage build for FreeSquash Backend
 # Build targets: production (default) or development
 
-# Stage 1: Base with dependencies (Debian-based for OpenSSL 1.1 compatibility)
-FROM node:20-bullseye-slim AS base
+# Stage 1: Base with dependencies (Debian Bookworm with OpenSSL 3)
+FROM node:20-bookworm-slim AS base
 
 WORKDIR /app
 
-# Ensure OpenSSL 1.1 is available for Prisma and build tools for native modules
+# Install OpenSSL for Prisma and build tools for native modules
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
        openssl \
@@ -56,11 +56,11 @@ RUN npm run build --workspace=packages/database
 RUN npm run build --workspace=apps/api
 
 # Stage 4: Production Runtime (Debian-based to match Prisma engine)
-FROM node:20-bullseye-slim AS production
+FROM node:20-bookworm-slim AS production
 
 WORKDIR /app
 
-# Ensure OpenSSL 1.1 is available at runtime
+# Match the builder's OpenSSL version for the generated Prisma engine
 RUN apt-get update \
     && apt-get install -y --no-install-recommends openssl ca-certificates \
     && rm -rf /var/lib/apt/lists/*

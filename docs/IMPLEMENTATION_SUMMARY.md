@@ -1,5 +1,12 @@
 # ✅ RESUMEN DE IMPLEMENTACIÓN COMPLETA
 
+## Reparación del build de Railway — 30 de octubre de 2026
+
+- Dockerfile: usar Debian Bookworm en build y runtime, con OpenSSL 3 y el motor Prisma generado dentro de la misma imagen base. Sustituye Bullseye, cuya descarga de paquetes devolvía HTTP 404 durante el despliegue.
+- Railway: versionar los patrones de despliegue para incluir API, paquete de base de datos y archivos de construcción del monorepo.
+- Verificación: build local de la imagen de producción, build de workspaces, lint y smoke test de `/health` después del despliegue. Este cambio no modifica el esquema de datos.
+
+
 ## 🤕 IMPLEMENTACIÓN: MARCAR LESIÓN DE TEMPORADA (JUGADOR Y ADMIN)
 
 **Estado**: ✅ **COMPLETADA Y LISTA PARA USAR**
