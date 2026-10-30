@@ -1,3 +1,9 @@
+## [1.3.5](https://github.com/urtzih/FreeLiga/compare/v1.3.4...v1.3.5) (2026-10-30)
+
+### Correcciones
+
+* **api:** restore Railway builds with Debian Bookworm ([493c105](https://github.com/urtzih/FreeLiga/commit/493c1058d63e165f031038d19ec246834b5f8949))
+
 ## [1.3.4](https://github.com/urtzih/FreeLiga/compare/v1.3.3...v1.3.4) (2026-08-29)
 
 ### Correcciones
